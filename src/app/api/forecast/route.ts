@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
         stage: true,
         value: true,
         probability: true,
-        closedAt: true,
         createdAt: true,
         updatedAt: true,
         owner: { select: { id: true, name: true } },
