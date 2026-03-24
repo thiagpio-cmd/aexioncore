@@ -1,0 +1,756 @@
+// Aexion Core — Prisma Schema
+// Includes: Canonical Revenue Event Model, expanded Integration, Credential Vault
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Core Models
+// ============================================================================
+
+model Organization {
+  id    String @id @default(cuid())
+  name  String
+  slug  String @unique
+
+  // Branding
+  displayName    String?
+  logoUrl        String?
+  primaryColor   String?   @default("#2457FF")
+  secondaryColor String?   @default("#1a1a2e")
+  favicon        String?
+
+  // Module activation (JSON array of enabled module keys)
+  enabledModules String?   @default("[\"commercial\",\"data\",\"reports\",\"automation\",\"post_sale\",\"playbooks\"]")
+
+  // Setup state
+  setupCompleted Boolean   @default(false)
+  setupStep      Int       @default(0)
+
+  // Org settings
+  industry       String?
+  defaultCurrency String?  @default("BRL")
+  fiscalYearStart Int?     @default(1)
+  timezone        String?  @default("America/Sao_Paulo")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      User[]
+  teams      Team[]
+  companies  Company[]
+  accounts   Account[]
+  leads      Lead[]
+  opportunities Opportunity[]
+  pipelines  Pipeline[]
+  integrations Integration[]
+  auditLogs  AuditLog[]
+  revenueEvents RevenueEvent[]
+
+  @@map("organizations")
+}
+
+model Team {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  managerId      String?
+  manager        User?    @relation("TeamManager", fields: [managerId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users User[]
+
+  @@index([organizationId])
+  @@map("teams")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId         String?
+  team           Team?    @relation(fields: [teamId], references: [id])
+  email          String   @unique
+  name           String
+  password       String
+  role           String   @default("USER")
+  workspace      String   @default("SDR")
+  image          String?
+  isActive       Boolean  @default(true)
+  notificationPrefs String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  ownedLeads      Lead[]       @relation("LeadOwner")
+  ownedOpportunities Opportunity[] @relation("OpportunityOwner")
+  ownedTasks      Task[]       @relation("TaskOwner")
+  ownedMeetings   Meeting[]    @relation("MeetingOwner")
+  managedTeam     Team[]       @relation("TeamManager")
+  createdActivities Activity[] @relation("ActivityCreator")
+  auditLogs       AuditLog[]
+  reports         SavedReport[] @relation("UserReports")
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("users")
+}
+
+model Company {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  industry       String?
+  size           String?
+  website        String?
+  annualRevenue  Int?     @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  contacts Contact[]
+  accounts Account[]
+  leads    Lead[]
+
+  @@index([organizationId])
+  @@index([name])
+  @@map("companies")
+}
+
+model Contact {
+  id             String   @id @default(cuid())
+  organizationId String?
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name           String
+  email          String   @unique
+  phone          String?
+  title          String?
+  isChampion     Boolean  @default(false)
+  isDecisionMaker Boolean @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  leads Lead[]
+  meetings Meeting[]
+  primaryOpportunities Opportunity[] @relation("OpportunityPrimaryContact")
+
+  @@index([companyId])
+  @@index([email])
+  @@map("contacts")
+}
+
+model Account {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name           String
+  status         String   @default("active")
+  ownerId        String?
+  
+  // Post-Sale Journey Tracking
+  isCustomer          Boolean   @default(false)
+  becameCustomerAt    DateTime?
+  deliveryDate        DateTime?
+  activationDate      DateTime?
+  onboardingStatus    String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, DELAYED
+  implementationDelayDays Int?
+
+  // Churn Intelligence
+  churnDate           DateTime?
+  churnReason         String?     // e.g., "PRICE", "COMPETITOR", "LACK_OF_USAGE", "POOR_SUPPORT", "BUSINESS_CLOSED"
+  churnRepId          String?     // The rep who owned the account/renewal when churn happened
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  opportunities Opportunity[]
+
+  @@index([organizationId])
+  @@index([companyId])
+  @@map("accounts")
+}
+
+model Lead {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId      String?
+  contact        Contact? @relation(fields: [contactId], references: [id])
+
+  name           String
+  email          String   @unique
+  phone          String?
+  title          String?
+  source         String   @default("web")
+  status         String   @default("NEW")
+  temperature    String   @default("COLD")
+  fitScore       Int      @default(0)
+  ownerId        String
+  owner          User     @relation("LeadOwner", fields: [ownerId], references: [id])
+  lastContact    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Source attribution for integration-created leads
+  sourceSystem     String?
+  sourceExternalId String?
+
+  meetings   Meeting[]
+  insights   Insight[]
+  tasks      Task[]    @relation("TaskLead")
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([ownerId])
+  @@index([sourceExternalId])
+  @@map("leads")
+}
+
+model Pipeline {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  stages        Stage[]
+
+  @@index([organizationId])
+  @@map("pipelines")
+}
+
+model Stage {
+  id          String   @id @default(cuid())
+  pipelineId  String
+  pipeline    Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name        String
+  order       Int
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  opportunities Opportunity[]
+
+  @@index([pipelineId])
+  @@map("stages")
+}
+
+model Opportunity {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  accountId      String
+  account        Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  title          String
+  description    String?
+  value          Int      @default(0)
+  stage          String   @default("discovery")
+  stageId        String?
+  stageRelation  Stage?   @relation(fields: [stageId], references: [id])
+
+  ownerId        String
+  owner          User     @relation("OpportunityOwner", fields: [ownerId], references: [id])
+  ownerName      String?
+
+  // Primary contact for this deal
+  primaryContactId String?
+  primaryContact   Contact? @relation("OpportunityPrimaryContact", fields: [primaryContactId], references: [id])
+
+  probability    Int      @default(0)
+  expectedCloseDate DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Source attribution
+  sourceSystem     String?
+  sourceExternalId String?
+
+  tasks      Task[]
+  insights   Insight[]
+  meetings   Meeting[] @relation("MeetingOpportunity")
+
+  @@index([organizationId])
+  @@index([accountId])
+  @@index([ownerId])
+  @@index([primaryContactId])
+  @@index([sourceExternalId])
+  @@map("opportunities")
+}
+
+model Activity {
+  id             String   @id @default(cuid())
+  organizationId String?
+  type           String
+  channel        String?  @default("internal")
+
+  leadId         String?
+  opportunityId  String?
+
+  subject        String?
+  body           String?
+  creatorId      String?
+  creator        User?    @relation("ActivityCreator", fields: [creatorId], references: [id])
+  createdAt      DateTime @default(now())
+
+  // Integration source fields
+  direction      String?   // inbound, outbound
+  sourceSystem   String?   // gmail, outlook, etc.
+  externalId     String?   // provider message ID (for dedup)
+  occurredAt     DateTime? // when the event occurred in the source system
+
+  // Link to revenue event if this activity came from an integration
+  revenueEventId String?
+
+  @@index([type])
+  @@index([leadId])
+  @@index([opportunityId])
+  @@index([creatorId])
+  @@index([externalId])
+  @@map("activities")
+}
+
+model Task {
+  id             String   @id @default(cuid())
+  organizationId String?
+  title          String
+  description    String?
+  type           String   @default("FOLLOW_UP")
+  priority       String   @default("MEDIUM")
+  status         String   @default("PENDING")
+
+  leadId         String?
+  lead           Lead?    @relation("TaskLead", fields: [leadId], references: [id])
+  opportunityId  String?
+  opportunity    Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  ownerId        String
+  owner          User     @relation("TaskOwner", fields: [ownerId], references: [id])
+
+  dueDate        DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([leadId])
+  @@index([opportunityId])
+  @@map("tasks")
+}
+
+model Meeting {
+  id             String   @id @default(cuid())
+  organizationId String?
+  title          String
+  description    String?
+
+  leadId         String?
+  lead           Lead?    @relation(fields: [leadId], references: [id])
+  contactId      String?
+  contact        Contact? @relation(fields: [contactId], references: [id])
+  opportunityId  String?
+  opportunity    Opportunity? @relation("MeetingOpportunity", fields: [opportunityId], references: [id])
+
+  ownerId        String
+  owner          User     @relation("MeetingOwner", fields: [ownerId], references: [id])
+
+  startTime      DateTime
+  endTime        DateTime?
+  location       String?
+  attendees      String?  @default("[]")
+  notes          String?
+  recordingUrl   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Source attribution for calendar sync
+  sourceSystem     String?
+  sourceExternalId String?
+
+  @@index([ownerId])
+  @@index([opportunityId])
+  @@index([sourceExternalId])
+  @@map("meetings")
+}
+
+model InboxMessage {
+  id             String   @id @default(cuid())
+  organizationId String?
+  channel        String   @default("EMAIL")
+  sender         String
+  subject        String?
+  body           String
+  isRead         Boolean  @default(false)
+  starred        Boolean  @default(false)
+  status         String   @default("ACTIVE")   // ACTIVE, ARCHIVED, SNOOZED
+  direction      String   @default("inbound")  // inbound, outbound
+  snoozeUntil    DateTime?
+
+  // Classification (set by manual or automated triage)
+  category       String?   // e.g., "DEAL_RELATED", "SUPPORT", "MARKETING", "PERSONAL", "UNKNOWN"
+  relevance      String?   // e.g., "HIGH", "MEDIUM", "LOW", "NONE"
+
+  // Entity resolution links
+  contactId      String?
+  companyId      String?
+  leadId         String?
+  opportunityId  String?
+  ownerId        String?
+
+  // Source attribution
+  sourceSystem     String?
+  sourceExternalId String?
+  threadExternalId String?
+
+  // Link to revenue event
+  revenueEventId String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([channel])
+  @@index([isRead])
+  @@index([contactId])
+  @@index([sourceExternalId])
+  @@map("inbox_messages")
+}
+
+// ============================================================================
+// Canonical Revenue Event Model
+// ============================================================================
+
+model RevenueEvent {
+  id               String   @id @default(cuid())
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Provider identification
+  provider         String          // e.g., "gmail", "hubspot", "whatsapp"
+  domain           String          // e.g., "email", "crm", "messaging"
+  eventType        String          // e.g., "EMAIL_RECEIVED", "DEAL_STAGE_CHANGED"
+  direction        String          // "inbound", "outbound", "internal", "system"
+  channel          String          // "EMAIL", "WHATSAPP", "CALL", "CRM", etc.
+
+  // Timing
+  occurredAt       DateTime        // When the event actually happened
+  receivedAt       DateTime @default(now()) // When we received it
+
+  // External references
+  sourceExternalId   String        // ID in the external system
+  threadExternalId   String?       // Thread/conversation ID
+  actorExternalId    String?       // Who did it externally
+  counterpartyEmail  String?       // Counterparty email (for resolution)
+  counterpartyPhone  String?       // Counterparty phone (for resolution)
+
+  // Entity resolution results
+  resolvedContactId    String?
+  resolvedCompanyId    String?
+  resolvedAccountId    String?
+  resolvedLeadId       String?
+  resolvedOpportunityId String?
+  resolvedOwnerId      String?
+  resolutionMethod     String?     // "email_exact", "phone_exact", "domain_heuristic", "unresolved"
+  resolutionConfidence Int      @default(0) // 0-100
+
+  // Payload
+  normalizedPayload String?        // JSON: domain-specific structured data
+  rawPayloadRef     String?        // Reference to raw payload (webhook event ID)
+
+  // Deduplication
+  dedupeKey         String   @unique
+
+  // Processing
+  processingStatus  String   @default("pending") // "pending", "processed", "failed", "skipped"
+  processingError   String?
+
+  createdAt         DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([provider])
+  @@index([eventType])
+  @@index([channel])
+  @@index([occurredAt])
+  @@index([resolvedContactId])
+  @@index([resolvedLeadId])
+  @@index([resolvedOpportunityId])
+  @@index([sourceExternalId])
+  @@index([counterpartyEmail])
+  @@map("revenue_events")
+}
+
+// ============================================================================
+// Intelligence Models
+// ============================================================================
+
+model Insight {
+  id             String   @id @default(cuid())
+  organizationId String?
+  category       String
+  title          String
+  description    String
+  impact         String   @default("MEDIUM")
+  confidence     Int      @default(80)
+  suggestedAction String?
+
+  leadId         String?
+  lead           Lead?    @relation(fields: [leadId], references: [id])
+  opportunityId  String?
+  opportunity    Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  createdAt      DateTime @default(now())
+
+  @@index([category])
+  @@index([leadId])
+  @@index([opportunityId])
+  @@map("insights")
+}
+
+model Recommendation {
+  id             String   @id @default(cuid())
+  organizationId String?
+  action         String
+  reason         String?
+  priority       String   @default("MEDIUM")
+
+  leadId         String?
+  opportunityId  String?
+
+  createdAt      DateTime @default(now())
+
+  @@map("recommendations")
+}
+
+model ForecastSnapshot {
+  id             String   @id @default(cuid())
+  organizationId String?
+  quarter        String
+  year           Int
+
+  commit         Int      @default(0)
+  bestCase       Int      @default(0)
+  pipeline       Int      @default(0)
+  target         Int      @default(0)
+
+  createdAt      DateTime @default(now())
+
+  @@map("forecast_snapshots")
+}
+
+// ============================================================================
+// Playbooks
+// ============================================================================
+
+model Playbook {
+  id             String   @id @default(cuid())
+  organizationId String?
+  name           String
+  description    String?
+  segment        String?
+  stage          String?
+  conversionRate Int      @default(0)
+  usage          Int      @default(0)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  steps PlaybookStep[]
+
+  @@map("playbooks")
+}
+
+model PlaybookStep {
+  id          String  @id @default(cuid())
+  playbookId  String
+  playbook    Playbook @relation(fields: [playbookId], references: [id], onDelete: Cascade)
+  order       Int
+  title       String
+  description String?
+  resources   String?
+
+  @@index([playbookId])
+  @@map("playbook_steps")
+}
+
+// ============================================================================
+// Integration Models (expanded)
+// ============================================================================
+
+model Integration {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name           String
+  slug           String   @unique
+  status         String   @default("DISCONNECTED")  // DISCONNECTED, CONNECTING, CONNECTED, DEGRADED, ERROR, RECONNECT_REQUIRED
+  description    String?
+
+  // Provider metadata
+  providerKey    String?         // e.g., "gmail", "hubspot" — links to provider registry
+  domain         String?         // e.g., "email", "crm", "messaging"
+  authType       String?         // e.g., "oauth2", "api_key", "webhook_only"
+  syncMode       String?         // e.g., "push", "pull", "hybrid"
+  scopes         String?         // JSON array of granted scopes
+
+  // Health (computed by health engine)
+  healthPercent  Int      @default(0)
+  lastSync       DateTime?
+  lastSuccessfulSync DateTime?
+  lastFailedSyncAt DateTime?
+  lastError      String?
+  eventsReceived Int      @default(0)
+  itemsFetched   Int      @default(0)
+  itemsPersisted Int      @default(0)
+  itemsIgnored   Int      @default(0)
+  itemsFailed    Int      @default(0)
+  errorCount     Int      @default(0)
+  consecutiveFailures Int @default(0)
+
+  // Sync state
+  syncCursor     String?         // JSON: provider-specific cursor
+  syncStatus     String?         // "idle", "syncing", "error"
+  nextSyncAt     DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  credentials IntegrationCredential[]
+  webhooks    WebhookEvent[]
+
+  @@index([organizationId])
+  @@map("integrations")
+}
+
+model IntegrationCredential {
+  id             String   @id @default(cuid())
+  integrationId  String
+  integration    Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  // Encrypted fields
+  accessToken    String?
+  refreshToken   String?
+  apiKey         String?         // For API key auth
+  signingSecret  String?         // For webhook signature validation
+
+  // Metadata (not sensitive — stored plain)
+  expiresAt      DateTime?
+  scope          String?         // Granted OAuth scopes
+  accountEmail   String?         // e.g., user@gmail.com (which mailbox is linked)
+  accountName    String?         // e.g., "Ana Silva's Gmail"
+  metadata       String?         // JSON: provider-specific metadata (mailboxId, calendarId, etc.)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([integrationId])
+  @@map("integration_credentials")
+}
+
+model WebhookEvent {
+  id             String   @id @default(cuid())
+  integrationId  String
+  integration    Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  eventType      String
+  status         String   @default("received")  // received, processed, failed, skipped, duplicate
+  payload        String?
+  retryCount     Int      @default(0)
+
+  // Deduplication
+  dedupeKey      String?
+
+  // Processing result
+  processingError String?
+  processedAt    DateTime?
+
+  // Source tracking
+  sourceIp       String?
+  userAgent      String?
+
+  createdAt      DateTime @default(now())
+
+  @@index([integrationId])
+  @@index([eventType])
+  @@index([dedupeKey])
+  @@index([status])
+  @@map("webhook_events")
+}
+
+// ============================================================================
+// Audit & Governance
+// ============================================================================
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+
+  action         String
+  objectType     String
+  objectId       String?
+
+  details        String?
+  source         String?
+
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// Reports
+// ============================================================================
+
+model SavedReport {
+  id              String   @id @default(cuid())
+  organizationId  String
+  createdById     String
+  createdBy       User     @relation("UserReports", fields: [createdById], references: [id])
+
+  title           String
+  description     String?
+  reportType      String   // "executive_summary" | "pipeline_review" | "team_performance" | "lead_analysis" | "forecast_report" | "activity_report" | "custom"
+
+  // Input parameters (what was selected when generating)
+  period          String   // "7d" | "30d" | "90d" | "365d" | "custom"
+  periodStart     DateTime?
+  periodEnd       DateTime?
+  modules         String   // JSON array of selected modules: ["pipeline","leads","activities","forecast","alerts","recommendations"]
+  filters         String?  // JSON object: { repId?, stage?, source?, segment? }
+
+  // Generated output (stored as JSON)
+  content         String   // JSON: the full report output
+
+  // Metadata
+  status          String   @default("generated") // "generating" | "generated" | "archived"
+  generatedAt     DateTime @default(now())
+  archivedAt      DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([createdById])
+  @@map("saved_reports")
+}

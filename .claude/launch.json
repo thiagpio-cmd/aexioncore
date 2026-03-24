@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "aexion-dev",
+      "runtimeExecutable": "/Users/thiagpio/.nvm/versions/node/v24.14.0/bin/pnpm",
+      "runtimeArgs": ["dev"],
+      "port": 3000
+    }
+  ]
+}

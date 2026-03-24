@@ -1,0 +1,495 @@
+// Production schema for PostgreSQL
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Core Models
+// ============================================================================
+
+model Organization {
+  id    String @id @default(cuid())
+  name  String
+  slug  String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      User[]
+  teams      Team[]
+  companies  Company[]
+  accounts   Account[]
+  leads      Lead[]
+  opportunities Opportunity[]
+  pipelines  Pipeline[]
+  integrations Integration[]
+  auditLogs  AuditLog[]
+
+  @@map("organizations")
+}
+
+model Team {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  managerId      String?
+  manager        User?    @relation("TeamManager", fields: [managerId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users User[]
+
+  @@index([organizationId])
+  @@map("teams")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId         String?
+  team           Team?    @relation(fields: [teamId], references: [id])
+  email          String   @unique
+  name           String
+  password       String
+  role           String   @default("USER")
+  workspace      String   @default("SDR")
+  image          String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  ownedLeads      Lead[]       @relation("LeadOwner")
+  ownedOpportunities Opportunity[] @relation("OpportunityOwner")
+  ownedTasks      Task[]       @relation("TaskOwner")
+  ownedMeetings   Meeting[]    @relation("MeetingOwner")
+  managedTeam     Team[]       @relation("TeamManager")
+  createdActivities Activity[] @relation("ActivityCreator")
+  auditLogs       AuditLog[]
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("users")
+}
+
+model Company {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  industry       String?
+  size           String?
+  website        String?
+  annualRevenue  Int?     @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  contacts Contact[]
+  accounts Account[]
+  leads    Lead[]
+
+  @@index([organizationId])
+  @@index([name])
+  @@map("companies")
+}
+
+model Contact {
+  id             String   @id @default(cuid())
+  organizationId String?
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name           String
+  email          String   @unique
+  phone          String?
+  title          String?
+  isChampion     Boolean  @default(false)
+  isDecisionMaker Boolean @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  leads Lead[]
+  meetings Meeting[]
+
+  @@index([companyId])
+  @@index([email])
+  @@map("contacts")
+}
+
+model Account {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name           String
+  status         String   @default("active")
+  ownerId        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  opportunities Opportunity[]
+
+  @@index([organizationId])
+  @@index([companyId])
+  @@map("accounts")
+}
+
+model Lead {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId      String?
+  contact        Contact? @relation(fields: [contactId], references: [id])
+
+  name           String
+  email          String   @unique
+  phone          String?
+  title          String?
+  source         String   @default("web")
+  status         String   @default("NEW")
+  temperature    String   @default("COLD")
+  fitScore       Int      @default(0)
+  ownerId        String
+  owner          User     @relation("LeadOwner", fields: [ownerId], references: [id])
+  lastContact    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  meetings   Meeting[]
+  insights   Insight[]
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([ownerId])
+  @@map("leads")
+}
+
+model Pipeline {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  stages        Stage[]
+
+  @@index([organizationId])
+  @@map("pipelines")
+}
+
+model Stage {
+  id          String   @id @default(cuid())
+  pipelineId  String
+  pipeline    Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name        String
+  order       Int
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  opportunities Opportunity[]
+
+  @@index([pipelineId])
+  @@map("stages")
+}
+
+model Opportunity {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  accountId      String
+  account        Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  title          String
+  description    String?
+  value          Int      @default(0)
+  stage          String   @default("discovery")
+  stageId        String?
+  stageRelation  Stage?   @relation(fields: [stageId], references: [id])
+
+  ownerId        String
+  owner          User     @relation("OpportunityOwner", fields: [ownerId], references: [id])
+  ownerName      String?
+
+  probability    Int      @default(0)
+  expectedCloseDate DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tasks      Task[]
+  insights   Insight[]
+
+  @@index([organizationId])
+  @@index([accountId])
+  @@index([ownerId])
+  @@map("opportunities")
+}
+
+model Activity {
+  id             String   @id @default(cuid())
+  organizationId String?
+  type           String
+  channel        String?  @default("internal")
+
+  leadId         String?
+  opportunityId  String?
+
+  subject        String?
+  body           String?
+  creatorId      String
+  creator        User     @relation("ActivityCreator", fields: [creatorId], references: [id])
+  createdAt      DateTime @default(now())
+
+  @@index([type])
+  @@index([leadId])
+  @@index([opportunityId])
+  @@index([creatorId])
+  @@map("activities")
+}
+
+model Task {
+  id             String   @id @default(cuid())
+  organizationId String?
+  title          String
+  description    String?
+  type           String   @default("FOLLOW_UP")
+  priority       String   @default("MEDIUM")
+  status         String   @default("PENDING")
+
+  leadId         String?
+  opportunityId  String?
+  opportunity    Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  ownerId        String
+  owner          User     @relation("TaskOwner", fields: [ownerId], references: [id])
+
+  dueDate        DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([opportunityId])
+  @@map("tasks")
+}
+
+model Meeting {
+  id             String   @id @default(cuid())
+  organizationId String?
+  title          String
+  description    String?
+
+  leadId         String?
+  lead           Lead?    @relation(fields: [leadId], references: [id])
+  contactId      String?
+  contact        Contact? @relation(fields: [contactId], references: [id])
+
+  ownerId        String
+  owner          User     @relation("MeetingOwner", fields: [ownerId], references: [id])
+
+  startTime      DateTime
+  endTime        DateTime?
+  location       String?
+  attendees      String?  @default("[]")
+  notes          String?
+  recordingUrl   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([ownerId])
+  @@map("meetings")
+}
+
+model InboxMessage {
+  id             String   @id @default(cuid())
+  organizationId String?
+  channel        String   @default("EMAIL")
+  sender         String
+  subject        String?
+  body           String
+  isRead         Boolean  @default(false)
+  starred        Boolean  @default(false)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([channel])
+  @@index([isRead])
+  @@map("inbox_messages")
+}
+
+model Insight {
+  id             String   @id @default(cuid())
+  organizationId String?
+  category       String
+  title          String
+  description    String
+  impact         String   @default("MEDIUM")
+  confidence     Int      @default(80)
+  suggestedAction String?
+
+  leadId         String?
+  lead           Lead?    @relation(fields: [leadId], references: [id])
+  opportunityId  String?
+  opportunity    Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  createdAt      DateTime @default(now())
+
+  @@index([category])
+  @@index([leadId])
+  @@index([opportunityId])
+  @@map("insights")
+}
+
+model Recommendation {
+  id             String   @id @default(cuid())
+  organizationId String?
+  action         String
+  reason         String?
+  priority       String   @default("MEDIUM")
+
+  leadId         String?
+  opportunityId  String?
+
+  createdAt      DateTime @default(now())
+
+  @@map("recommendations")
+}
+
+model ForecastSnapshot {
+  id             String   @id @default(cuid())
+  organizationId String?
+  quarter        String
+  year           Int
+
+  commit         Int      @default(0)
+  bestCase       Int      @default(0)
+  pipeline       Int      @default(0)
+  target         Int      @default(0)
+
+  createdAt      DateTime @default(now())
+
+  @@map("forecast_snapshots")
+}
+
+model Playbook {
+  id             String   @id @default(cuid())
+  organizationId String?
+  name           String
+  description    String?
+  segment        String?
+  stage          String?
+  conversionRate Int      @default(0)
+  usage          Int      @default(0)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  steps PlaybookStep[]
+
+  @@map("playbooks")
+}
+
+model PlaybookStep {
+  id          String  @id @default(cuid())
+  playbookId  String
+  playbook    Playbook @relation(fields: [playbookId], references: [id], onDelete: Cascade)
+  order       Int
+  title       String
+  description String?
+  resources   String?
+
+  @@index([playbookId])
+  @@map("playbook_steps")
+}
+
+model Integration {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name           String
+  slug           String   @unique
+  status         String   @default("DISCONNECTED")
+  description    String?
+
+  healthPercent  Int      @default(0)
+  lastSync       DateTime?
+  eventsReceived Int      @default(0)
+  errorCount     Int      @default(0)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  credentials IntegrationCredential[]
+  webhooks    WebhookEvent[]
+
+  @@index([organizationId])
+  @@map("integrations")
+}
+
+model IntegrationCredential {
+  id             String   @id @default(cuid())
+  integrationId  String
+  integration    Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  accessToken    String?
+  refreshToken   String?
+  expiresAt      DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([integrationId])
+  @@map("integration_credentials")
+}
+
+model WebhookEvent {
+  id             String   @id @default(cuid())
+  integrationId  String
+  integration    Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  eventType      String
+  status         String   @default("received")
+  payload        String?  @db.Text
+  retryCount     Int      @default(0)
+
+  createdAt      DateTime @default(now())
+
+  @@index([integrationId])
+  @@index([eventType])
+  @@map("webhook_events")
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+
+  action         String
+  objectType     String
+  objectId       String?
+
+  details        String?  @db.Text
+  source         String?
+
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@map("audit_logs")
+}

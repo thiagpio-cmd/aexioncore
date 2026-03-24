@@ -1,0 +1,10 @@
+src/app/(dashboard)/integrations/page.tsx(12,29): error TS2307: Cannot find module '@/components/integrations/health-badge' or its corresponding type declarations.
+src/app/(dashboard)/integrations/page.tsx(246,46): error TS2304: Cannot find name 'formatRelativeTime'.
+src/app/api/contacts/[id]/route.ts(33,49): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/app/api/contacts/[id]/route.ts(53,49): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/app/api/contacts/route.ts(72,24): error TS2304: Cannot find name 'forbidden'.
+src/app/api/inbox/[id]/actions/route.ts(231,19): error TS2353: Object literal may only specify known properties, and 'status' does not exist in type '(Without<InboxMessageUpdateInput, InboxMessageUncheckedUpdateInput> & InboxMessageUncheckedUpdateInput) | (Without<...> & InboxMessageUpdateInput)'.
+src/app/api/inbox/[id]/actions/route.ts(260,13): error TS2353: Object literal may only specify known properties, and 'direction' does not exist in type '(Without<InboxMessageCreateInput, InboxMessageUncheckedCreateInput> & InboxMessageUncheckedCreateInput) | (Without<...> & InboxMessageCreateInput)'.
+src/app/api/inbox/[id]/actions/route.ts(334,19): error TS2353: Object literal may only specify known properties, and 'snoozeUntil' does not exist in type '(Without<InboxMessageUpdateInput, InboxMessageUncheckedUpdateInput> & InboxMessageUncheckedUpdateInput) | (Without<...> & InboxMessageUpdateInput)'.
