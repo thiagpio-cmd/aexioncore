@@ -54,7 +54,7 @@ export const LEAD_STATUSES: Record<string, { label: string; color: string }> = {
   NEW: { label: "New", color: "bg-blue-100 text-blue-700" },
   CONTACTED: { label: "Contacted", color: "bg-indigo-100 text-indigo-700" },
   QUALIFIED: { label: "Qualified", color: "bg-emerald-100 text-emerald-700" },
-  UNQUALIFIED: { label: "Unqualified", color: "bg-gray-100 text-gray-700" },
+  DISQUALIFIED: { label: "Disqualified", color: "bg-gray-100 text-gray-700" },
   CONVERTED: { label: "Converted", color: "bg-purple-100 text-purple-700" },
 };
 

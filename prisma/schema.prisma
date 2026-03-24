@@ -260,7 +260,7 @@ model Opportunity {
   title          String
   description    String?
   value          Int      @default(0)
-  stage          String   @default("discovery")
+  stage          String   @default("DISCOVERY")
   stageId        String?
   stageRelation  Stage?   @relation(fields: [stageId], references: [id])
 

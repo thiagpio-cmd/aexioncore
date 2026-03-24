@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { auditStageChange } from "@/server/audit";
+import { OPP_STAGE_TRANSITIONS, STAGE_DEFAULT_PROBABILITY, type OppStage } from "@/lib/domain/enums";
 
 export interface StageTransitionParams {
   opportunityId: string;
@@ -27,19 +28,16 @@ export async function transitionOpportunityStage(params: StageTransitionParams) 
       throw new Error("Opportunity is already in the target stage");
     }
 
-    const oldStage = opp.stage;
+    const oldStage = opp.stage as OppStage;
 
-    // Optional constraint: if moving to a non-terminal phase and risk supports it, require next step
-    if (!["CLOSED_WON", "CLOSED_LOST"].includes(targetStage) && !["CLOSED_WON", "CLOSED_LOST"].includes(oldStage)) {
-      // For MVP, we'll accept it but maybe log an insight if no next step is given.
-      // But let's follow the strict "exception if nextStep missing" for "in-flight" deals
-      // if it's explicitly required by business rules. Here we enforce it optionally if the frontend sends it,
-      // or we can strictly enforce it:
-      // if (!nextStepTask) throw new Error("A next step task is required when advancing stages");
+    // Validate stage transition is allowed
+    const allowedTargets = OPP_STAGE_TRANSITIONS[oldStage];
+    if (allowedTargets && !allowedTargets.includes(targetStage as OppStage)) {
+      throw new Error(`Invalid transition: ${oldStage} → ${targetStage}. Allowed: ${allowedTargets.join(", ")}`);
     }
 
-    // 1. Update the opportunity stage, recalculate risk/health simply (example: lower probability if stuck, etc. For now just update stage)
-    const newProbability = targetStage === "CLOSED_WON" ? 100 : targetStage === "CLOSED_LOST" ? 0 : opp.probability;
+    // Auto-adjust probability based on stage defaults
+    const newProbability = STAGE_DEFAULT_PROBABILITY[targetStage as OppStage] ?? opp.probability;
 
     const updated = await tx.opportunity.update({
       where: { id: opportunityId },

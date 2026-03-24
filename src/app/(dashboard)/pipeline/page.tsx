@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useApi, apiPut } from "@/lib/hooks/use-api";
+import { useApi, apiPut, apiPost } from "@/lib/hooks/use-api";
 import { useToast } from "@/components/shared/toast";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/shared/page-header";
@@ -173,7 +173,10 @@ export default function PipelinePage() {
     if (!deal || deal.stage === targetStage) return;
 
     setUpdating(true);
-    const { error } = await apiPut(`/api/opportunities/${dealId}`, { stage: targetStage });
+    const { error } = await apiPost(`/api/opportunities/${dealId}/stage-transition`, {
+      targetStage,
+      note: `Moved to ${STAGES.find((s) => s.id === targetStage)?.name || targetStage} via pipeline`,
+    });
     setUpdating(false);
 
     if (error) {

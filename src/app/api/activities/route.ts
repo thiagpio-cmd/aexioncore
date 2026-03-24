@@ -7,7 +7,14 @@ import { authOptions } from "@/lib/auth";
 import { z } from "zod";
 
 const ActivityCreateSchema = z.object({
-  type: z.enum(["MESSAGE", "EMAIL", "CALL", "MEETING", "NOTE", "WHATSAPP", "STAGE_CHANGE", "TASK_COMPLETED", "FILE_SHARED"]),
+  type: z.enum([
+    "MESSAGE", "EMAIL", "CALL", "MEETING", "NOTE", "WHATSAPP",
+    "STAGE_CHANGE", "TASK_COMPLETED", "FILE_SHARED",
+    // Canonical dot-notation types used by domain services
+    "lead.converted", "lead.created", "lead.status_changed",
+    "opportunity.created", "opportunity.stage_changed",
+    "task.created", "task.completed",
+  ]),
   channel: z.string().optional().default("internal"),
   leadId: z.string().optional(),
   opportunityId: z.string().optional(),
