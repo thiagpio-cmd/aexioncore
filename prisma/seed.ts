@@ -3,15 +3,31 @@ import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-async function main() {
-  console.log("🌱 Starting database seed...");
+// ─── Date Helpers ─────────────────────────────────────────────────────────────
+const now = new Date();
+const d = (daysAgo: number, hours = 10) => {
+  const dt = new Date(now);
+  dt.setDate(dt.getDate() - daysAgo);
+  dt.setHours(hours, 0, 0, 0);
+  return dt;
+};
+const future = (daysAhead: number, hours = 14) => {
+  const dt = new Date(now);
+  dt.setDate(dt.getDate() + daysAhead);
+  dt.setHours(hours, 0, 0, 0);
+  return dt;
+};
 
-  // Clear existing data
-  console.log("🗑️  Clearing existing data...");
+async function main() {
+  console.log("Starting seed...");
+
+  // ─── Clear ──────────────────────────────────────────────────────────────────
   await prisma.auditLog.deleteMany();
   await prisma.webhookEvent.deleteMany();
   await prisma.integrationCredential.deleteMany();
   await prisma.integration.deleteMany();
+  await prisma.forecastSnapshot.deleteMany();
+  await prisma.savedReport.deleteMany();
   await prisma.playbookStep.deleteMany();
   await prisma.playbook.deleteMany();
   await prisma.recommendation.deleteMany();
@@ -31,1128 +47,330 @@ async function main() {
   await prisma.team.deleteMany();
   await prisma.organization.deleteMany();
 
-  // Create organization
-  console.log("📦 Creating organization...");
+  // ─── Organization + Teams ───────────────────────────────────────────────────
   const org = await prisma.organization.create({
     data: {
       name: "Aexion Inc",
       slug: "aexion-inc",
+      enabledModules: JSON.stringify(["commercial", "data", "reports", "playbooks"]),
     },
   });
+  const O = org.id;
 
-  // Create teams
-  console.log("👥 Creating teams...");
-  const sdrTeam = await prisma.team.create({
-    data: {
-      organizationId: org.id,
-      name: "Sales Development",
-      description: "SDR team focused on lead generation and qualification",
-    },
-  });
+  const sdrTeam = await prisma.team.create({ data: { organizationId: O, name: "Sales Development", description: "SDR team" } });
+  const closerTeam = await prisma.team.create({ data: { organizationId: O, name: "Sales Closing", description: "Closer team" } });
+  const mgrTeam = await prisma.team.create({ data: { organizationId: O, name: "Sales Management", description: "Management" } });
 
-  const closerTeam = await prisma.team.create({
-    data: {
-      organizationId: org.id,
-      name: "Sales Closing",
-      description: "Closer team focused on deal closure",
-    },
-  });
+  // ─── Users (7) — same emails for login compatibility ────────────────────────
+  const pw = await bcrypt.hash("aexion123", 10);
+  const mkUser = (email: string, name: string, role: string, workspace: string, teamId: string | null) =>
+    prisma.user.create({ data: { organizationId: O, teamId, email, name, password: pw, role, workspace, isActive: true } });
 
-  const managerTeam = await prisma.team.create({
-    data: {
-      organizationId: org.id,
-      name: "Sales Management",
-      description: "Team managers overseeing sales reps",
-    },
-  });
+  const ana       = await mkUser("ana@aexion.io",       "Ana Silva",          "ADMIN",    "EXECUTIVE", mgrTeam.id);
+  const rafael    = await mkUser("rafael@aexion.io",    "Rafael Santos",      "SDR",      "SDR",       sdrTeam.id);
+  const joao      = await mkUser("joao@aexion.io",      "Joao Ferreira",      "SDR",      "SDR",       sdrTeam.id);
+  const lucas     = await mkUser("lucas@aexion.io",     "Lucas Costa",        "CLOSER",   "CLOSER",    closerTeam.id);
+  const camila    = await mkUser("camila@aexion.io",    "Camila Oliveira",    "CLOSER",   "CLOSER",    closerTeam.id);
+  const patricia  = await mkUser("patricia@aexion.io",  "Patricia Lopes",     "MANAGER",  "MANAGER",   mgrTeam.id);
+  const fernanda  = await mkUser("fernanda@aexion.io",  "Fernanda Dias",      "DIRECTOR", "EXECUTIVE", mgrTeam.id);
 
-  // Hash password
-  const hashedPassword = await bcrypt.hash("aexion123", 10);
+  // ─── Companies (8) ──────────────────────────────────────────────────────────
+  const mkCo = (name: string, industry: string, size: string, website: string) =>
+    prisma.company.create({ data: { organizationId: O, name, industry, size, website } });
 
-  // Create users
-  console.log("👤 Creating users...");
-  const users = await Promise.all([
-    prisma.user.create({
-      data: {
-        organizationId: org.id,
-        teamId: sdrTeam.id,
-        email: "ana@aexion.io",
-        name: "Ana Silva",
-        password: hashedPassword,
-        role: "ADMIN",
-        workspace: "EXECUTIVE",
-      },
-    }),
-    prisma.user.create({
-      data: {
-        organizationId: org.id,
-        teamId: sdrTeam.id,
-        email: "rafael@aexion.io",
-        name: "Rafael Santos",
-        password: hashedPassword,
-        role: "SDR",
-        workspace: "SDR",
-      },
-    }),
-    prisma.user.create({
-      data: {
-        organizationId: org.id,
-        teamId: closerTeam.id,
-        email: "lucas@aexion.io",
-        name: "Lucas Costa",
-        password: hashedPassword,
-        role: "CLOSER",
-        workspace: "CLOSER",
-      },
-    }),
-    prisma.user.create({
-      data: {
-        organizationId: org.id,
-        teamId: closerTeam.id,
-        email: "camila@aexion.io",
-        name: "Camila Oliveira",
-        password: hashedPassword,
-        role: "CLOSER",
-        workspace: "CLOSER",
-      },
-    }),
-    prisma.user.create({
-      data: {
-        organizationId: org.id,
-        teamId: managerTeam.id,
-        email: "patricia@aexion.io",
-        name: "Patricia Manager",
-        password: hashedPassword,
-        role: "MANAGER",
-        workspace: "MANAGER",
-      },
-    }),
-    prisma.user.create({
-      data: {
-        organizationId: org.id,
-        teamId: managerTeam.id,
-        email: "bruno@aexion.io",
-        name: "Bruno Sales Manager",
-        password: hashedPassword,
-        role: "MANAGER",
-        workspace: "MANAGER",
-      },
-    }),
-    prisma.user.create({
-      data: {
-        organizationId: org.id,
-        email: "fernanda@aexion.io",
-        name: "Fernanda Director",
-        password: hashedPassword,
-        role: "DIRECTOR",
-        workspace: "EXECUTIVE",
-      },
-    }),
+  const [coTechNova, coCloudFirst, coDataFlow, coSecureNet, coAILabs, coGlobalRetail, coFinanceHub, coLogiPrime] = await Promise.all([
+    mkCo("TechNova Solutions",      "Technology",       "201-500",  "https://technova.io"),
+    mkCo("CloudFirst",              "Cloud Services",   "51-200",   "https://cloudfirst.com"),
+    mkCo("DataFlow Analytics",      "Data & Analytics", "11-50",    "https://dataflow.io"),
+    mkCo("SecureNet Systems",       "Cybersecurity",    "201-500",  "https://securenet.io"),
+    mkCo("AI Innovations Lab",      "Artificial Intel", "11-50",    "https://aiinnov.io"),
+    mkCo("Global Retail Strategic", "Retail",           "501-1000", "https://globalretail.com"),
+    mkCo("FinanceHub",              "Financial Serv.",  "51-200",   "https://financehub.com"),
+    mkCo("LogiPrime",               "Logistics",        "201-500",  "https://logiprime.com"),
   ]);
 
-  const [ana, rafael, lucas, camila, patricia, bruno, fernanda] = users;
+  // ─── Contacts (10) ─────────────────────────────────────────────────────────
+  const mkContact = (name: string, email: string, title: string, companyId: string, phone?: string) =>
+    prisma.contact.create({ data: { organizationId: O, name, email, title, companyId, phone } });
 
-  // Update teams with managers
-  await prisma.team.update({
-    where: { id: sdrTeam.id },
-    data: { managerId: patricia.id },
-  });
-
-  await prisma.team.update({
-    where: { id: closerTeam.id },
-    data: { managerId: bruno.id },
-  });
-
-  // Create companies
-  console.log("🏢 Creating companies...");
-  const companies = await Promise.all([
-    prisma.company.create({
-      data: {
-        organizationId: org.id,
-        name: "TechNova Solutions",
-        industry: "Technology",
-        size: "1000-5000",
-        website: "technova.io",
-        annualRevenue: 50000000,
-      },
-    }),
-    prisma.company.create({
-      data: {
-        organizationId: org.id,
-        name: "CloudFirst Corp",
-        industry: "Cloud Services",
-        size: "500-1000",
-        website: "cloudfirst.com",
-        annualRevenue: 30000000,
-      },
-    }),
-    prisma.company.create({
-      data: {
-        organizationId: org.id,
-        name: "DataFlow Analytics",
-        industry: "Analytics",
-        size: "100-500",
-        website: "dataflow.io",
-        annualRevenue: 15000000,
-      },
-    }),
-    prisma.company.create({
-      data: {
-        organizationId: org.id,
-        name: "SecureNet Systems",
-        industry: "Cybersecurity",
-        size: "1000-5000",
-        website: "securenet.io",
-        annualRevenue: 80000000,
-      },
-    }),
-    prisma.company.create({
-      data: {
-        organizationId: org.id,
-        name: "AI Innovations Labs",
-        industry: "AI/ML",
-        size: "50-100",
-        website: "aiinnov.io",
-        annualRevenue: 5000000,
-      },
-    }),
-    prisma.company.create({
-      data: {
-        organizationId: org.id,
-        name: "Global Retail Inc",
-        industry: "Retail",
-        size: "5000+",
-        website: "globalretail.com",
-        annualRevenue: 500000000,
-      },
-    }),
+  const [ctJohn, ctSarah, ctMichael, ctEmma, ctDavid, ctLisa, ctRodrigo, ctFernandaCt, ctPaulo, ctMariana] = await Promise.all([
+    mkContact("John Smith",       "john.smith@technova.io",     "CTO",                 coTechNova.id,      "+55 11 98765-4321"),
+    mkContact("Sarah Chen",       "sarah.chen@cloudfirst.com",  "VP Engineering",      coCloudFirst.id,    "+55 21 97654-3210"),
+    mkContact("Michael Rivera",   "michael@dataflow.io",        "Head of Data",        coDataFlow.id),
+    mkContact("Emma Rodriguez",   "emma@securenet.io",          "Security Director",   coSecureNet.id,     "+55 31 96543-2109"),
+    mkContact("David Kim",        "david@aiinnov.io",           "CEO",                 coAILabs.id,        "+55 41 95432-1098"),
+    mkContact("Lisa Wang",        "lisa@globalretail.com",      "COO",                 coGlobalRetail.id),
+    mkContact("Rodrigo Almeida",  "rodrigo@financehub.com",     "CFO",                 coFinanceHub.id,    "+55 11 94321-0987"),
+    mkContact("Fernanda Costa",   "fernanda@logiprime.com",     "VP Operations",       coLogiPrime.id),
+    mkContact("Paulo Henrique",   "paulo@technova.io",          "Product Manager",     coTechNova.id),
+    mkContact("Mariana Souza",    "mariana@cloudfirst.com",     "Engineering Manager", coCloudFirst.id),
   ]);
 
-  const [technova, cloudfirst, dataflow, securenet, aiinnov, globalretail] =
-    companies;
+  // ─── Leads (12) — owned by SDRs (Rafael & Joao) ────────────────────────────
+  //
+  // Status distribution: NEW(3), CONTACTED(3), QUALIFIED(3), CONVERTED(2), DISQUALIFIED(1)
+  // Temperature: HOT(4), WARM(4), COLD(3), COOL(1)
+  // Sources: linkedin(3), web(3), email(2), referral(2), event(2)
+  //
+  const mkLead = (p: { name: string; email: string; phone?: string; title?: string; companyId: string; contactId: string; ownerId: string; source: string; status: string; temperature: string; fitScore: number; lastContact?: Date }) =>
+    prisma.lead.create({ data: { organizationId: O, ...p } });
 
-  // Create contacts
-  console.log("📇 Creating contacts...");
-  const contacts = await Promise.all([
-    prisma.contact.create({
-      data: {
-        companyId: technova.id,
-        name: "John Smith",
-        email: "john.smith@technova.io",
-        phone: "+55 11 98765-4321",
-        title: "CTO",
-        isChampion: true,
-        isDecisionMaker: true,
-      },
-    }),
-    prisma.contact.create({
-      data: {
-        companyId: technova.id,
-        name: "Sarah Johnson",
-        email: "sarah.johnson@technova.io",
-        phone: "+55 11 99876-5432",
-        title: "VP Sales",
-        isChampion: false,
-        isDecisionMaker: true,
-      },
-    }),
-    prisma.contact.create({
-      data: {
-        companyId: cloudfirst.id,
-        name: "Michael Chen",
-        email: "m.chen@cloudfirst.com",
-        phone: "+55 21 98765-4321",
-        title: "Engineering Director",
-        isChampion: true,
-        isDecisionMaker: false,
-      },
-    }),
-    prisma.contact.create({
-      data: {
-        companyId: dataflow.id,
-        name: "Emma Rodriguez",
-        email: "emma@dataflow.io",
-        phone: "+55 31 98765-4321",
-        title: "Product Lead",
-        isChampion: false,
-        isDecisionMaker: false,
-      },
-    }),
-    prisma.contact.create({
-      data: {
-        companyId: securenet.id,
-        name: "David Kim",
-        email: "david@securenet.io",
-        phone: "+55 41 98765-4321",
-        title: "Security Officer",
-        isChampion: true,
-        isDecisionMaker: true,
-      },
-    }),
-    prisma.contact.create({
-      data: {
-        companyId: aiinnov.id,
-        name: "Lisa Wang",
-        email: "lisa@aiinnov.io",
-        phone: "+55 51 98765-4321",
-        title: "CEO",
-        isChampion: true,
-        isDecisionMaker: true,
-      },
-    }),
-    prisma.contact.create({
-      data: {
-        companyId: globalretail.id,
-        name: "Robert Taylor",
-        email: "r.taylor@globalretail.com",
-        phone: "+55 61 98765-4321",
-        title: "IT Director",
-        isChampion: false,
-        isDecisionMaker: true,
-      },
-    }),
-    prisma.contact.create({
-      data: {
-        companyId: globalretail.id,
-        name: "Jennifer Lee",
-        email: "j.lee@globalretail.com",
-        phone: "+55 61 98765-5432",
-        title: "Operations Manager",
-        isChampion: false,
-        isDecisionMaker: false,
-      },
-    }),
-  ]);
-
-  // Create accounts
-  console.log("🎯 Creating accounts...");
-  const accounts = await Promise.all([
-    prisma.account.create({
-      data: {
-        organizationId: org.id,
-        companyId: technova.id,
-        name: "TechNova - Enterprise Account",
-        status: "active",
-        ownerId: lucas.id,
-      },
-    }),
-    prisma.account.create({
-      data: {
-        organizationId: org.id,
-        companyId: cloudfirst.id,
-        name: "CloudFirst - Growth Account",
-        status: "active",
-        ownerId: camila.id,
-      },
-    }),
-    prisma.account.create({
-      data: {
-        organizationId: org.id,
-        companyId: dataflow.id,
-        name: "DataFlow - SMB Account",
-        status: "active",
-        ownerId: lucas.id,
-      },
-    }),
-    prisma.account.create({
-      data: {
-        organizationId: org.id,
-        companyId: securenet.id,
-        name: "SecureNet - Enterprise",
-        status: "active",
-        ownerId: camila.id,
-      },
-    }),
-    prisma.account.create({
-      data: {
-        organizationId: org.id,
-        companyId: aiinnov.id,
-        name: "AI Innovations - Startup",
-        status: "active",
-        ownerId: lucas.id,
-      },
-    }),
-    prisma.account.create({
-      data: {
-        organizationId: org.id,
-        companyId: globalretail.id,
-        name: "Global Retail - Strategic",
-        status: "active",
-        ownerId: camila.id,
-      },
-    }),
-  ]);
-
-  // Create leads
-  console.log("📝 Creating leads...");
   const leads = await Promise.all([
-    prisma.lead.create({
-      data: {
-        organizationId: org.id,
-        companyId: technova.id,
-        contactId: contacts[0].id,
-        name: "John Smith",
-        email: "john.smith@technova.io",
-        phone: "+55 11 98765-4321",
-        title: "CTO",
-        source: "linkedin",
-        status: "CONTACTED",
-        temperature: "HOT",
-        fitScore: 95,
-        ownerId: ana.id,
-        lastContact: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-      },
-    }),
-    prisma.lead.create({
-      data: {
-        organizationId: org.id,
-        companyId: cloudfirst.id,
-        contactId: contacts[2].id,
-        name: "Michael Chen",
-        email: "m.chen@cloudfirst.com",
-        phone: "+55 21 98765-4321",
-        title: "Engineering Director",
-        source: "web",
-        status: "QUALIFIED",
-        temperature: "WARM",
-        fitScore: 88,
-        ownerId: rafael.id,
-        lastContact: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      },
-    }),
-    prisma.lead.create({
-      data: {
-        organizationId: org.id,
-        companyId: dataflow.id,
-        contactId: contacts[3].id,
-        name: "Emma Rodriguez",
-        email: "emma@dataflow.io",
-        phone: "+55 31 98765-4321",
-        title: "Product Lead",
-        source: "email",
-        status: "NEW",
-        temperature: "COLD",
-        fitScore: 65,
-        ownerId: ana.id,
-        lastContact: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-      },
-    }),
-    prisma.lead.create({
-      data: {
-        organizationId: org.id,
-        companyId: securenet.id,
-        contactId: contacts[4].id,
-        name: "David Kim",
-        email: "david@securenet.io",
-        phone: "+55 41 98765-4321",
-        title: "Security Officer",
-        source: "referral",
-        status: "QUALIFIED",
-        temperature: "HOT",
-        fitScore: 92,
-        ownerId: rafael.id,
-        lastContact: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      },
-    }),
-    prisma.lead.create({
-      data: {
-        organizationId: org.id,
-        companyId: aiinnov.id,
-        contactId: contacts[5].id,
-        name: "Lisa Wang",
-        email: "lisa@aiinnov.io",
-        phone: "+55 51 98765-4321",
-        title: "CEO",
-        source: "event",
-        status: "CONVERTED",
-        temperature: "HOT",
-        fitScore: 98,
-        ownerId: ana.id,
-        lastContact: new Date(Date.now() - 0 * 24 * 60 * 60 * 1000), // Today
-      },
-    }),
+    // NEW (3)
+    mkLead({ name: "John Smith",       email: "john.smith@technova.io",    phone: "+55 11 98765-4321", title: "CTO",              companyId: coTechNova.id,     contactId: ctJohn.id,       ownerId: rafael.id,  source: "linkedin",  status: "NEW",          temperature: "WARM",  fitScore: 78 }),
+    mkLead({ name: "Rodrigo Almeida",  email: "rodrigo@financehub.com",   phone: "+55 11 94321-0987", title: "CFO",              companyId: coFinanceHub.id,   contactId: ctRodrigo.id,    ownerId: joao.id,    source: "web",       status: "NEW",          temperature: "COLD",  fitScore: 55 }),
+    mkLead({ name: "Fernanda Costa",   email: "fernanda@logiprime.com",                               title: "VP Operations",    companyId: coLogiPrime.id,    contactId: ctFernandaCt.id, ownerId: rafael.id,  source: "event",     status: "NEW",          temperature: "COLD",  fitScore: 48 }),
+    // CONTACTED (3)
+    mkLead({ name: "Sarah Chen",       email: "sarah.chen@cloudfirst.com", phone: "+55 21 97654-3210", title: "VP Engineering",   companyId: coCloudFirst.id,   contactId: ctSarah.id,      ownerId: joao.id,    source: "web",       status: "CONTACTED",    temperature: "WARM",  fitScore: 82, lastContact: d(2) }),
+    mkLead({ name: "Michael Rivera",   email: "michael@dataflow.io",                                  title: "Head of Data",     companyId: coDataFlow.id,     contactId: ctMichael.id,    ownerId: rafael.id,  source: "linkedin",  status: "CONTACTED",    temperature: "WARM",  fitScore: 70, lastContact: d(5) }),
+    mkLead({ name: "Paulo Henrique",   email: "paulo@technova.io",                                    title: "Product Manager",  companyId: coTechNova.id,     contactId: ctPaulo.id,      ownerId: joao.id,    source: "email",     status: "CONTACTED",    temperature: "COOL",  fitScore: 65, lastContact: d(12) }),
+    // QUALIFIED (3)
+    mkLead({ name: "Emma Rodriguez",   email: "emma@securenet.io",        phone: "+55 31 96543-2109", title: "Security Director", companyId: coSecureNet.id,    contactId: ctEmma.id,       ownerId: rafael.id,  source: "referral",  status: "QUALIFIED",    temperature: "HOT",   fitScore: 92, lastContact: d(1) }),
+    mkLead({ name: "David Kim",        email: "david@aiinnov.io",         phone: "+55 41 95432-1098", title: "CEO",              companyId: coAILabs.id,       contactId: ctDavid.id,      ownerId: joao.id,    source: "linkedin",  status: "QUALIFIED",    temperature: "HOT",   fitScore: 88, lastContact: d(3) }),
+    mkLead({ name: "Mariana Souza",    email: "mariana@cloudfirst.com",                                title: "Eng Manager",      companyId: coCloudFirst.id,   contactId: ctMariana.id,    ownerId: rafael.id,  source: "web",       status: "QUALIFIED",    temperature: "WARM",  fitScore: 76, lastContact: d(4) }),
+    // CONVERTED (2)
+    mkLead({ name: "Lisa Wang",        email: "lisa@globalretail.com",                                 title: "COO",              companyId: coGlobalRetail.id, contactId: ctLisa.id,       ownerId: joao.id,    source: "event",     status: "CONVERTED",    temperature: "HOT",   fitScore: 95, lastContact: d(10) }),
+    mkLead({ name: "John Smith (TN)",  email: "john.smith2@technova.io",                               title: "CTO",              companyId: coTechNova.id,     contactId: ctJohn.id,       ownerId: rafael.id,  source: "referral",  status: "CONVERTED",    temperature: "HOT",   fitScore: 97, lastContact: d(15) }),
+    // DISQUALIFIED (1)
+    mkLead({ name: "Test User",        email: "test@example.com",                                      title: "Intern",           companyId: coDataFlow.id,     contactId: ctMichael.id,    ownerId: joao.id,    source: "email",     status: "DISQUALIFIED", temperature: "COLD",  fitScore: 22 }),
   ]);
 
-  // Create pipeline with stages
-  console.log("🔄 Creating pipeline...");
-  const pipeline = await prisma.pipeline.create({
-    data: {
-      organizationId: org.id,
-      name: "Default Sales Pipeline",
-      description: "Main sales pipeline for all deals",
-      stages: {
-        create: [
-          { name: "Discovery", order: 1, color: "#64748B" },
-          { name: "Demo", order: 2, color: "#0EA5E9" },
-          { name: "Proposal", order: 3, color: "#8B5CF6" },
-          { name: "Negotiation", order: 4, color: "#F59E0B" },
-          { name: "Closed Won", order: 5, color: "#10B981" },
-          { name: "Closed Lost", order: 6, color: "#EF4444" },
-        ],
-      },
-    },
-  });
+  // ─── Accounts (6) — 2 as customers ─────────────────────────────────────────
+  const mkAcct = (name: string, companyId: string, ownerId: string, isCustomer = false, becameCustomerAt?: Date) =>
+    prisma.account.create({ data: { organizationId: O, name, companyId, ownerId, status: "active", isCustomer, becameCustomerAt } });
 
-  // Get stages
-  const stages = await prisma.stage.findMany({
-    where: { pipelineId: pipeline.id },
-  });
-
-  // Create opportunities
-  console.log("💼 Creating opportunities...");
-  await Promise.all([
-    prisma.opportunity.create({
-      data: {
-        organizationId: org.id,
-        accountId: accounts[0].id,
-        title: "TechNova - Enterprise Deal",
-        description: "Large enterprise implementation",
-        value: 500000,
-        stage: "PROPOSAL",
-        stageId: stages[2].id,
-        ownerId: lucas.id,
-        ownerName: "Lucas Costa",
-        probability: 75,
-        expectedCloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      },
-    }),
-    prisma.opportunity.create({
-      data: {
-        organizationId: org.id,
-        accountId: accounts[1].id,
-        title: "CloudFirst - Growth Plan",
-        description: "Expansion of existing services",
-        value: 250000,
-        stage: "QUALIFICATION",
-        stageId: stages[1].id,
-        ownerId: camila.id,
-        ownerName: "Camila Oliveira",
-        probability: 50,
-        expectedCloseDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
-      },
-    }),
-    prisma.opportunity.create({
-      data: {
-        organizationId: org.id,
-        accountId: accounts[2].id,
-        title: "DataFlow - SMB Package",
-        description: "Standard SMB tier implementation",
-        value: 75000,
-        stage: "NEGOTIATION",
-        stageId: stages[3].id,
-        ownerId: lucas.id,
-        ownerName: "Lucas Costa",
-        probability: 60,
-        expectedCloseDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
-      },
-    }),
-    prisma.opportunity.create({
-      data: {
-        organizationId: org.id,
-        accountId: accounts[3].id,
-        title: "SecureNet - Security Suite",
-        description: "Full security implementation",
-        value: 350000,
-        stage: "DISCOVERY",
-        stageId: stages[0].id,
-        ownerId: camila.id,
-        ownerName: "Camila Oliveira",
-        probability: 30,
-        expectedCloseDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
-      },
-    }),
-    // Additional opportunities for richer pipeline
-    prisma.opportunity.create({
-      data: {
-        organizationId: org.id,
-        accountId: accounts[4].id,
-        title: "AI Labs - ML Platform",
-        description: "Machine learning platform integration",
-        value: 180000,
-        stage: "DISCOVERY",
-        stageId: stages[0].id,
-        ownerId: lucas.id,
-        ownerName: "Lucas Costa",
-        probability: 25,
-        expectedCloseDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-      },
-    }),
-    prisma.opportunity.create({
-      data: {
-        organizationId: org.id,
-        accountId: accounts[5].id,
-        title: "Global Retail - Full Suite",
-        description: "Complete retail analytics suite",
-        value: 680000,
-        stage: "PROPOSAL",
-        stageId: stages[2].id,
-        ownerId: camila.id,
-        ownerName: "Camila Oliveira",
-        probability: 65,
-        expectedCloseDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
-      },
-    }),
-    prisma.opportunity.create({
-      data: {
-        organizationId: org.id,
-        accountId: accounts[0].id,
-        title: "TechNova - Support Tier Upgrade",
-        description: "Premium support tier upgrade",
-        value: 95000,
-        stage: "NEGOTIATION",
-        stageId: stages[3].id,
-        ownerId: lucas.id,
-        ownerName: "Lucas Costa",
-        probability: 85,
-        expectedCloseDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-      },
-    }),
-    prisma.opportunity.create({
-      data: {
-        organizationId: org.id,
-        accountId: accounts[1].id,
-        title: "CloudFirst - API Gateway",
-        description: "API gateway implementation",
-        value: 120000,
-        stage: "QUALIFICATION",
-        stageId: stages[1].id,
-        ownerId: camila.id,
-        ownerName: "Camila Oliveira",
-        probability: 40,
-        expectedCloseDate: new Date(Date.now() + 55 * 24 * 60 * 60 * 1000),
-      },
-    }),
-    prisma.opportunity.create({
-      data: {
-        organizationId: org.id,
-        accountId: accounts[3].id,
-        title: "SecureNet - Compliance Module",
-        description: "Compliance and audit module",
-        value: 220000,
-        stage: "CLOSED_WON",
-        stageId: stages[4].id,
-        ownerId: lucas.id,
-        ownerName: "Lucas Costa",
-        probability: 100,
-        expectedCloseDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      },
-    }),
-    prisma.opportunity.create({
-      data: {
-        organizationId: org.id,
-        accountId: accounts[2].id,
-        title: "DataFlow - Starter Package",
-        description: "Basic analytics starter kit",
-        value: 35000,
-        stage: "CLOSED_LOST",
-        stageId: stages[5].id,
-        ownerId: camila.id,
-        ownerName: "Camila Oliveira",
-        probability: 0,
-        expectedCloseDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      },
-    }),
+  const [acctTechNova, acctCloudFirst, acctSecureNet, acctGlobalRetail, acctDataFlow, acctAILabs] = await Promise.all([
+    mkAcct("TechNova Enterprise",        coTechNova.id,     lucas.id,  true,  d(45)),
+    mkAcct("CloudFirst Growth",          coCloudFirst.id,   camila.id),
+    mkAcct("SecureNet Enterprise",       coSecureNet.id,    camila.id),
+    mkAcct("Global Retail Strategic",    coGlobalRetail.id, lucas.id,  true,  d(30)),
+    mkAcct("DataFlow SMB",               coDataFlow.id,     lucas.id),
+    mkAcct("AI Labs Innovation",         coAILabs.id,       camila.id),
   ]);
 
-  // Create tasks
-  console.log("✅ Creating tasks...");
+  // ─── Pipeline & Stages ──────────────────────────────────────────────────────
+  const pipeline = await prisma.pipeline.create({ data: { organizationId: O, name: "Default Pipeline" } });
+  const stageData = [
+    { name: "Discovery",     order: 1 },
+    { name: "Qualification", order: 2 },
+    { name: "Proposal",      order: 3 },
+    { name: "Negotiation",   order: 4 },
+    { name: "Closed Won",    order: 5 },
+    { name: "Closed Lost",   order: 6 },
+  ];
+  const stages: Record<string, string> = {};
+  for (const s of stageData) {
+    const st = await prisma.stage.create({ data: { pipelineId: pipeline.id, ...s } });
+    stages[s.name] = st.id;
+  }
+
+  // ─── Opportunities (12) — owned by Closers (Lucas & Camila) ─────────────────
+  //
+  // TARGET METRICS:
+  // Active Pipeline: ~R$2.53M | Won: R$580K | Win Rate: 67% (2/3)
+  // Forecast Commit (≥70%): ~R$1.05M | At Risk (prob<40): 3 | Avg Deal: ~R$281K
+  //
+  const mkOpp = (p: { title: string; value: number; stage: string; stageId: string; probability: number; accountId: string; ownerId: string; ownerName: string; expectedCloseDate: Date; createdAt?: Date; primaryContactId?: string }) =>
+    prisma.opportunity.create({ data: { organizationId: O, ...p } });
+
+  const opps = await Promise.all([
+    // DISCOVERY (2) — value: 350K, prob < 40
+    mkOpp({ title: "SecureNet - Full Platform",     value: 200000, stage: "DISCOVERY",     stageId: stages["Discovery"],     probability: 20, accountId: acctSecureNet.id,    ownerId: camila.id, ownerName: "Camila Oliveira", expectedCloseDate: future(75), primaryContactId: ctEmma.id }),
+    mkOpp({ title: "AI Labs - ML Suite",             value: 150000, stage: "DISCOVERY",     stageId: stages["Discovery"],     probability: 15, accountId: acctAILabs.id,       ownerId: lucas.id,  ownerName: "Lucas Costa",     expectedCloseDate: future(90), primaryContactId: ctDavid.id }),
+    // QUALIFICATION (3) — value: 620K, prob 35-50
+    mkOpp({ title: "CloudFirst - Growth Plan",       value: 280000, stage: "QUALIFICATION", stageId: stages["Qualification"], probability: 45, accountId: acctCloudFirst.id,   ownerId: camila.id, ownerName: "Camila Oliveira", expectedCloseDate: future(50), primaryContactId: ctSarah.id }),
+    mkOpp({ title: "DataFlow - Analytics Pro",       value: 180000, stage: "QUALIFICATION", stageId: stages["Qualification"], probability: 40, accountId: acctDataFlow.id,     ownerId: lucas.id,  ownerName: "Lucas Costa",     expectedCloseDate: future(45), primaryContactId: ctMichael.id }),
+    mkOpp({ title: "AI Labs - Data Pipeline",        value: 160000, stage: "QUALIFICATION", stageId: stages["Qualification"], probability: 35, accountId: acctAILabs.id,       ownerId: camila.id, ownerName: "Camila Oliveira", expectedCloseDate: future(60) }),
+    // PROPOSAL (3) — value: 930K, prob 55-70
+    mkOpp({ title: "TechNova - Enterprise Deal",     value: 450000, stage: "PROPOSAL",      stageId: stages["Proposal"],      probability: 65, accountId: acctTechNova.id,     ownerId: lucas.id,  ownerName: "Lucas Costa",     expectedCloseDate: future(25), primaryContactId: ctJohn.id }),
+    mkOpp({ title: "Global Retail - Full Suite",     value: 380000, stage: "PROPOSAL",      stageId: stages["Proposal"],      probability: 60, accountId: acctGlobalRetail.id, ownerId: camila.id, ownerName: "Camila Oliveira", expectedCloseDate: future(20), primaryContactId: ctLisa.id }),
+    mkOpp({ title: "SecureNet - Compliance Module",  value: 100000, stage: "PROPOSAL",      stageId: stages["Proposal"],      probability: 70, accountId: acctSecureNet.id,    ownerId: lucas.id,  ownerName: "Lucas Costa",     expectedCloseDate: future(15) }),
+    // NEGOTIATION (2) — value: 630K, prob 75-85
+    mkOpp({ title: "TechNova - Support Tier Upgrade", value: 130000, stage: "NEGOTIATION",  stageId: stages["Negotiation"],   probability: 85, accountId: acctTechNova.id,     ownerId: lucas.id,  ownerName: "Lucas Costa",     expectedCloseDate: future(7) }),
+    mkOpp({ title: "CloudFirst - API Gateway",        value: 500000, stage: "NEGOTIATION",  stageId: stages["Negotiation"],   probability: 78, accountId: acctCloudFirst.id,   ownerId: camila.id, ownerName: "Camila Oliveira", expectedCloseDate: future(12), primaryContactId: ctSarah.id }),
+    // CLOSED_WON (2) — value: 580K
+    mkOpp({ title: "Global Retail - Phase 1",        value: 320000, stage: "CLOSED_WON",    stageId: stages["Closed Won"],    probability: 100, accountId: acctGlobalRetail.id, ownerId: lucas.id,  ownerName: "Lucas Costa",    expectedCloseDate: d(5),  createdAt: d(60), primaryContactId: ctLisa.id }),
+    mkOpp({ title: "TechNova - Initial License",     value: 260000, stage: "CLOSED_WON",    stageId: stages["Closed Won"],    probability: 100, accountId: acctTechNova.id,     ownerId: camila.id, ownerName: "Camila Oliveira", expectedCloseDate: d(12), createdAt: d(75), primaryContactId: ctJohn.id }),
+    // CLOSED_LOST (1) — value: 95K
+  ]);
+  // Separate create for CLOSED_LOST to avoid variable collision
+  await mkOpp({ title: "DataFlow - Starter Package", value: 95000, stage: "CLOSED_LOST", stageId: stages["Closed Lost"], probability: 0, accountId: acctDataFlow.id, ownerId: lucas.id, ownerName: "Lucas Costa", expectedCloseDate: d(8), createdAt: d(40) });
+
+  // ─── Tasks (8) — mix of statuses ────────────────────────────────────────────
   await prisma.task.createMany({
     data: [
-      {
-        organizationId: org.id,
-        title: "Follow up with TechNova",
-        type: "FOLLOW_UP",
-        priority: "HIGH",
-        status: "PENDING",
-        ownerId: lucas.id,
-        dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-      },
-      {
-        organizationId: org.id,
-        title: "Call CloudFirst CTO",
-        type: "CALL",
-        priority: "HIGH",
-        status: "PENDING",
-        ownerId: camila.id,
-        dueDate: new Date(Date.now() + 0 * 24 * 60 * 60 * 1000),
-      },
-      {
-        organizationId: org.id,
-        title: "Send proposal to DataFlow",
-        type: "EMAIL",
-        priority: "MEDIUM",
-        status: "PENDING",
-        ownerId: lucas.id,
-        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-      },
-      {
-        organizationId: org.id,
-        title: "Schedule demo with SecureNet",
-        type: "MEETING",
-        priority: "HIGH",
-        status: "PENDING",
-        ownerId: camila.id,
-        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      },
+      // PENDING (3)
+      { organizationId: O, title: "Send proposal to CloudFirst",       type: "EMAIL",     priority: "HIGH",     status: "PENDING",     ownerId: camila.id,  opportunityId: opps[2].id, dueDate: future(2) },
+      { organizationId: O, title: "Schedule demo with AI Labs",         type: "MEETING",   priority: "MEDIUM",   status: "PENDING",     ownerId: lucas.id,   leadId: leads[7].id,       dueDate: future(3) },
+      { organizationId: O, title: "Prepare case study for TechNova",    type: "OTHER",     priority: "MEDIUM",   status: "PENDING",     ownerId: lucas.id,   opportunityId: opps[5].id, dueDate: future(5) },
+      // OVERDUE (2)
+      { organizationId: O, title: "Follow up with SecureNet",           type: "FOLLOW_UP", priority: "HIGH",     status: "PENDING",     ownerId: camila.id,  leadId: leads[6].id,       dueDate: d(2) },
+      { organizationId: O, title: "Call DataFlow for qualification",    type: "CALL",      priority: "HIGH",     status: "PENDING",     ownerId: rafael.id,  leadId: leads[4].id,       dueDate: d(1) },
+      // COMPLETED (2)
+      { organizationId: O, title: "Send NDA to GlobalRetail",           type: "EMAIL",     priority: "MEDIUM",   status: "COMPLETED",   ownerId: lucas.id,   opportunityId: opps[6].id, dueDate: d(7) },
+      { organizationId: O, title: "Qualification call with Sarah",      type: "CALL",      priority: "HIGH",     status: "COMPLETED",   ownerId: joao.id,    leadId: leads[3].id,       dueDate: d(5) },
+      // IN_PROGRESS (1)
+      { organizationId: O, title: "Finalize pricing for CloudFirst API", type: "OTHER",    priority: "CRITICAL", status: "IN_PROGRESS", ownerId: camila.id,  opportunityId: opps[9].id, dueDate: future(1) },
     ],
   });
 
-  // Create Activities (Timeline events)
-  console.log("📝 Creating activities...");
-  await prisma.activity.createMany({
-    data: [
-      {
-        organizationId: org.id,
-        type: "MESSAGE",
-        channel: "email",
-        subject: "Outbound effort: Discovery email sent",
-        body: "Sent intro email regarding new CRM requirements.",
-        creatorId: rafael.id, // SDR
-        leadId: leads[1].id, // Michael Chen (CloudFirst)
-      },
-      {
-        organizationId: org.id,
-        type: "CALL",
-        channel: "internal",
-        subject: "Qualification Call",
-        body: "Spoke with David Kim. They have budget approved for Q3. Strong fit.",
-        creatorId: rafael.id, // SDR
-        leadId: leads[3].id, // David Kim
-      },
-      {
-        organizationId: org.id,
-        type: "STAGE_CHANGE",
-        channel: "system",
-        subject: "Stage changed: DISCOVERY → PROPOSAL",
-        body: "Opportunity moved forward after successful pricing discussion.",
-        creatorId: lucas.id, // Closer
-        opportunityId: accounts[0].id, // Actually, use an opportunity ID. We'll use the ID of the first opp below, but wait, we need the Opportunity IDs.
-        // I will omit opportunityId for this hardcoded list and only provide it if I query first, but since it's createMany it's tricky.
-      }
-    ]
-  });
-
-  // Create meetings
-  console.log("📅 Creating meetings...");
+  // ─── Meetings (4) — 2 past, 2 future ───────────────────────────────────────
   await prisma.meeting.createMany({
     data: [
-      {
-        organizationId: org.id,
-        title: "TechNova Discovery Call",
-        description: "Initial discovery meeting with TechNova team",
-        contactId: contacts[0].id,
-        ownerId: lucas.id,
-        startTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-        endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000),
-        location: "Virtual - Zoom",
-        attendees: JSON.stringify(["Lucas Costa", "John Smith", "Sarah Johnson"]),
-      },
-      {
-        organizationId: org.id,
-        title: "CloudFirst Demo",
-        description: "Product demo for CloudFirst",
-        contactId: contacts[2].id,
-        ownerId: camila.id,
-        startTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-        endTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000),
-        location: "Virtual - Teams",
-        attendees: JSON.stringify(["Camila Oliveira", "Michael Chen"]),
-      },
+      { organizationId: O, title: "TechNova Discovery Call",    ownerId: lucas.id,  contactId: ctJohn.id,  leadId: leads[0].id, startTime: d(5, 14),      endTime: d(5, 15),        location: "Virtual - Zoom",  notes: "Discussed pain points. Strong interest in automation module.", attendees: JSON.stringify(["John Smith", "Paulo Henrique"]) },
+      { organizationId: O, title: "CloudFirst Proposal Review", ownerId: camila.id, contactId: ctSarah.id,                      startTime: d(2, 10),      endTime: d(2, 11),        location: "Virtual - Teams", notes: "Reviewed pricing. Requested 15% volume discount.",            attendees: JSON.stringify(["Sarah Chen", "Mariana Souza"]) },
+      { organizationId: O, title: "SecureNet Technical Demo",   ownerId: camila.id, contactId: ctEmma.id,  leadId: leads[6].id, startTime: future(2, 14), endTime: future(2, 15),   location: "Virtual - Zoom",                                                                                attendees: JSON.stringify(["Emma Rodriguez", "Security Team"]) },
+      { organizationId: O, title: "AI Labs CEO Alignment",      ownerId: lucas.id,  contactId: ctDavid.id, leadId: leads[7].id, startTime: future(5, 10), endTime: future(5, 11),   location: "Virtual - Teams",                                                                               attendees: JSON.stringify(["David Kim"]) },
     ],
   });
 
-  // Create inbox messages
-  console.log("📧 Creating inbox messages...");
-  await prisma.inboxMessage.createMany({
-    data: [
-      {
-        organizationId: org.id,
-        channel: "EMAIL",
-        sender: "john.smith@technova.io",
-        subject: "Re: Implementation Timeline",
-        body: "Thanks for the proposal. We're interested in moving forward.",
-        isRead: false,
-      },
-      {
-        organizationId: org.id,
-        channel: "WHATSAPP",
-        sender: "Michael Chen",
-        subject: "Quick question",
-        body: "Can you clarify the pricing model?",
-        isRead: true,
-      },
-    ],
-  });
-
-  // Create integrations
-  // ALL integrations start DISCONNECTED — real OAuth is required for Gmail.
-  // Non-Gmail integrations have no provider implementation yet (Coming Soon).
-  console.log("🔗 Creating integrations...");
-  await prisma.integration.createMany({
-    data: [
-      {
-        organizationId: org.id,
-        name: "Gmail",
-        slug: "gmail",
-        providerKey: "gmail",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "Outlook",
-        slug: "outlook",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "WhatsApp",
-        slug: "whatsapp",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "Slack",
-        slug: "slack",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "HubSpot",
-        slug: "hubspot",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "Salesforce",
-        slug: "salesforce",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "Zapier",
-        slug: "zapier",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "Stripe",
-        slug: "stripe",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "Calendly",
-        slug: "calendly",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "Zoom",
-        slug: "zoom",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "Microsoft Teams",
-        slug: "teams",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-      {
-        organizationId: org.id,
-        name: "Jira",
-        slug: "jira",
-        status: "DISCONNECTED",
-        healthPercent: 0,
-        eventsReceived: 0,
-        errorCount: 0,
-      },
-    ],
-  });
-
-  // Create playbooks
-  console.log("📚 Creating playbooks...");
-  await prisma.playbook.createMany({
-    data: [
-      {
-        organizationId: org.id,
-        name: "Enterprise Sales Playbook",
-        description: "Step-by-step guide for enterprise deals",
-        segment: "Enterprise",
-        stage: "Discovery",
-        conversionRate: 65,
-        usage: 234,
-      },
-      {
-        organizationId: org.id,
-        name: "SMB Quick Start",
-        description: "Fast-track for SMB customers",
-        segment: "SMB",
-        stage: "Demo",
-        conversionRate: 45,
-        usage: 156,
-      },
-    ],
-  });
-
-  // Create insights
-  console.log("💡 Creating insights...");
-  await prisma.insight.createMany({
-    data: [
-      {
-        organizationId: org.id,
-        category: "PIPELINE",
-        title: "High-value deals need attention",
-        description:
-          "3 deals over $500K have no activity in the last week",
-        impact: "HIGH",
-        confidence: 95,
-        suggestedAction:
-          "Schedule check-in calls with account owners",
-      },
-      {
-        organizationId: org.id,
-        category: "ENGAGEMENT",
-        title: "Response time declining",
-        description: "Average response time has increased by 23%",
-        impact: "MEDIUM",
-        confidence: 85,
-        suggestedAction:
-          "Review workload distribution and capacity planning",
-      },
-    ],
-  });
-
-  // Create activities
-  console.log("📊 Creating activities...");
+  // ─── Activities (24) — spread across 30 days ───────────────────────────────
   await prisma.activity.createMany({
     data: [
-      { type: "EMAIL", channel: "email", subject: "Follow-up on proposal", body: "Sent revised proposal with updated pricing", creatorId: lucas.id, leadId: leads[0].id, createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
-      { type: "CALL", channel: "phone", subject: "Discovery call", body: "30-minute discovery call with CTO. Discussed pain points and timeline.", creatorId: camila.id, leadId: leads[1].id, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-      { type: "NOTE", channel: "internal", subject: "Internal update", body: "Champion confirmed budget approval for Q2", creatorId: ana.id, leadId: leads[2].id, createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
-      { type: "MEETING", channel: "video", subject: "Demo session", body: "Product demo with 5 stakeholders. Strong interest in analytics module.", creatorId: lucas.id, leadId: leads[3].id, createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000) },
-      { type: "EMAIL", channel: "email", subject: "Contract review", body: "Legal team reviewing contract. Expected feedback by end of week.", creatorId: camila.id, leadId: leads[4].id, createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
-      { type: "WHATSAPP", channel: "whatsapp", subject: "Quick check-in", body: "Quick check-in on implementation timeline", creatorId: rafael.id, leadId: leads[0].id, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-      { type: "CALL", channel: "phone", subject: "Qualification call", body: "Qualified opportunity. Budget confirmed at R$250K.", creatorId: ana.id, leadId: leads[1].id, createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000) },
-      { type: "NOTE", channel: "internal", subject: "Risk flag", body: "Deal at risk: competitor offering 30% discount", creatorId: patricia.id, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-      { type: "EMAIL", channel: "email", subject: "ROI documentation", body: "Shared ROI analysis showing 3.2x return in first year", creatorId: lucas.id, leadId: leads[2].id, createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-      { type: "MEETING", channel: "video", subject: "Executive review", body: "Quarterly pipeline review with leadership team", creatorId: bruno.id, createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+      // Week 1 (recent)
+      { organizationId: O, type: "EMAIL",        channel: "email",    subject: "Follow-up on proposal",       body: "Sent revised proposal with updated pricing for TechNova",                    creatorId: lucas.id,  leadId: leads[0].id,  opportunityId: opps[5].id, createdAt: d(1, 9) },
+      { organizationId: O, type: "CALL",         channel: "phone",    subject: "Qualification call",          body: "30-min discovery call with Sarah. Discussed cloud migration needs.",         creatorId: camila.id, leadId: leads[3].id,                              createdAt: d(1, 14) },
+      { organizationId: O, type: "NOTE",         channel: "internal", subject: "Champion confirmed",          body: "Sarah confirmed budget approval for Q2. Moving to proposal.",                creatorId: joao.id,   leadId: leads[3].id,                              createdAt: d(2, 10) },
+      { organizationId: O, type: "WHATSAPP",     channel: "whatsapp", subject: "Quick check-in",              body: "Quick check-in with David about timeline for ML Suite evaluation.",          creatorId: rafael.id, leadId: leads[7].id,                              createdAt: d(2, 16) },
+      { organizationId: O, type: "STAGE_CHANGE", channel: "system",   subject: "Stage: DISCOVERY -> QUALIFICATION", body: "CloudFirst Growth Plan moved to Qualification.",                      creatorId: camila.id, opportunityId: opps[2].id,                        createdAt: d(3, 11) },
+      // Week 2
+      { organizationId: O, type: "EMAIL",        channel: "email",    subject: "ROI analysis shared",         body: "Sent ROI analysis showing 3.2x return in first year for Global Retail.",    creatorId: lucas.id,  opportunityId: opps[6].id,                        createdAt: d(5, 9) },
+      { organizationId: O, type: "MEETING",      channel: "video",    subject: "Demo session with SecureNet", body: "Product demo with 4 stakeholders. Strong interest in compliance module.",    creatorId: camila.id, leadId: leads[6].id,                              createdAt: d(5, 14) },
+      { organizationId: O, type: "CALL",         channel: "phone",    subject: "Objection handling",          body: "Addressed pricing concerns. Competitor offering 20% less but no compliance.", creatorId: lucas.id,  opportunityId: opps[5].id,                       createdAt: d(6, 10) },
+      { organizationId: O, type: "NOTE",         channel: "internal", subject: "Risk flag - DataFlow",        body: "DataFlow deal at risk: budget freeze announced. Monitoring closely.",         creatorId: patricia.id,                                                  createdAt: d(7, 15) },
+      { organizationId: O, type: "EMAIL",        channel: "email",    subject: "Contract draft sent",         body: "Legal team reviewing contract for TechNova Support Upgrade.",                creatorId: lucas.id,  opportunityId: opps[8].id,                        createdAt: d(7, 9) },
+      // Week 3
+      { organizationId: O, type: "CALL",         channel: "phone",    subject: "Cold outreach - FinanceHub",  body: "First call with CFO. Interested in revenue analytics. Booked follow-up.",   creatorId: joao.id,   leadId: leads[1].id,                              createdAt: d(10, 11) },
+      { organizationId: O, type: "WHATSAPP",     channel: "whatsapp", subject: "Quick update from Lisa",      body: "Lisa confirmed Phase 1 go-live was successful. Discussing Phase 2.",        creatorId: lucas.id,  leadId: leads[9].id,  opportunityId: opps[10].id, createdAt: d(10, 16) },
+      { organizationId: O, type: "EMAIL",        channel: "email",    subject: "Proposal sent to SecureNet",  body: "Full platform proposal at R$200K. 60-day implementation.",                  creatorId: camila.id, leadId: leads[6].id,  opportunityId: opps[0].id,  createdAt: d(12, 9) },
+      { organizationId: O, type: "STAGE_CHANGE", channel: "system",   subject: "Stage: PROPOSAL -> NEGOTIATION", body: "CloudFirst API Gateway advanced to Negotiation.",                       creatorId: camila.id, opportunityId: opps[9].id,                        createdAt: d(14, 10) },
+      // Week 4
+      { organizationId: O, type: "MEETING",      channel: "video",    subject: "Executive alignment",         body: "Quarterly pipeline review with leadership team.",                            creatorId: patricia.id,                                                  createdAt: d(15, 10) },
+      { organizationId: O, type: "CALL",         channel: "phone",    subject: "Follow-up with Emma",         body: "Emma says internal approval expected next week for compliance module.",      creatorId: camila.id, leadId: leads[6].id,                              createdAt: d(17, 14) },
+      { organizationId: O, type: "EMAIL",        channel: "email",    subject: "Welcome email - Global Retail", body: "Sent onboarding welcome package after Phase 1 closed.",                   creatorId: lucas.id,  opportunityId: opps[10].id,                       createdAt: d(20, 9) },
+      { organizationId: O, type: "NOTE",         channel: "internal", subject: "Forecast update",             body: "Updated Q2 forecast: commit at R$1.1M, best case R$1.8M.",                 creatorId: ana.id,                                                       createdAt: d(21, 16) },
+      // Older
+      { organizationId: O, type: "CALL",         channel: "phone",    subject: "Initial outreach - LogiPrime", body: "Left voicemail. Will retry in 2 days.",                                   creatorId: rafael.id, leadId: leads[2].id,                              createdAt: d(22, 11) },
+      { organizationId: O, type: "STAGE_CHANGE", channel: "system",   subject: "Stage: NEGOTIATION -> CLOSED_WON", body: "Global Retail Phase 1 closed for R$320K.",                           creatorId: lucas.id,  opportunityId: opps[10].id,                       createdAt: d(5, 17) },
+      { organizationId: O, type: "STAGE_CHANGE", channel: "system",   subject: "Stage: PROPOSAL -> CLOSED_WON",    body: "TechNova Initial License closed for R$260K.",                        creatorId: camila.id, opportunityId: opps[11].id,                       createdAt: d(12, 17) },
+      { organizationId: O, type: "EMAIL",        channel: "email",    subject: "Lost deal post-mortem",       body: "DataFlow Starter lost to competitor. Price was the deciding factor.",        creatorId: lucas.id,                                                     createdAt: d(8, 10) },
+      { organizationId: O, type: "CALL",         channel: "phone",    subject: "Referral from John",          body: "John Smith referred Emma Rodriguez at SecureNet. Hot lead.",                 creatorId: rafael.id, leadId: leads[6].id,                              createdAt: d(25, 14) },
+      { organizationId: O, type: "NOTE",         channel: "internal", subject: "Team standup notes",          body: "Rafael: 3 new leads qualified. Joao: 2 demos booked. Pipeline healthy.",    creatorId: patricia.id,                                                  createdAt: d(3, 9) },
     ],
   });
 
-  // Create inbox messages
-  console.log("📬 Creating inbox messages...");
+  // ─── Inbox Messages (12) ────────────────────────────────────────────────────
   await prisma.inboxMessage.createMany({
     data: [
-      {
-        channel: "EMAIL",
-        sender: "Maria Silva (TechCorp)",
-        subject: "Re: Enterprise License Proposal",
-        body: "Thanks for sending over the proposal. We reviewed it with our CTO and have a few questions about the implementation timeline. Can we schedule a call this week?",
-        isRead: false,
-      },
-      {
-        channel: "WHATSAPP",
-        sender: "João Santos (DataFlow)",
-        subject: null,
-        body: "Hey, quick question about the API integration options. Our team is evaluating between the REST API and the webhook approach.",
-        isRead: false,
-      },
-      {
-        channel: "EMAIL",
-        sender: "Patricia Lima (FinanceHub)",
-        subject: "Demo Follow-up",
-        body: "Great demo yesterday! The team was impressed. We'd like to move forward with a pilot program. What are the next steps?",
-        isRead: true,
-      },
-      {
-        channel: "CALL",
-        sender: "Roberto Mendes (LogiPrime)",
-        subject: "Missed Call",
-        body: "Called to discuss the renewal terms. Please call back at your earliest convenience.",
-        isRead: false,
-      },
-      {
-        channel: "EMAIL",
-        sender: "Ana Rodrigues (HealthTech)",
-        subject: "Partnership Opportunity",
-        body: "We're exploring a strategic partnership for our healthcare vertical. Would love to discuss how Aexion could complement our offering.",
-        isRead: true,
-      },
-      {
-        channel: "INTERNAL",
-        sender: "Diego Executive",
-        subject: "Q1 Pipeline Review",
-        body: "Please prepare the Q1 pipeline metrics for the board meeting next Tuesday. Focus on enterprise deals.",
-        isRead: false,
-      },
-      {
-        channel: "WHATSAPP",
-        sender: "Fernando Costa (EduLearn)",
-        subject: null,
-        body: "We signed the contract! When can we start onboarding? Our team is excited to get started.",
-        isRead: true,
-      },
+      { organizationId: O, channel: "EMAIL",    sender: "john.smith@technova.io",    subject: "Re: Implementation Timeline",  body: "Thanks for the proposal. We reviewed it with our CTO and have a few questions about the implementation timeline. Can we schedule a call this week?", isRead: false, createdAt:d(0, 19) },
+      { organizationId: O, channel: "WHATSAPP", sender: "michael@dataflow.io",       subject: "Quick question",               body: "Can you clarify the pricing for the analytics module? Our budget is approved for Q2.",                                                               isRead: false, createdAt:d(0, 19) },
+      { organizationId: O, channel: "EMAIL",    sender: "sarah.chen@cloudfirst.com", subject: "API Gateway Proposal Feedback", body: "We'd like to move forward but need a 10% discount for annual commitment. Can we discuss?",                                                          isRead: false, createdAt:d(0, 7) },
+      { organizationId: O, channel: "EMAIL",    sender: "emma@securenet.io",         subject: "Compliance Requirements",      body: "Attached our compliance requirements checklist. Can your platform meet all 23 criteria?",                                                             isRead: true,  createdAt:d(1, 10) },
+      { organizationId: O, channel: "CALL",     sender: "rodrigo@financehub.com",    subject: "Missed Call",                  body: "Called to discuss revenue analytics demo. Please call back.",                                                                                          isRead: false, createdAt:d(1, 16) },
+      { organizationId: O, channel: "EMAIL",    sender: "lisa@globalretail.com",     subject: "Phase 2 Discussion",           body: "Phase 1 is going great! We want to discuss expanding to Phase 2 with additional modules.",                                                            isRead: true,  createdAt:d(2, 9) },
+      { organizationId: O, channel: "WHATSAPP", sender: "david@aiinnov.io",          subject: "ML Suite Timeline",            body: "When can we start the POC for the ML Suite? Our data science team is ready.",                                                                          isRead: false, createdAt:d(2, 15) },
+      { organizationId: O, channel: "EMAIL",    sender: "ads@google.com",            subject: "Your campaign performance",    body: "Your Google Ads campaign generated 47 clicks this week.",                                                                                              isRead: true,  createdAt:d(3, 8) },
+      { organizationId: O, channel: "EMAIL",    sender: "newsletter@saas.weekly",    subject: "Top SaaS trends Q2 2026",      body: "This week's roundup of the hottest SaaS trends and funding news.",                                                                                     isRead: true,  createdAt:d(4, 7) },
+      { organizationId: O, channel: "INTERNAL", sender: "system",                    subject: "Weekly Pipeline Summary",      body: "Your pipeline grew 12% this week. 2 new qualified leads, 1 deal advanced to negotiation.",                                                             isRead: false, createdAt:d(0, 8) },
+      { organizationId: O, channel: "EMAIL",    sender: "fernanda@logiprime.com",    subject: "Web Agency Submission",        body: "We submitted our requirements via your website. Looking forward to hearing from you.",                                                                  isRead: false, createdAt:d(0, 7) },
+      { organizationId: O, channel: "EMAIL",    sender: "paulo@technova.io",         subject: "Product Feedback",             body: "Our product team loved the demo. Can we get access to the sandbox environment?",                                                                       isRead: false, createdAt:d(1, 11) },
     ],
   });
 
-  // Create forecast snapshots
-  console.log("📈 Creating forecast snapshots...");
+  // ─── Integrations (12) ──────────────────────────────────────────────────────
+  const integrationNames = ["Gmail", "Outlook", "WhatsApp", "Slack", "HubSpot", "Salesforce", "Zapier", "Stripe", "Calendly", "Zoom", "Microsoft Teams", "Jira"];
+  await prisma.integration.createMany({
+    data: integrationNames.map((name) => ({
+      organizationId: O,
+      name,
+      slug: name.toLowerCase().replace(/\s+/g, "-"),
+      providerKey: name.toLowerCase().replace(/\s+/g, "-"),
+      status: "DISCONNECTED",
+      healthPercent: 0,
+      eventsReceived: 0,
+      errorCount: 0,
+    })),
+  });
+
+  // ─── Playbooks (2) ─────────────────────────────────────────────────────────
+  await prisma.playbook.createMany({
+    data: [
+      { organizationId: O, name: "Enterprise Sales Playbook", description: "Step-by-step guide for enterprise deals >R$200K", segment: "Enterprise", stage: "Discovery", conversionRate: 65, usage: 234 },
+      { organizationId: O, name: "SMB Quick Start",           description: "Fast-track for SMB customers <R$100K",           segment: "SMB",        stage: "Demo",      conversionRate: 45, usage: 156 },
+    ],
+  });
+
+  // ─── Insights (4) ──────────────────────────────────────────────────────────
+  await prisma.insight.createMany({
+    data: [
+      { organizationId: O, category: "pipeline",    title: "High-value deals need attention",      description: "3 deals over R$300K have no activity in the last 5 days.", impact: "HIGH",   confidence: 92, suggestedAction: "Schedule check-in calls with account owners.",  },
+      { organizationId: O, category: "engagement",  title: "Response time improving",              description: "Average response time decreased by 18% this month.",       impact: "MEDIUM", confidence: 87, suggestedAction: "Maintain current cadence. Share best practices with team.",  },
+      { organizationId: O, category: "risk",         title: "DataFlow deal at risk",                description: "Budget freeze reported at DataFlow. Monitor closely.",      impact: "HIGH",   confidence: 95, suggestedAction: "Engage champion and propose phased approach.",  },
+      { organizationId: O, category: "performance", title: "Top performer: Lucas Costa",           description: "Lucas closed R$580K this quarter with 67% win rate.",       impact: "LOW",    confidence: 98, suggestedAction: "Schedule knowledge-sharing session for team.",  },
+    ],
+  });
+
+  // ─── Forecast Snapshots ─────────────────────────────────────────────────────
   await prisma.forecastSnapshot.createMany({
     data: [
-      {
-        organizationId: org.id,
-        quarter: "Q1",
-        year: 2026,
-        commit: 480000,
-        bestCase: 650000,
-        pipeline: 1200000,
-        target: 750000,
-      },
-      {
-        organizationId: org.id,
-        quarter: "Q2",
-        year: 2026,
-        commit: 320000,
-        bestCase: 520000,
-        pipeline: 980000,
-        target: 800000,
-      },
+      { organizationId: O, quarter: "Q1", year: 2026, commit: 580000,  bestCase: 850000,  pipeline: 2530000, target: 900000 },
+      { organizationId: O, quarter: "Q2", year: 2026, commit: 400000,  bestCase: 680000,  pipeline: 1800000, target: 1000000 },
     ],
   });
 
-  // Create audit logs
-  console.log("📋 Creating audit logs...");
-  const allUsers = await prisma.user.findMany({ select: { id: true } });
-  const firstUserId = allUsers[0]?.id || "unknown";
-  const secondUserId = allUsers[1]?.id || firstUserId;
-
+  // ─── Audit Logs (5) ────────────────────────────────────────────────────────
   await prisma.auditLog.createMany({
     data: [
-      {
-        organizationId: org.id,
-        userId: firstUserId,
-        action: "lead.status_changed",
-        objectType: "Lead",
-        objectId: "lead-1",
-        details: "Status changed from NEW to CONTACTED",
-        source: "web",
-      },
-      {
-        organizationId: org.id,
-        userId: secondUserId,
-        action: "opportunity.stage_changed",
-        objectType: "Opportunity",
-        objectId: "opp-1",
-        details: "Stage advanced from Discovery to Proposal",
-        source: "web",
-      },
-      {
-        organizationId: org.id,
-        userId: firstUserId,
-        action: "opportunity.closed_won",
-        objectType: "Opportunity",
-        objectId: "opp-2",
-        details: "Deal closed for R$ 180K",
-        source: "web",
-      },
-      {
-        organizationId: org.id,
-        userId: secondUserId,
-        action: "integration.synced",
-        objectType: "Integration",
-        objectId: "int-1",
-        details: "Salesforce sync completed: 45 records updated",
-        source: "system",
-      },
-      {
-        organizationId: org.id,
-        userId: firstUserId,
-        action: "user.role_changed",
-        objectType: "User",
-        objectId: "user-3",
-        details: "Role changed from SDR to CLOSER",
-        source: "admin",
-      },
+      { organizationId: O, userId: lucas.id,   action: "opportunity.closed_won",      objectType: "Opportunity", objectId: opps[10].id, details: "Global Retail Phase 1 closed for R$320K",  source: "web", createdAt: d(5) },
+      { organizationId: O, userId: camila.id,  action: "opportunity.closed_won",      objectType: "Opportunity", objectId: opps[11].id, details: "TechNova Initial License closed for R$260K", source: "web", createdAt: d(12) },
+      { organizationId: O, userId: rafael.id,  action: "lead.status_changed",         objectType: "Lead",        objectId: leads[6].id, details: "Status changed from CONTACTED to QUALIFIED",  source: "web", createdAt: d(15) },
+      { organizationId: O, userId: joao.id,    action: "lead.status_changed",         objectType: "Lead",        objectId: leads[7].id, details: "Status changed from NEW to QUALIFIED",        source: "web", createdAt: d(18) },
+      { organizationId: O, userId: ana.id,     action: "settings.modules_updated",    objectType: "Organization", objectId: org.id,     details: "Enabled modules: commercial, data, reports, playbooks", source: "admin", createdAt: d(30) },
     ],
   });
 
-  // Create webhook events (need integration IDs)
-  console.log("🔗 Creating webhook events...");
-  const integrations = await prisma.integration.findMany({ select: { id: true } });
+  // ─── Webhook Events ────────────────────────────────────────────────────────
+  const integrations = await prisma.integration.findMany({ select: { id: true }, take: 2 });
   if (integrations.length > 0) {
     await prisma.webhookEvent.createMany({
       data: [
-        {
-          integrationId: integrations[0].id,
-          eventType: "contact.created",
-          status: "processed",
-          payload: '{"type":"contact","action":"create"}',
-          retryCount: 0,
-        },
-        {
-          integrationId: integrations[0].id,
-          eventType: "deal.updated",
-          status: "processed",
-          payload: '{"type":"deal","action":"update"}',
-          retryCount: 0,
-        },
-        {
-          integrationId: integrations.length > 1 ? integrations[1].id : integrations[0].id,
-          eventType: "email.received",
-          status: "failed",
-          payload: '{"type":"email","error":"timeout"}',
-          retryCount: 3,
-        },
-        {
-          integrationId: integrations[0].id,
-          eventType: "task.completed",
-          status: "processed",
-          payload: '{"type":"task","action":"complete"}',
-          retryCount: 0,
-        },
+        { integrationId: integrations[0].id, eventType: "contact.created", status: "processed", payload: '{"type":"contact","action":"create"}', retryCount: 0 },
+        { integrationId: integrations[0].id, eventType: "deal.updated",    status: "processed", payload: '{"type":"deal","action":"update"}',    retryCount: 0 },
+        { integrationId: integrations[0].id, eventType: "email.received",  status: "failed",    payload: '{"type":"email","error":"timeout"}',   retryCount: 3 },
       ],
     });
   }
 
-  console.log("✨ Database seed completed successfully!");
+  console.log("Seed completed successfully!");
+  console.log(`
+  Summary:
+  - 1 Organization
+  - 3 Teams, 7 Users (ADMIN, 2 SDRs, 2 Closers, MANAGER, DIRECTOR)
+  - 8 Companies, 10 Contacts
+  - 12 Leads (NEW:3, CONTACTED:3, QUALIFIED:3, CONVERTED:2, DISQUALIFIED:1)
+  - 6 Accounts (2 customers)
+  - 13 Opportunities (DISCOVERY:2, QUALIFICATION:3, PROPOSAL:3, NEGOTIATION:2, WON:2, LOST:1)
+  - 8 Tasks (PENDING:3, OVERDUE:2, COMPLETED:2, IN_PROGRESS:1)
+  - 4 Meetings (2 past, 2 future)
+  - 24 Activities (spread across 25 days)
+  - 12 Inbox Messages
+  - 12 Integrations, 2 Playbooks, 4 Insights, 2 Forecast Snapshots
+
+  Expected Metrics:
+  - Active Pipeline: R$2,530,000
+  - Won Revenue: R$580,000
+  - Win Rate: 67% (2 won / 3 closed)
+  - Avg Deal Size: R$281,111
+  - Forecast Commit (>=70%): R$730,000
+  - At Risk (prob<40): 3 deals
+  - Overdue Tasks: 2
+  - Conversion Rate: 17% (2/12)
+  `);
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seeding failed:", e);
+    console.error("Seeding failed:", e);
     process.exit(1);
   })
   .finally(async () => {
