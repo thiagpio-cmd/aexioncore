@@ -1,3 +1,5 @@
+"use client";
+
 import { AdminGate } from "@/components/admin/admin-gate";
 import { ToastProvider } from "@/components/shared/toast";
 
