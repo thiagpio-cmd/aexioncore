@@ -1,46 +1,82 @@
-type LogLevel = "info" | "warn" | "error";
+/**
+ * Structured Logger — production-ready observability
+ *
+ * All API routes should use this instead of console.log/error.
+ * In production, pipe output to Datadog/CloudWatch/Sentry.
+ */
+
+import { randomUUID } from "crypto";
+
+type LogLevel = "info" | "warn" | "error" | "debug";
 
 interface LogPayload {
   event: string;
+  requestId?: string;
   userId?: string;
   organizationId?: string;
   entityId?: string;
   entityType?: string;
+  route?: string;
+  method?: string;
+  statusCode?: number;
+  durationMs?: number;
   error?: any;
   [key: string]: any;
+}
+
+/** Generate a short request ID for tracing */
+export function generateRequestId(): string {
+  return randomUUID().slice(0, 8);
 }
 
 export const logger = {
   info: (payload: LogPayload) => log("info", payload),
   warn: (payload: LogPayload) => log("warn", payload),
   error: (payload: LogPayload) => log("error", payload),
+  debug: (payload: LogPayload) => {
+    if (process.env.NODE_ENV === "development") log("debug", payload);
+  },
 };
 
 function log(level: LogLevel, payload: LogPayload) {
   const timestamp = new Date().toISOString();
-  let errorObj = undefined;
-  
+
+  const entry: Record<string, any> = {
+    timestamp,
+    level,
+    event: payload.event,
+  };
+
+  // Add optional fields only if present (keeps logs clean)
+  if (payload.requestId) entry.rid = payload.requestId;
+  if (payload.route) entry.route = payload.route;
+  if (payload.method) entry.method = payload.method;
+  if (payload.statusCode) entry.status = payload.statusCode;
+  if (payload.durationMs) entry.ms = payload.durationMs;
+  if (payload.userId) entry.uid = payload.userId;
+  if (payload.organizationId) entry.oid = payload.organizationId;
+  if (payload.entityId) entry.eid = payload.entityId;
+  if (payload.entityType) entry.etype = payload.entityType;
+
+  // Error serialization
   if (payload.error) {
-    errorObj = {
+    entry.error = {
       message: payload.error.message || String(payload.error),
       name: payload.error.name,
-      stack: payload.error.stack,
+      ...(process.env.NODE_ENV === "development" && { stack: payload.error.stack }),
     };
   }
 
-  const structuredLog = {
-    timestamp,
-    level,
-    ...payload,
-    error: errorObj,
-  };
+  // Add any extra fields
+  const { event, requestId, userId, organizationId, entityId, entityType, route, method, statusCode, durationMs, error: _e, ...extra } = payload;
+  if (Object.keys(extra).length > 0) entry.meta = extra;
 
-  // In production, this would pipe to Datadog/CloudWatch
-  if (level === "error") {
-    console.error(JSON.stringify(structuredLog));
-  } else if (level === "warn") {
-    console.warn(JSON.stringify(structuredLog));
-  } else {
-    console.info(JSON.stringify(structuredLog));
+  const output = JSON.stringify(entry);
+
+  switch (level) {
+    case "error": console.error(output); break;
+    case "warn": console.warn(output); break;
+    case "debug": console.debug(output); break;
+    default: console.info(output);
   }
 }
