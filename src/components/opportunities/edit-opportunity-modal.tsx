@@ -112,7 +112,7 @@ export function EditOpportunityModal({ open, onClose, onUpdated, opportunity }: 
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="Value (R$)" error={errors.value}>
+          <FormField label="Value ($)" error={errors.value}>
             <input
               type="number"
               value={form.value}

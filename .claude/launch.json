@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "aexion-dev",
-      "runtimeExecutable": "/Users/thiagpio/.nvm/versions/node/v24.14.0/bin/pnpm",
+      "runtimeExecutable": "/Users/thiagpio/.nvm/versions/node/v20.20.1/bin/pnpm",
       "runtimeArgs": ["dev"],
       "port": 3000
     }

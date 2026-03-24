@@ -122,7 +122,7 @@ export default function OpportunitiesPage() {
             <span className="text-xs text-muted">
               {loading ? "Loading..." : `${filtered.length} opportunities`}
             </span>
-            <span className="text-xs font-medium text-foreground">Total: {formatCurrency(totalValue, "BRL")}</span>
+            <span className="text-xs font-medium text-foreground">Total: {formatCurrency(totalValue, "USD")}</span>
           </div>
         </div>
 
@@ -156,7 +156,7 @@ export default function OpportunitiesPage() {
                     <p className="text-sm text-muted">{opp.account?.name || "—"}</p>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className="text-sm font-semibold text-foreground">{formatCurrency(opp.value || 0, "BRL")}</span>
+                    <span className="text-sm font-semibold text-foreground">{formatCurrency(opp.value || 0, "USD")}</span>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STAGE_COLORS[opp.stage] || "bg-gray-50 text-gray-600"}`}>

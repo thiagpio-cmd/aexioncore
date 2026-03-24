@@ -5,8 +5,10 @@ import { useApi, apiPut } from "@/lib/hooks/use-api";
 import { StatCard } from "@/components/shared/stat-card";
 import { AlertsPanel } from "@/components/shared/alerts-panel";
 import { GlobalRecommendations } from "@/components/dashboard/GlobalRecommendations";
+import { CreateLeadModal } from "@/components/leads/create-lead-modal";
+import { LogActivityModal } from "@/components/shared/log-activity-modal";
 import Link from "next/link";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -149,6 +151,8 @@ function SkeletonList({ rows = 4 }: { rows?: number }) {
 export function SDRWorkspace() {
   const { user } = useAuth();
   const firstName = user?.name?.split(" ")[0] || "there";
+  const [showCreateLead, setShowCreateLead] = useState(false);
+  const [showLogActivity, setShowLogActivity] = useState(false);
 
   // Primary dashboard data (stats, priority leads)
   const { data: dashboard, loading: dashLoading } = useApi<DashboardData>("/api/dashboard");
@@ -382,18 +386,18 @@ export function SDRWorkspace() {
 
       {/* Quick Actions Bar */}
       <div className="flex items-center gap-3">
-        <Link
-          href="/leads/new"
+        <button
+          onClick={() => setShowCreateLead(true)}
           className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
         >
           + New Lead
-        </Link>
-        <Link
-          href="/activities/new"
+        </button>
+        <button
+          onClick={() => setShowLogActivity(true)}
           className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-background transition-colors"
         >
           Log Activity
-        </Link>
+        </button>
         <Link
           href="/leads"
           className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-background transition-colors"
@@ -401,6 +405,17 @@ export function SDRWorkspace() {
           View All Leads
         </Link>
       </div>
+
+      <CreateLeadModal
+        open={showCreateLead}
+        onClose={() => setShowCreateLead(false)}
+        onCreated={() => setShowCreateLead(false)}
+      />
+      <LogActivityModal
+        open={showLogActivity}
+        onClose={() => setShowLogActivity(false)}
+        onCreated={() => setShowLogActivity(false)}
+      />
     </div>
   );
 }

@@ -140,10 +140,10 @@ export default function AnalyticsPage() {
           {/* KPI Cards */}
           <div className="grid grid-cols-4 gap-4">
             {[
-              { label: "Total Revenue", value: formatCurrency(s.totalRevenue || 0, "BRL"), sub: `${s.winRate || 0}% win rate`, color: "text-success" },
-              { label: "Active Pipeline", value: formatCurrency(s.totalPipeline || 0, "BRL"), sub: `${s.totalDeals || 0} deals`, color: "text-foreground" },
-              { label: "Avg Deal Size", value: formatCurrency(s.avgDealSize || 0, "BRL"), sub: "Won deals", color: "text-foreground" },
-              { label: "Total Lost", value: formatCurrency(s.totalLost || 0, "BRL"), sub: `${100 - (s.winRate || 0)}% loss rate`, color: "text-danger" },
+              { label: "Total Revenue", value: formatCurrency(s.totalRevenue || 0, "USD"), sub: `${s.winRate || 0}% win rate`, color: "text-success" },
+              { label: "Active Pipeline", value: formatCurrency(s.totalPipeline || 0, "USD"), sub: `${s.totalDeals || 0} deals`, color: "text-foreground" },
+              { label: "Avg Deal Size", value: formatCurrency(s.avgDealSize || 0, "USD"), sub: "Won deals", color: "text-foreground" },
+              { label: "Total Lost", value: formatCurrency(s.totalLost || 0, "USD"), sub: `${100 - (s.winRate || 0)}% loss rate`, color: "text-danger" },
             ].map((card) => (
               <div key={card.label} className="rounded-xl border border-border bg-surface p-5">
                 <p className="text-xs text-muted mb-1">{card.label}</p>
@@ -167,7 +167,7 @@ export default function AnalyticsPage() {
                     <div className={`h-2 w-2 rounded-full ${f.color}`} />
                     <span className="text-xs font-medium text-muted">{f.label}</span>
                   </div>
-                  <p className="text-xl font-bold text-foreground">{formatCurrency(f.value, "BRL")}</p>
+                  <p className="text-xl font-bold text-foreground">{formatCurrency(f.value, "USD")}</p>
                   <p className="text-[11px] text-muted mt-0.5">{f.desc}</p>
                 </div>
               ))}
@@ -181,7 +181,7 @@ export default function AnalyticsPage() {
               {monthly.map((m: any) => (
                 <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
                   <span className="text-[10px] font-medium text-foreground">
-                    {m.won > 0 ? `R$${(m.won / 1000).toFixed(0)}K` : ""}
+                    {m.won > 0 ? `$${(m.won / 1000).toFixed(0)}K` : ""}
                   </span>
                   <div className="w-full flex flex-col gap-0.5" style={{ height: "160px" }}>
                     <div className="flex-1" />
@@ -274,7 +274,7 @@ export default function AnalyticsPage() {
                     <span className="text-xs font-medium text-muted">{p.stage}</span>
                   </div>
                   <p className="text-xl font-bold text-foreground">{p.count}</p>
-                  <p className="text-sm text-muted">{formatCurrency(p.value, "BRL")}</p>
+                  <p className="text-sm text-muted">{formatCurrency(p.value, "USD")}</p>
                   <p className="text-[11px] text-muted mt-1">Avg prob: {p.avgProbability}%</p>
                 </div>
               ))}
@@ -293,7 +293,7 @@ export default function AnalyticsPage() {
                         className={`h-8 rounded flex items-center justify-end px-3 ${STAGE_COLORS[p.stage] || "bg-gray-400"}`}
                         style={{ width: `${Math.max(pct, 8)}%` }}
                       >
-                        <span className="text-xs font-medium text-white">{formatCurrency(p.value, "BRL")}</span>
+                        <span className="text-xs font-medium text-white">{formatCurrency(p.value, "USD")}</span>
                       </div>
                     </div>
                     <span className="text-xs text-muted w-16 text-right">{p.count} deals</span>
@@ -312,7 +312,7 @@ export default function AnalyticsPage() {
             ].map((f) => (
               <div key={f.label} className={`rounded-xl border-l-4 ${f.color} border border-border bg-surface p-5`}>
                 <p className="text-xs text-muted mb-1">{f.label}</p>
-                <p className="text-2xl font-bold text-foreground">{formatCurrency(f.value, "BRL")}</p>
+                <p className="text-2xl font-bold text-foreground">{formatCurrency(f.value, "USD")}</p>
                 <p className="text-[11px] text-muted mt-1">{f.desc}</p>
               </div>
             ))}
@@ -406,8 +406,8 @@ export default function AnalyticsPage() {
                     <td className="px-5 py-3">
                       <span className="text-sm font-medium text-foreground">{r.name}</span>
                     </td>
-                    <td className="px-5 py-3 text-right text-sm font-semibold text-success">{formatCurrency(r.revenue, "BRL")}</td>
-                    <td className="px-5 py-3 text-right text-sm text-foreground">{formatCurrency(r.pipeline, "BRL")}</td>
+                    <td className="px-5 py-3 text-right text-sm font-semibold text-success">{formatCurrency(r.revenue, "USD")}</td>
+                    <td className="px-5 py-3 text-right text-sm text-foreground">{formatCurrency(r.pipeline, "USD")}</td>
                     <td className="px-5 py-3 text-right text-sm text-success">{r.won}</td>
                     <td className="px-5 py-3 text-right text-sm text-danger">{r.lost}</td>
                     <td className="px-5 py-3 text-right">
@@ -440,7 +440,7 @@ export default function AnalyticsPage() {
                           className="h-6 rounded bg-success flex items-center justify-end px-2"
                           style={{ width: `${Math.max((r.revenue / maxRev) * 100, 5)}%` }}
                         >
-                          {r.revenue > 0 && <span className="text-[10px] font-medium text-white">{formatCurrency(r.revenue, "BRL")}</span>}
+                          {r.revenue > 0 && <span className="text-[10px] font-medium text-white">{formatCurrency(r.revenue, "USD")}</span>}
                         </div>
                       </div>
                       <span className="text-xs text-muted w-12 text-right">{r.winRate}%</span>

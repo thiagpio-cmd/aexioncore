@@ -10,10 +10,13 @@ import { Modal } from "@/components/shared/modal";
 import { HealthStatusBadge, HealthStatusCard } from "@/components/integrations/health-status";
 
 const INTEGRATION_ICONS: Record<string, string> = {
-  gmail: "📧", outlook: "📨", whatsapp: "💬", slack: "💼",
+  gmail: "📧", "google-calendar": "📆", outlook: "📨", whatsapp: "💬", slack: "💼",
   hubspot: "🔶", salesforce: "☁️", zapier: "⚡", stripe: "💳",
   calendly: "📅", zoom: "🎥", teams: "👥", jira: "📋",
 };
+
+/** Only these slugs have real provider implementations with actual OAuth + sync */
+const REAL_PROVIDER_SLUGS = new Set(["gmail", "google-calendar"]);
 
 const STATUS_COLORS: Record<string, string> = {
   received: "bg-blue-100 text-blue-700",
@@ -76,6 +79,39 @@ export default function IntegrationDetailPage() {
         <Link href="/integrations" className="mt-2 text-primary text-sm hover:underline">
           Back to Integrations
         </Link>
+      </div>
+    );
+  }
+
+  const providerKey = integration.providerKey || integration.slug;
+  const isComingSoon = !REAL_PROVIDER_SLUGS.has(providerKey);
+
+  if (isComingSoon) {
+    return (
+      <div>
+        <Link href="/integrations" className="mb-4 inline-flex items-center gap-1 text-sm text-muted hover:text-foreground transition-colors">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m15 18-6-6 6-6" /></svg>
+          Back to Integrations
+        </Link>
+        <div className="mt-12 flex flex-col items-center justify-center text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-background text-4xl grayscale mb-6">
+            {INTEGRATION_ICONS[integration.slug] || "🔗"}
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{integration.name}</h1>
+          <span className="mb-4 inline-flex rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted">
+            Coming Soon
+          </span>
+          <p className="max-w-md text-sm text-muted">
+            The {integration.name} integration is not yet available. We are working on bringing
+            this integration to Aexion Core. Check back soon for updates.
+          </p>
+          <Link
+            href="/integrations"
+            className="mt-6 rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-background transition-colors"
+          >
+            View All Integrations
+          </Link>
+        </div>
       </div>
     );
   }
@@ -415,6 +451,7 @@ export default function IntegrationDetailPage() {
 function getSupportedEvents(slug: string): string[] {
   const events: Record<string, string[]> = {
     gmail: ["message.received", "message.sent", "thread.updated"],
+    "google-calendar": ["event.created", "event.updated", "event.deleted", "event.reminder"],
     outlook: ["email.received", "email.sent", "calendar.event"],
     whatsapp: ["message.received", "message.delivered", "message.read"],
     slack: ["message", "reaction_added", "channel_created"],

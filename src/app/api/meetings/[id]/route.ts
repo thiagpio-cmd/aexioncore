@@ -6,6 +6,7 @@ import { unauthorized, notFound, forbidden, validationError } from "@/lib/errors
 import { authOptions } from "@/lib/auth";
 import { MeetingUpdateSchema } from "@/lib/validations/meeting";
 import { auditUpdate } from "@/server/audit";
+import { actorFromSession, canPerform } from "@/lib/authorization";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -13,6 +14,9 @@ export async function GET(request: NextRequest, ctx: Ctx) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
+
+    const actor = actorFromSession(session);
+    if (!actor) return sendError(unauthorized());
 
     const { id } = await ctx.params;
 
@@ -27,6 +31,11 @@ export async function GET(request: NextRequest, ctx: Ctx) {
 
     if (!meeting) return sendError(notFound("Meeting"));
     if (meeting.organizationId !== session.user.organizationId) return sendError(forbidden("No access"));
+
+    if (!canPerform(actor, "meeting", "view", { ownerId: meeting.ownerId, organizationId: meeting.organizationId })) {
+      return sendError(forbidden("You do not have permission to view this meeting"));
+    }
+
     return sendSuccess(meeting);
   } catch (error: any) {
     console.error("GET /api/meetings/[id] error:", error);
@@ -39,11 +48,18 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
 
+    const actor = actorFromSession(session);
+    if (!actor) return sendError(unauthorized());
+
     const { id } = await ctx.params;
 
     const meeting = await prisma.meeting.findUnique({ where: { id } });
     if (!meeting) return sendError(notFound("Meeting"));
     if (meeting.organizationId !== session.user.organizationId) return sendError(forbidden("No access"));
+
+    if (!canPerform(actor, "meeting", "edit", { ownerId: meeting.ownerId, organizationId: meeting.organizationId })) {
+      return sendError(forbidden("You do not have permission to update this meeting"));
+    }
 
     const body = await request.json();
     const data = MeetingUpdateSchema.parse(body);

@@ -73,15 +73,15 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     if (description !== undefined) updateData.description = description;
 
     // If connecting, set initial health and lastSync
-    if (status === "connected" && integration.status !== "connected") {
+    if (status === "CONNECTED" && integration.status !== "CONNECTED") {
       updateData.healthPercent = 100;
       updateData.lastSync = new Date();
       updateData.errorCount = 0;
     }
 
     // If disconnecting, reset health
-    if (status === "disconnected" || status === "DISCONNECTED") {
-      updateData.status = "disconnected";
+    if (status === "DISCONNECTED") {
+      updateData.status = "DISCONNECTED";
       updateData.healthPercent = 0;
       updateData.lastSync = null;
     }
@@ -91,7 +91,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
       data: updateData,
     });
 
-    if (status === "connected" && integration.status !== "connected") {
+    if (status === "CONNECTED" && integration.status !== "CONNECTED") {
       await prisma.activity.create({
         data: {
           type: "integration.connected",

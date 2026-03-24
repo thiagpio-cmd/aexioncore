@@ -140,7 +140,7 @@ export function ManagerWorkspace() {
         <div className="grid grid-cols-4 gap-4">
           <StatCard
             label="Team Pipeline"
-            value={formatCurrency(s.totalPipeline, "BRL")}
+            value={formatCurrency(s.totalPipeline, "USD")}
             change={`${s.activeDeals} active deals`}
             changeType="neutral"
           />
@@ -276,7 +276,7 @@ export function ManagerWorkspace() {
                   </p>
                 </div>
                 <span className="text-sm font-semibold text-foreground shrink-0 ml-3">
-                  {formatCurrency(deal.value, "BRL")}
+                  {formatCurrency(deal.value, "USD")}
                 </span>
               </Link>
             ))}
@@ -332,7 +332,7 @@ export function ManagerWorkspace() {
                 <div key={st.stage}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm text-foreground">{stageLabel(st.stage)}</span>
-                    <span className="text-xs text-muted">{st.count} deals &middot; {formatCurrency(st.value, "BRL")}</span>
+                    <span className="text-xs text-muted">{st.count} deals &middot; {formatCurrency(st.value, "USD")}</span>
                   </div>
                   <div className="h-2 rounded-full bg-background">
                     <div className="h-2 rounded-full bg-primary" style={{ width: `${pct}%` }} />

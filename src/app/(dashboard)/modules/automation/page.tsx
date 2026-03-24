@@ -8,13 +8,16 @@ export default function AutomationModulePage() {
 }
 
 function AutomationContent() {
-  const { data: alerts } = useApi<any[]>("/api/alerts");
-  const { data: recommendations } = useApi<any[]>("/api/recommendations");
+  const { data: alertsData } = useApi<any>("/api/alerts");
+  const { data: recsData } = useApi<any>("/api/recommendations");
 
-  const alertCount = alerts?.length ?? 0;
-  const recCount = recommendations?.length ?? 0;
-  const criticalAlerts = alerts?.filter((a: any) => a.severity === "critical").length ?? 0;
-  const highRecs = recommendations?.filter((r: any) => r.priority === "high").length ?? 0;
+  const alerts = alertsData?.alerts ?? [];
+  const recommendations = recsData?.recommendations ?? [];
+
+  const alertCount = alerts.length;
+  const recCount = recommendations.length;
+  const criticalAlerts = alerts.filter((a: any) => a.severity === "critical").length;
+  const highRecs = recommendations.filter((r: any) => r.priority === "HIGH").length;
 
   return (
     <div className="space-y-6">
@@ -57,7 +60,7 @@ function AutomationContent() {
             { name: "Stuck Deal", trigger: "Same stage > 14 days", severity: "warning" },
             { name: "At Risk Deal", trigger: "High value + no activity > 21d", severity: "critical" },
             { name: "No Next Step", trigger: "Open deal without scheduled task", severity: "warning" },
-            { name: "High Value No Meeting", trigger: "Deal > R$50k without meeting", severity: "warning" },
+            { name: "High Value No Meeting", trigger: "Deal > $50k without meeting", severity: "warning" },
             { name: "Pipeline Coverage Low", trigger: "Pipeline < 3x commit", severity: "warning" },
             { name: "Conversion Overdue", trigger: "HOT lead > 10 days unconverted", severity: "critical" },
             { name: "Meeting No Follow-up", trigger: "> 2 days post-meeting without task", severity: "warning" },

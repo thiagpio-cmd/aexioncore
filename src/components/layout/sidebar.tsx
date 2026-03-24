@@ -260,9 +260,18 @@ function NavSections({
   const toggle = useCallback((title: string) => {
     if (ALWAYS_EXPANDED.has(title)) return;
     setExpanded(prev => {
-      const next = new Set(prev);
-      if (next.has(title)) next.delete(title);
-      else next.add(title);
+      const next = new Set<string>();
+      // Keep always-expanded sections
+      for (const s of ALWAYS_EXPANDED) next.add(s);
+      // Toggle: if already open, close it. If closed, open it (and close others).
+      if (prev.has(title)) {
+        // Keep other sections that were open
+        for (const s of prev) {
+          if (s !== title) next.add(s);
+        }
+      } else {
+        next.add(title);
+      }
       return next;
     });
   }, []);

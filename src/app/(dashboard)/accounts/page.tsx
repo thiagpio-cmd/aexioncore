@@ -95,7 +95,7 @@ export default function AccountsPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className="text-sm font-medium text-foreground">
-                      {acc.company?.annualRevenue ? formatCurrency(acc.company.annualRevenue, "BRL") : "—"}
+                      {acc.company?.annualRevenue ? formatCurrency(acc.company.annualRevenue, "USD") : "—"}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">

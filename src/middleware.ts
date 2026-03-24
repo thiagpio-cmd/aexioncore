@@ -1,9 +1,5 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import { registerAllProviders } from "@/lib/integrations/providers";
-
-// Initialize providers at startup
-registerAllProviders();
 
 export default withAuth(
   function middleware(req) {

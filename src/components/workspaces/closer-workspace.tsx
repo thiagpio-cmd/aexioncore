@@ -207,7 +207,7 @@ export function CloserWorkspace() {
           Deal Command Center
           {s && (
             <span className="ml-2 font-medium text-primary">
-              &middot; Pipeline: {formatCurrency(s.totalPipeline, "BRL")}
+              &middot; Pipeline: {formatCurrency(s.totalPipeline, "USD")}
             </span>
           )}
         </p>
@@ -220,14 +220,14 @@ export function CloserWorkspace() {
         <div className="grid grid-cols-4 gap-4">
           <StatCard
             label="Pipeline Value"
-            value={formatCurrency(s.totalPipeline, "BRL")}
+            value={formatCurrency(s.totalPipeline, "USD")}
             change={`${s.activeDeals} active deals`}
             changeType="neutral"
           />
           <StatCard
             label="Closing This Month"
             value={s.closingThisMonth}
-            change={formatCurrency(s.closingValue, "BRL")}
+            change={formatCurrency(s.closingValue, "USD")}
             changeType="positive"
           />
           <StatCard
@@ -238,7 +238,7 @@ export function CloserWorkspace() {
           />
           <StatCard
             label="Avg Deal Size"
-            value={formatCurrency(s.avgDealSize, "BRL")}
+            value={formatCurrency(s.avgDealSize, "USD")}
             change="Active pipeline"
             changeType="neutral"
           />
@@ -266,7 +266,7 @@ export function CloserWorkspace() {
                     <p className="text-xs font-semibold text-muted uppercase tracking-wide">{stageLabel(stage)}</p>
                     <div className="flex items-baseline gap-2 mt-1">
                       <span className="text-lg font-bold text-foreground">{stageData?.count || 0}</span>
-                      <span className="text-xs text-muted">{formatCurrency(stageData?.value || 0, "BRL")}</span>
+                      <span className="text-xs text-muted">{formatCurrency(stageData?.value || 0, "USD")}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -281,7 +281,7 @@ export function CloserWorkspace() {
                         >
                           <p className="text-xs font-medium text-foreground truncate">{opp.title}</p>
                           <div className="flex items-center justify-between mt-1">
-                            <span className="text-xs text-muted">{formatCurrency(opp.value, "BRL")}</span>
+                            <span className="text-xs text-muted">{formatCurrency(opp.value, "USD")}</span>
                             <span className="text-[10px] text-muted">{daysInStage}d</span>
                           </div>
                           {isStuck && (
@@ -442,7 +442,7 @@ export function CloserWorkspace() {
                 >
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-sm font-medium text-foreground truncate">{deal.title}</p>
-                    <span className="text-sm font-semibold text-foreground">{formatCurrency(deal.value, "BRL")}</span>
+                    <span className="text-sm font-semibold text-foreground">{formatCurrency(deal.value, "USD")}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-muted">{deal.account} &middot; {stageLabel(deal.stage)}</p>

@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 type ViewMode = "overview" | "scenarios" | "gap";
 
 function formatCurrency(v: number) {
-  return `R$ ${(v / 1000).toFixed(0)}K`;
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+  return `$${(v / 1000).toFixed(0)}K`;
 }
 
 export default function ForecastPage() {
@@ -82,7 +83,7 @@ export default function ForecastPage() {
           <div className="absolute left-0 top-0 h-full rounded-full bg-primary/30 transition-all" style={{ width: `${totalTarget > 0 ? Math.min((totalCommit / totalTarget) * 100, 100) : 0}%` }} />
         </div>
         <div className="flex justify-between mt-2">
-          <span className="text-xs text-muted">R$ 0</span>
+          <span className="text-xs text-muted">$0</span>
           <span className="text-xs text-muted">{formatCurrency(totalTarget)}</span>
         </div>
         <div className="flex gap-6 mt-3">

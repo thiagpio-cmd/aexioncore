@@ -63,12 +63,12 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
       <div className="grid grid-cols-4 gap-4">
         <StatCard
           label="Annual Revenue"
-          value={formatCurrency(account.company?.annualRevenue || account.annualRevenue || 0, "BRL")}
+          value={formatCurrency(account.company?.annualRevenue || account.annualRevenue || 0, "USD")}
           change={account.company?.industry || account.industry || ""}
           changeType="neutral"
         />
-        <StatCard label="Open Pipeline" value={formatCurrency(totalPipeline, "BRL")} change={`${openDeals} deals`} changeType="neutral" />
-        <StatCard label="Won Revenue" value={formatCurrency(wonValue, "BRL")} change="Lifetime" changeType="positive" />
+        <StatCard label="Open Pipeline" value={formatCurrency(totalPipeline, "USD")} change={`${openDeals} deals`} changeType="neutral" />
+        <StatCard label="Won Revenue" value={formatCurrency(wonValue, "USD")} change="Lifetime" changeType="positive" />
         <StatCard label="Contacts" value={contactList.length} change="In this account" changeType="neutral" />
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -101,7 +101,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                   <p className="text-sm font-medium text-foreground">{o.title}</p>
                   <p className="text-xs text-muted">{(o.stage || "").replace(/_/g, " ")} · {o.owner?.name || "Unassigned"}</p>
                 </div>
-                <span className="text-sm font-semibold text-foreground">{formatCurrency(o.value || 0, "BRL")}</span>
+                <span className="text-sm font-semibold text-foreground">{formatCurrency(o.value || 0, "USD")}</span>
               </Link>
             ))}
             {!oppsLoading && oppList.length === 0 && <p className="text-xs text-muted">No opportunities</p>}

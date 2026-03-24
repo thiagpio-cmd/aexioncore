@@ -128,6 +128,13 @@ export async function GET(request: NextRequest) {
       source: "oauth_callback",
     });
 
+    // Auto-sync: trigger initial sync in background (fire-and-forget)
+    const syncUrl = new URL(`/api/integrations/${integrationId}/sync`, request.url);
+    fetch(syncUrl.toString(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", cookie: request.headers.get("cookie") || "" },
+    }).catch((err) => console.error("[Gmail Auto-Sync] Failed to trigger:", err));
+
     return NextResponse.redirect(
       new URL(`${redirectPath}?connected=true`, request.url)
     );

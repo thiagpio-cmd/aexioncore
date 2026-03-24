@@ -2,10 +2,10 @@ import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
-import { unauthorized, validationError } from "@/lib/errors";
+import { unauthorized, forbidden, validationError } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { MeetingCreateSchema, MeetingQuerySchema } from "@/lib/validations/meeting";
-import { buildScopeFilter, actorFromSession } from "@/lib/authorization";
+import { buildScopeFilter, actorFromSession, canPerform } from "@/lib/authorization";
 
 export async function GET(request: NextRequest) {
   try {
@@ -66,6 +66,11 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
+
+    const actor = actorFromSession(session);
+    if (!actor || !canPerform(actor, "meeting", "create")) {
+      return sendError(forbidden("You do not have permission to create meetings"));
+    }
 
     const body = await request.json();
     const data = MeetingCreateSchema.parse(body);

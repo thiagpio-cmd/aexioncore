@@ -4,12 +4,16 @@ import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
 import { unauthorized } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
+import { requireRole } from "@/server/auth";
 import { inferPersona } from "@/lib/scoring/engine";
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
+
+    const roleError = requireRole(session.user as any, "MANAGER");
+    if (roleError) return roleError;
 
     const objections = await prisma.insight.findMany({
       where: {

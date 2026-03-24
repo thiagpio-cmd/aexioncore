@@ -4,7 +4,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import type { RepPerformance, AllMetrics } from "@/lib/metrics/business-metrics-engine";
 
 function fmt(n: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
 export default function TeamPerformancePage() {

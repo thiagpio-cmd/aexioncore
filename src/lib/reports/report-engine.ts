@@ -79,7 +79,7 @@ interface DateRange {
 // ---------------------------------------------------------------------------
 
 function formatBRL(value: number): string {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return value.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
 // ---------------------------------------------------------------------------

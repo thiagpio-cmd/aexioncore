@@ -19,9 +19,10 @@ const INDUSTRIES = [
 ];
 
 const CURRENCIES = [
-  { code: "BRL", label: "R$ — Brazilian Real" },
   { code: "USD", label: "$ — US Dollar" },
   { code: "EUR", label: "€ — Euro" },
+  { code: "GBP", label: "£ — British Pound" },
+  { code: "BRL", label: "R$ — Brazilian Real" },
 ];
 
 export default function SetupPage() {
@@ -34,7 +35,7 @@ export default function SetupPage() {
   const [displayName, setDisplayName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#2457FF");
   const [industry, setIndustry] = useState("");
-  const [currency, setCurrency] = useState("BRL");
+  const [currency, setCurrency] = useState("USD");
   const [enabledModules, setEnabledModules] = useState<string[]>([]);
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function SetupPage() {
       setDisplayName(org.displayName || org.name || "");
       setPrimaryColor(org.primaryColor || "#2457FF");
       setIndustry(org.industry || "");
-      setCurrency(org.defaultCurrency || "BRL");
+      setCurrency(org.defaultCurrency || "USD");
       setEnabledModules(org.enabledModules || ALL_MODULES.map(m => m.key));
       setStep(org.setupStep || 0);
     }

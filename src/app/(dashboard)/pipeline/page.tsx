@@ -76,7 +76,7 @@ function DealCard({
       </div>
       <p className="text-xs text-muted mb-2">{accountName}</p>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-foreground">{formatCurrency(deal.value, "BRL")}</span>
+        <span className="text-sm font-semibold text-foreground">{formatCurrency(deal.value, "USD")}</span>
         <div className="flex items-center gap-1.5">
           <div className="h-1.5 w-8 rounded-full bg-background">
             <div
@@ -122,7 +122,8 @@ export default function PipelinePage() {
   const { user } = useAuth();
   const [showCreate, setShowCreate] = useState(false);
   const { data: deals, loading, refetch } = useApi<Deal[]>("/api/opportunities?limit=100");
-  const items = deals || [];
+  const [optimisticDeals, setOptimisticDeals] = useState<Deal[] | null>(null);
+  const items = optimisticDeals || deals || [];
 
   const filteredDeals = items.filter((d) => {
     if (!search) return true;
@@ -172,6 +173,11 @@ export default function PipelinePage() {
     const deal = items.find((d) => d.id === dealId);
     if (!deal || deal.stage === targetStage) return;
 
+    // Optimistic update — move card instantly in UI, preserving all values
+    setOptimisticDeals(
+      items.map((d) => d.id === dealId ? { ...d, stage: targetStage } : d)
+    );
+
     setUpdating(true);
     const { error } = await apiPost(`/api/opportunities/${dealId}/stage-transition`, {
       targetStage,
@@ -180,12 +186,15 @@ export default function PipelinePage() {
     setUpdating(false);
 
     if (error) {
+      // Revert optimistic update
+      setOptimisticDeals(null);
       toastError(error);
       return;
     }
 
     const stageName = STAGES.find((s) => s.id === targetStage)?.name || targetStage;
     toastSuccess(`"${deal.title}" moved to ${stageName}`);
+    setOptimisticDeals(null);
     refetch();
   }, [items, refetch, toastSuccess, toastError]);
 
@@ -276,7 +285,7 @@ export default function PipelinePage() {
                       <span className="text-sm font-semibold text-foreground">{stage.name}</span>
                       <span className="rounded-full bg-background px-1.5 py-0.5 text-[11px] text-muted">{stageDeals.length}</span>
                     </div>
-                    <span className="text-xs font-medium text-muted">{formatCurrency(stageTotal, "BRL")}</span>
+                    <span className="text-xs font-medium text-muted">{formatCurrency(stageTotal, "USD")}</span>
                   </div>
                   <div
                     className={cn(
@@ -349,7 +358,7 @@ export default function PipelinePage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted">{deal.account?.name || "—"}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(deal.value, "BRL")}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(deal.value, "USD")}</td>
                     <td className="px-4 py-3">
                       <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium text-white", stage?.color || "bg-gray-500")}>
                         {stage?.name || deal.stage}
@@ -413,7 +422,7 @@ export default function PipelinePage() {
                 </div>
                 <div className="flex items-center gap-6">
                   <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium text-white", stage?.color)}>{stage?.name || deal.stage}</span>
-                  <span className="text-sm font-semibold text-foreground w-24 text-right">{formatCurrency(deal.value, "BRL")}</span>
+                  <span className="text-sm font-semibold text-foreground w-24 text-right">{formatCurrency(deal.value, "USD")}</span>
                   <div className="flex items-center gap-1.5 w-16">
                     <div className="h-1.5 w-8 rounded-full bg-background">
                       <div className={cn("h-1.5 rounded-full", healthScore >= 70 ? "bg-success" : healthScore >= 40 ? "bg-warning" : "bg-danger")} style={{ width: `${healthScore}%` }} />
@@ -435,7 +444,7 @@ export default function PipelinePage() {
         <div className="flex items-center gap-6">
           <div>
             <span className="text-xs text-muted">Total Pipeline</span>
-            <p className="text-lg font-bold text-foreground">{formatCurrency(totalPipeline, "BRL")}</p>
+            <p className="text-lg font-bold text-foreground">{formatCurrency(totalPipeline, "USD")}</p>
           </div>
           <div className="h-8 w-px bg-border" />
           <div>
@@ -456,11 +465,11 @@ export default function PipelinePage() {
         <div className="flex items-center gap-6">
           <div>
             <span className="text-xs text-muted">Won</span>
-            <p className="text-lg font-bold text-success">{formatCurrency(wonDeals.reduce((s, d) => s + d.value, 0), "BRL")}</p>
+            <p className="text-lg font-bold text-success">{formatCurrency(wonDeals.reduce((s, d) => s + d.value, 0), "USD")}</p>
           </div>
           <div>
             <span className="text-xs text-muted">Lost</span>
-            <p className="text-lg font-bold text-danger">{formatCurrency(lostDeals.reduce((s, d) => s + d.value, 0), "BRL")}</p>
+            <p className="text-lg font-bold text-danger">{formatCurrency(lostDeals.reduce((s, d) => s + d.value, 0), "USD")}</p>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useApi, apiPut, apiPost } from "@/lib/hooks/use-api";
 import { useToast } from "@/components/shared/toast";
@@ -302,27 +302,11 @@ export default function InboxPage() {
                   </div>
                 )}
 
-                {/* AI Suggested Response */}
-                <div className="mt-4 rounded-lg border border-primary/20 bg-primary-light p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-semibold text-primary">AI Suggested Response</span>
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Smart Reply</span>
-                  </div>
-                  <p className="text-sm text-foreground/80">
-                    {getAiSuggestion(selected.channel)}
-                  </p>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => setReplyText(getAiSuggestion(selected.channel))}
-                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover transition-colors"
-                    >
-                      Use Response
-                    </button>
-                    <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground transition-colors">
-                      Regenerate
-                    </button>
-                  </div>
-                </div>
+                {/* AI Classification & Suggested Response */}
+                <AIMessagePanel
+                  message={selected}
+                  onUseReply={(text) => setReplyText(text)}
+                />
               </div>
 
               {/* Reply Bar */}
@@ -472,12 +456,138 @@ function ComposeModal({
   );
 }
 
-function getAiSuggestion(channel: string): string {
-  const suggestions: Record<string, string> = {
-    EMAIL: "Thank you for your email. I've reviewed the details and would like to schedule a call to discuss further. When works best for you this week?",
-    WHATSAPP: "Thanks for the message! I'll check on this and get back to you shortly.",
-    CALL: "Following up on our call - I'll send over the materials we discussed. Let me know if you have any questions.",
-    INTERNAL: "Thanks for the update. I'll review and take action on this right away.",
+function AIMessagePanel({ message, onUseReply }: { message: any; onUseReply: (text: string) => void }) {
+  const [aiData, setAiData] = useState<{
+    classification?: { category: string; relevance: string; sentiment: string; confidence: number };
+    suggestedReply?: string;
+    provider?: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const classify = useCallback(async () => {
+    if (!message) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: fetchError } = await apiPost("/api/ai/classify-message", {
+        subject: message.subject || "",
+        body: message.body || "",
+        sender: message.sender || "",
+        channel: message.channel || "EMAIL",
+      });
+      if (fetchError) {
+        setError(fetchError);
+      } else {
+        setAiData(data);
+      }
+    } catch (err) {
+      setError("Failed to classify message");
+    }
+    setLoading(false);
+  }, [message?.id]);
+
+  useEffect(() => {
+    setAiData(null);
+    classify();
+  }, [message?.id, classify]);
+
+  const relevanceColors: Record<string, string> = {
+    HIGH: "bg-emerald-100 text-emerald-700",
+    MEDIUM: "bg-amber-100 text-amber-700",
+    LOW: "bg-gray-100 text-gray-600",
+    NONE: "bg-gray-100 text-gray-400",
   };
-  return suggestions[channel] || suggestions.EMAIL;
+
+  const sentimentColors: Record<string, string> = {
+    POSITIVE: "bg-emerald-100 text-emerald-700",
+    NEUTRAL: "bg-blue-100 text-blue-700",
+    NEGATIVE: "bg-red-100 text-red-700",
+  };
+
+  const categoryLabels: Record<string, string> = {
+    DEAL_RELATED: "Deal Related",
+    MEETING_REQUEST: "Meeting Request",
+    FOLLOW_UP: "Follow-up",
+    SUPPORT: "Support",
+    INQUIRY: "Inquiry",
+    MARKETING: "Marketing",
+    PERSONAL: "Personal",
+    UNKNOWN: "Unclassified",
+  };
+
+  return (
+    <div className="mt-4 rounded-lg border border-primary/20 bg-primary-light p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <span className="text-xs font-semibold text-primary">AI Analysis</span>
+        {aiData?.provider && (
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+            {aiData.provider === "openai" ? "GPT-4o" : aiData.provider === "gemini" ? "Gemini" : "Smart Reply"}
+          </span>
+        )}
+      </div>
+
+      {loading && (
+        <div className="space-y-2">
+          <div className="h-4 w-32 rounded bg-primary/10 animate-pulse" />
+          <div className="h-10 rounded bg-primary/10 animate-pulse" />
+        </div>
+      )}
+
+      {error && (
+        <p className="text-xs text-muted">{error}</p>
+      )}
+
+      {aiData && !loading && (
+        <>
+          {/* Classification Tags */}
+          {aiData.classification && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span className="inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold bg-primary/10 text-primary">
+                {categoryLabels[aiData.classification.category] || aiData.classification.category}
+              </span>
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${relevanceColors[aiData.classification.relevance] || relevanceColors.MEDIUM}`}>
+                {aiData.classification.relevance} Relevance
+              </span>
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${sentimentColors[aiData.classification.sentiment] || sentimentColors.NEUTRAL}`}>
+                {aiData.classification.sentiment}
+              </span>
+              <span className="inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium bg-gray-100 text-gray-500">
+                {Math.round((aiData.classification.confidence || 0) * 100)}% confidence
+              </span>
+            </div>
+          )}
+
+          {/* Suggested Reply */}
+          {aiData.suggestedReply && (
+            <>
+              <p className="text-xs font-medium text-primary/70 mb-1.5">Suggested Reply</p>
+              <p className="text-sm text-foreground/80 leading-relaxed">{aiData.suggestedReply}</p>
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={() => onUseReply(aiData.suggestedReply!)}
+                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover transition-colors"
+                >
+                  Use Response
+                </button>
+                <button
+                  onClick={classify}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground transition-colors"
+                >
+                  Regenerate
+                </button>
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
 }

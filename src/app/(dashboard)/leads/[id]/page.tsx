@@ -52,6 +52,101 @@ interface Activity {
 const LEAD_STATUSES = ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED", "DISQUALIFIED"];
 const PIPELINE_STATUSES = ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED"];
 
+function AILeadInsight({ leadId }: { leadId: string }) {
+  const { data, loading } = useApi<any>(`/api/ai/lead-insight?leadId=${leadId}`);
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary animate-pulse">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <span className="text-xs font-semibold text-primary">AI Insight</span>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary animate-pulse">Analyzing...</span>
+        </div>
+        <div className="space-y-2">
+          <div className="h-3 w-full rounded bg-primary/10 animate-pulse" />
+          <div className="h-3 w-3/4 rounded bg-primary/10 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const signalIcons: Record<string, string> = {
+    positive: "text-emerald-500",
+    negative: "text-red-500",
+    neutral: "text-gray-400",
+  };
+
+  return (
+    <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <span className="text-xs font-semibold text-primary">AI Insight</span>
+        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+          {data.provider === "openai" ? "GPT-4o" : data.provider === "gemini" ? "Gemini" : "Smart"}
+        </span>
+      </div>
+
+      {/* LLM Insight */}
+      {data.aiInsight && (
+        <p className="text-sm text-foreground leading-relaxed mb-3">{data.aiInsight}</p>
+      )}
+
+      {/* Next Best Action */}
+      <div className="rounded-lg bg-primary/5 border border-primary/10 p-3 mb-3">
+        <p className="text-[10px] font-semibold text-primary uppercase tracking-wider mb-1">Next Best Action</p>
+        <p className="text-xs text-foreground font-medium">{data.nextAction}</p>
+      </div>
+
+      {/* Signal List */}
+      {data.signals && data.signals.length > 0 && (
+        <div className="space-y-1.5">
+          {data.signals.slice(0, 5).map((s: any, i: number) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className={`mt-0.5 text-xs ${signalIcons[s.type] || signalIcons.neutral}`}>
+                {s.type === "positive" ? "+" : s.type === "negative" ? "−" : "·"}
+              </span>
+              <span className="text-xs text-foreground/70">{s.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Context Metrics */}
+      {data.context && (
+        <div className="mt-3 pt-3 border-t border-primary/10 grid grid-cols-3 gap-2">
+          <div className="text-center">
+            <p className="text-lg font-bold text-foreground">{data.context.activityCount}</p>
+            <p className="text-[10px] text-muted">Activities</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-foreground">{data.context.taskCount}</p>
+            <p className="text-[10px] text-muted">Tasks</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-foreground">{data.context.daysSinceContact ?? "—"}</p>
+            <p className="text-[10px] text-muted">Days Silent</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LeadDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -284,6 +379,11 @@ export default function LeadDetailPage() {
 
         {/* Right Sidebar */}
         <div className="space-y-4">
+          {/* AI Lead Insight */}
+          {lead.status !== "CONVERTED" && lead.status !== "DISQUALIFIED" && (
+            <AILeadInsight leadId={leadId} />
+          )}
+
           {/* AI Channel Suggestion */}
           {lead.status !== "CONVERTED" && lead.status !== "DISQUALIFIED" && (() => {
             const channelScore: Record<string, number> = { email: 2, whatsapp: 3, phone: 1, linkedin: 1 };

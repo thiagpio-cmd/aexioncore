@@ -34,9 +34,9 @@ const DEFAULT_CONFIG: OrgConfig = {
   setupCompleted: false,
   setupStep: 0,
   industry: null,
-  defaultCurrency: "BRL",
+  defaultCurrency: "USD",
   fiscalYearStart: 1,
-  timezone: "America/Sao_Paulo",
+  timezone: "America/New_York",
 };
 
 interface OrgContextValue {

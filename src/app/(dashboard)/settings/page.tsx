@@ -265,9 +265,10 @@ export default function SettingsPage() {
                   <div>
                     <label className="block text-xs font-medium text-muted mb-1.5">Default Currency</label>
                     <select className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none">
-                      <option>BRL - Brazilian Real</option>
                       <option>USD - US Dollar</option>
                       <option>EUR - Euro</option>
+                      <option>GBP - British Pound</option>
+                      <option>BRL - Brazilian Real</option>
                     </select>
                   </div>
                   <div>

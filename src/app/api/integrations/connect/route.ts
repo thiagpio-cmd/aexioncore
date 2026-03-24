@@ -55,26 +55,41 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Upsert the tenant's connection record (plug-and-play instantiation)
-    const slug = `${providerKey}-${session.user.organizationId}`;
-
-    const integration = await prisma.integration.upsert({
-      where: { slug },
-      update: {
-        status: "CONNECTING",
-      },
-      create: {
+    // Find existing integration record for this provider+org, or create new
+    const existing = await prisma.integration.findFirst({
+      where: {
         organizationId: session.user.organizationId,
-        name: provider.metadata.name,
-        slug,
-        providerKey,
-        domain: provider.metadata.domain,
-        authType: provider.metadata.authType,
-        syncMode: provider.metadata.syncMode,
-        status: "CONNECTING",
-        description: provider.metadata.description,
+        OR: [
+          { providerKey },
+          { slug: providerKey },
+        ],
       },
     });
+
+    let integration;
+    if (existing) {
+      integration = await prisma.integration.update({
+        where: { id: existing.id },
+        data: {
+          status: "CONNECTING",
+          providerKey,
+        },
+      });
+    } else {
+      integration = await prisma.integration.create({
+        data: {
+          organizationId: session.user.organizationId,
+          name: provider.metadata.name,
+          slug: `${providerKey}-${session.user.organizationId}`,
+          providerKey,
+          domain: provider.metadata.domain,
+          authType: provider.metadata.authType,
+          syncMode: provider.metadata.syncMode,
+          status: "CONNECTING",
+          description: provider.metadata.description,
+        },
+      });
+    }
 
     // Build state token: HMAC-signed base64-encoded JSON
     const payload = JSON.stringify({

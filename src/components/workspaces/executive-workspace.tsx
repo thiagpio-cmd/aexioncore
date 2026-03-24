@@ -167,7 +167,7 @@ export function ExecutiveWorkspace() {
           Strategic overview of revenue operations
           {s && (
             <span className="ml-2 font-medium text-primary">
-              &middot; {formatCurrency(s.wonValue, "BRL")} closed this period
+              &middot; {formatCurrency(s.wonValue, "USD")} closed this period
             </span>
           )}
         </p>
@@ -181,13 +181,13 @@ export function ExecutiveWorkspace() {
           <div className="grid grid-cols-4 gap-4">
             <StatCard
               label="Total Pipeline"
-              value={formatCurrency(s.totalPipeline, "BRL")}
+              value={formatCurrency(s.totalPipeline, "USD")}
               change={`${s.activeDeals} active deals`}
               changeType="neutral"
             />
             <StatCard
               label="Forecast (Weighted)"
-              value={formatCurrency(s.forecastCommit, "BRL")}
+              value={formatCurrency(s.forecastCommit, "USD")}
               change={"\u226570% probability"}
               changeType="positive"
             />
@@ -209,19 +209,19 @@ export function ExecutiveWorkspace() {
           <div className="grid grid-cols-4 gap-4">
             <StatCard
               label="Won Revenue"
-              value={formatCurrency(s.wonValue, "BRL")}
+              value={formatCurrency(s.wonValue, "USD")}
               change="Closed won"
               changeType="positive"
             />
             <StatCard
               label="Best Case"
-              value={formatCurrency(s.bestCase, "BRL")}
+              value={formatCurrency(s.bestCase, "USD")}
               change={"\u226540% probability"}
               changeType="neutral"
             />
             <StatCard
               label="Avg. Deal Size"
-              value={formatCurrency(s.avgDealSize, "BRL")}
+              value={formatCurrency(s.avgDealSize, "USD")}
               change="Active pipeline"
               changeType="neutral"
             />
@@ -248,7 +248,7 @@ export function ExecutiveWorkspace() {
                     <Link href="/pipeline" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                       {stageLabel(st.stage)}
                     </Link>
-                    <span className="text-sm text-muted">{formatCurrency(st.value, "BRL")} &middot; {st.count} deals</span>
+                    <span className="text-sm text-muted">{formatCurrency(st.value, "USD")} &middot; {st.count} deals</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-3 rounded-full bg-background">
@@ -300,7 +300,7 @@ export function ExecutiveWorkspace() {
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${health.color}`}>
                           {health.label}
                         </span>
-                        <span className="text-sm font-semibold text-foreground">{formatCurrency(deal.value, "BRL")}</span>
+                        <span className="text-sm font-semibold text-foreground">{formatCurrency(deal.value, "USD")}</span>
                       </div>
                     </Link>
                   );

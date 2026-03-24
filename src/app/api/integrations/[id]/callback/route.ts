@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { providerRegistry } from "@/lib/integrations/provider-registry";
 import { storeCredentials } from "@/lib/integrations/credential-vault";
 import { writeAuditLog } from "@/server/audit";
+import { createHmac, timingSafeEqual } from "crypto";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -37,11 +38,29 @@ export async function GET(request: NextRequest, ctx: Ctx) {
       );
     }
 
-    // Decode state to retrieve integrationId and userId
-    let statePayload: { integrationId: string; userId: string };
+    // Decode and verify HMAC-signed state
+    let statePayload: { integrationId: string; userId: string; ts?: number };
     try {
+      const [payloadB64, signature] = state.split(".");
+      if (!payloadB64 || !signature) {
+        return NextResponse.redirect(
+          new URL(`${baseRedirect}?error=${encodeURIComponent("Invalid state format")}`, request.url)
+        );
+      }
+
+      // Verify HMAC signature
+      const hmacSecret = process.env.NEXTAUTH_SECRET || "";
+      const expectedSig = createHmac("sha256", hmacSecret).update(payloadB64).digest("base64url");
+      const sigBuffer = Buffer.from(signature, "base64url");
+      const expectedBuffer = Buffer.from(expectedSig, "base64url");
+      if (sigBuffer.length !== expectedBuffer.length || !timingSafeEqual(sigBuffer, expectedBuffer)) {
+        return NextResponse.redirect(
+          new URL(`${baseRedirect}?error=${encodeURIComponent("Invalid state signature")}`, request.url)
+        );
+      }
+
       statePayload = JSON.parse(
-        Buffer.from(state, "base64url").toString("utf-8")
+        Buffer.from(payloadB64, "base64url").toString("utf-8")
       );
     } catch {
       return NextResponse.redirect(

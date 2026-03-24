@@ -10,13 +10,15 @@ const INDUSTRIES = [
   "Manufacturing", "Professional Services", "Education", "Other",
 ];
 const CURRENCIES = [
-  { code: "BRL", label: "R$ — Brazilian Real" },
   { code: "USD", label: "$ — US Dollar" },
   { code: "EUR", label: "€ — Euro" },
+  { code: "GBP", label: "£ — British Pound" },
+  { code: "BRL", label: "R$ — Brazilian Real" },
 ];
 const TIMEZONES = [
-  "America/Sao_Paulo", "America/New_York", "America/Chicago",
-  "America/Los_Angeles", "Europe/London", "Europe/Berlin", "Asia/Tokyo",
+  "America/New_York", "America/Chicago", "America/Denver",
+  "America/Los_Angeles", "America/Sao_Paulo", "Europe/London",
+  "Europe/Berlin", "Asia/Tokyo",
 ];
 
 export default function OrganizationSettingsPage() {
@@ -26,8 +28,8 @@ export default function OrganizationSettingsPage() {
   const [form, setForm] = useState({
     displayName: "",
     industry: "",
-    defaultCurrency: "BRL",
-    timezone: "America/Sao_Paulo",
+    defaultCurrency: "USD",
+    timezone: "America/New_York",
     fiscalYearStart: 1,
   });
 
@@ -36,8 +38,8 @@ export default function OrganizationSettingsPage() {
       setForm({
         displayName: org.displayName || org.name || "",
         industry: org.industry || "",
-        defaultCurrency: org.defaultCurrency || "BRL",
-        timezone: org.timezone || "America/Sao_Paulo",
+        defaultCurrency: org.defaultCurrency || "USD",
+        timezone: org.timezone || "America/New_York",
         fiscalYearStart: org.fiscalYearStart || 1,
       });
     }

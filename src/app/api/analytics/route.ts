@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
 import { unauthorized } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
+import { requireRole } from "@/server/auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +12,14 @@ export async function GET(request: NextRequest) {
     if (!session?.user) return sendError(unauthorized());
 
     const orgId = session.user.organizationId;
+    const userId = session.user.id;
     const now = new Date();
+
+    // SDR/CLOSER (role level <= 1) only see their own data
+    const ROLE_LEVELS: Record<string, number> = { USER: 1, SDR: 1, CLOSER: 1, VIEWER: 1, REVOPS: 2, MANAGER: 3, DIRECTOR: 4, ADMIN: 5 };
+    const userLevel = ROLE_LEVELS[session.user.role] ?? 0;
+    const ownerFilter = userLevel <= 1 ? { ownerId: userId } : {};
+    const creatorFilter = userLevel <= 1 ? { creatorId: userId } : {};
 
     // Period filter
     const periodParam = request.nextUrl.searchParams.get("period") || "30d";
@@ -25,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     const [opportunities, leads, activities, tasks, accounts] = await Promise.all([
       prisma.opportunity.findMany({
-        where: { organizationId: orgId, ...(dateFilter ? { createdAt: dateFilter } : {}) },
+        where: { organizationId: orgId, ...ownerFilter, ...(dateFilter ? { createdAt: dateFilter } : {}) },
         include: {
           owner: { select: { id: true, name: true } },
           account: { select: { id: true, name: true } },
@@ -33,17 +41,17 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "asc" },
       }),
       prisma.lead.findMany({
-        where: { organizationId: orgId, ...(dateFilter ? { createdAt: dateFilter } : {}) },
+        where: { organizationId: orgId, ...ownerFilter, ...(dateFilter ? { createdAt: dateFilter } : {}) },
         include: { owner: { select: { id: true, name: true } } },
         orderBy: { createdAt: "asc" },
       }),
       prisma.activity.findMany({
-        where: { organizationId: orgId, ...(dateFilter ? { createdAt: dateFilter } : {}) },
+        where: { organizationId: orgId, ...creatorFilter, ...(dateFilter ? { createdAt: dateFilter } : {}) },
         orderBy: { createdAt: "asc" },
         take: 500,
       }),
       prisma.task.findMany({
-        where: { organizationId: orgId },
+        where: { organizationId: orgId, ...ownerFilter },
         include: { owner: { select: { id: true, name: true } } },
       }),
       prisma.account.findMany({

@@ -15,7 +15,10 @@ export async function GET(request: NextRequest) {
     if (session.user.role === "VIEWER") return sendError(forbidden("Viewers cannot search"));
 
     const actor = actorFromSession(session)!;
-    const scopeFilter = buildScopeFilter(actor, "lead");
+    const leadScopeFilter = buildScopeFilter(actor, "lead");
+    const opportunityScopeFilter = buildScopeFilter(actor, "opportunity");
+    const contactScopeFilter = buildScopeFilter(actor, "contact");
+    const accountScopeFilter = buildScopeFilter(actor, "account");
 
     const q = request.nextUrl.searchParams.get("q")?.trim();
     if (!q || q.length < 2) {
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest) {
       prisma.lead.findMany({
         where: {
           organizationId: orgId,
-          ...scopeFilter,
+          ...leadScopeFilter,
           OR: [
             { name: { contains: q } },
             { email: { contains: q } },
@@ -50,6 +53,7 @@ export async function GET(request: NextRequest) {
       prisma.opportunity.findMany({
         where: {
           organizationId: orgId,
+          ...opportunityScopeFilter,
           OR: [
             { title: { contains: q } },
             { description: { contains: q } },
@@ -69,6 +73,7 @@ export async function GET(request: NextRequest) {
       prisma.contact.findMany({
         where: {
           organizationId: orgId,
+          ...contactScopeFilter,
           OR: [
             { name: { contains: q } },
             { email: { contains: q } },
@@ -88,6 +93,7 @@ export async function GET(request: NextRequest) {
       prisma.account.findMany({
         where: {
           organizationId: orgId,
+          ...accountScopeFilter,
           name: { contains: q },
         },
         select: {

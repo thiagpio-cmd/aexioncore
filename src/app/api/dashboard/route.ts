@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
 import { unauthorized } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
+import { requireRole } from "@/server/auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,6 +17,12 @@ export async function GET(request: NextRequest) {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
+    // SDR/CLOSER (role level <= 1) only see their own data
+    const ROLE_LEVELS: Record<string, number> = { USER: 1, SDR: 1, CLOSER: 1, VIEWER: 1, REVOPS: 2, MANAGER: 3, DIRECTOR: 4, ADMIN: 5 };
+    const userLevel = ROLE_LEVELS[session.user.role] ?? 0;
+    const ownerFilter = userLevel <= 1 ? { ownerId: userId } : {};
+    const creatorFilter = userLevel <= 1 ? { creatorId: userId } : {};
+
     const [
       opportunities,
       leads,
@@ -25,7 +32,7 @@ export async function GET(request: NextRequest) {
       users,
     ] = await Promise.all([
       prisma.opportunity.findMany({
-        where: { organizationId: orgId },
+        where: { organizationId: orgId, ...ownerFilter },
         include: {
           account: { select: { id: true, name: true } },
           owner: { select: { id: true, name: true } },
@@ -33,7 +40,7 @@ export async function GET(request: NextRequest) {
         orderBy: { updatedAt: "desc" },
       }),
       prisma.lead.findMany({
-        where: { organizationId: orgId },
+        where: { organizationId: orgId, ...ownerFilter },
         include: {
           owner: { select: { id: true, name: true } },
           company: { select: { id: true, name: true } },
@@ -41,17 +48,17 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
       }),
       prisma.task.findMany({
-        where: { organizationId: orgId },
+        where: { organizationId: orgId, ...ownerFilter },
         include: { owner: { select: { id: true, name: true } } },
       }),
       prisma.activity.findMany({
-        where: { organizationId: orgId },
+        where: { organizationId: orgId, ...creatorFilter },
         include: { creator: { select: { id: true, name: true } } },
         orderBy: { createdAt: "desc" },
         take: 200,
       }),
       prisma.meeting.findMany({
-        where: { organizationId: orgId },
+        where: { organizationId: orgId, ...ownerFilter },
         orderBy: { startTime: "asc" },
       }),
       prisma.user.findMany({

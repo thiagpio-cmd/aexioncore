@@ -84,7 +84,7 @@ export function GlobalSearch() {
   const flatResults = results
     ? [
         ...results.leads.map((r) => ({ type: "leads" as const, id: r.id, name: r.name, sub: r.email, badge: r.status })),
-        ...results.opportunities.map((r) => ({ type: "opportunities" as const, id: r.id, name: r.title, sub: formatCurrency(r.value, "BRL"), badge: r.stage })),
+        ...results.opportunities.map((r) => ({ type: "opportunities" as const, id: r.id, name: r.title, sub: formatCurrency(r.value, "USD"), badge: r.stage })),
         ...results.contacts.map((r) => ({ type: "contacts" as const, id: r.id, name: r.name, sub: r.email || r.phone || "", badge: r.title || "" })),
         ...results.accounts.map((r) => ({ type: "accounts" as const, id: r.id, name: r.name, sub: r.company?.website || "", badge: r.company?.industry || "" })),
       ]

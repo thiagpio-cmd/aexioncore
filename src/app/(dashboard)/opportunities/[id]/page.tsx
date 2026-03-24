@@ -125,7 +125,7 @@ export default function OpportunityDetailPage() {
               </span>
               <HealthBadge score={deal.probability} size="md" />
             </div>
-            <p className="mt-1 text-2xl font-bold text-foreground">{formatCurrency(deal.value, "BRL")}</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{formatCurrency(deal.value, "USD")}</p>
             <div className="mt-1 flex items-center gap-2">
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-light text-[10px] font-semibold text-primary">
                 {getInitials(ownerName)}
@@ -449,7 +449,7 @@ export default function OpportunityDetailPage() {
             <h3 className="mb-3 text-sm font-semibold text-foreground">Deal Information</h3>
             <dl className="space-y-3">
               {[
-                { label: "Deal Value", value: formatCurrency(deal.value, "BRL") },
+                { label: "Deal Value", value: formatCurrency(deal.value, "USD") },
                 { label: "Stage", value: stageLabel },
                 { label: "Probability", value: `${deal.probability}%` },
                 ...(deal.expectedCloseDate ? [{ label: "Close Date", value: new Date(deal.expectedCloseDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) }] : []),

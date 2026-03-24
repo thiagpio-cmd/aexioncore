@@ -106,7 +106,7 @@ export function ConvertLeadModal({ open, onClose, onConverted, lead }: ConvertLe
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="Value (R$)">
+          <FormField label="Value ($)">
             <input
               type="number"
               value={form.opportunityValue}

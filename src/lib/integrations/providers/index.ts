@@ -12,6 +12,7 @@
 
 import { providerRegistry } from "../provider-registry";
 import { GmailProvider } from "./gmail";
+import { GoogleCalendarProvider } from "./google-calendar";
 
 /**
  * Register all available integration providers with the registry.
@@ -19,7 +20,9 @@ import { GmailProvider } from "./gmail";
  */
 export function registerAllProviders(): void {
   providerRegistry.register(new GmailProvider());
+  providerRegistry.register(new GoogleCalendarProvider());
 }
 
 // Re-export individual providers for direct use
 export { GmailProvider } from "./gmail";
+export { GoogleCalendarProvider } from "./google-calendar";

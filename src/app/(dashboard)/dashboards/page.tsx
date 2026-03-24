@@ -9,14 +9,121 @@ import { cn } from "@/lib/utils";
 type Period = "7d" | "30d" | "90d" | "all";
 
 function formatCurrency(v: number) {
-  return `R$ ${(v / 1000).toFixed(0)}K`;
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+  return `$${(v / 1000).toFixed(0)}K`;
+}
+
+interface AIInsight {
+  type: "success" | "warning" | "danger" | "info";
+  title: string;
+  description: string;
+  metric?: string;
+}
+
+interface AIInsightsData {
+  insights: AIInsight[];
+  synthesis: string | null;
+  provider: string;
+  metrics: Record<string, number>;
+}
+
+function AIInsightsPanel() {
+  const { data, loading } = useApi<AIInsightsData>("/api/ai/insights");
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary animate-pulse">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <h3 className="text-sm font-semibold text-foreground">AI Insights</h3>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Analyzing...</span>
+        </div>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 rounded-lg bg-background/50 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || (data.insights.length === 0 && !data.synthesis)) return null;
+
+  const typeStyles: Record<string, { bg: string; border: string; icon: string; text: string }> = {
+    success: { bg: "bg-emerald-50", border: "border-emerald-200", icon: "text-emerald-600", text: "text-emerald-700" },
+    warning: { bg: "bg-amber-50", border: "border-amber-200", icon: "text-amber-600", text: "text-amber-700" },
+    danger: { bg: "bg-red-50", border: "border-red-200", icon: "text-red-600", text: "text-red-700" },
+    info: { bg: "bg-blue-50", border: "border-blue-200", icon: "text-blue-600", text: "text-blue-700" },
+  };
+
+  const typeIcons: Record<string, React.ReactNode> = {
+    success: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>,
+    warning: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>,
+    danger: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>,
+    info: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>,
+  };
+
+  return (
+    <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <h3 className="text-sm font-semibold text-foreground">AI Insights</h3>
+        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+          {data.provider === "openai" ? "GPT-4o" : data.provider === "gemini" ? "Gemini" : "Deterministic"}
+        </span>
+      </div>
+
+      {/* LLM Executive Synthesis */}
+      {data.synthesis && (
+        <div className="mb-4 rounded-lg border border-primary/10 bg-white/50 p-4">
+          <p className="text-[10px] font-semibold text-primary uppercase tracking-wider mb-2">Executive Summary</p>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{data.synthesis}</p>
+        </div>
+      )}
+
+      {/* Deterministic Insight Cards */}
+      <div className="grid grid-cols-2 gap-3">
+        {data.insights.map((insight, i) => {
+          const style = typeStyles[insight.type] || typeStyles.info;
+          return (
+            <div key={i} className={cn("rounded-lg border p-3", style.bg, style.border)}>
+              <div className="flex items-start gap-2">
+                <div className={cn("mt-0.5 shrink-0", style.icon)}>
+                  {typeIcons[insight.type]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={cn("text-xs font-semibold", style.text)}>{insight.title}</p>
+                    {insight.metric && (
+                      <span className={cn("text-lg font-bold", style.text)}>{insight.metric}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-foreground/70 mt-0.5 leading-relaxed">{insight.description}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardsPage() {
   const [period, setPeriod] = useState<Period>("30d");
   const { data, loading, error } = useApi<any>("/api/dashboard");
-
-  const objections = ["Budget constraints", "Timeline concern", "Integration complexity", "Already evaluating competitor", "Needs board approval"];
 
   if (loading) {
     return (
@@ -43,12 +150,7 @@ export default function DashboardsPage() {
   const stats = data.stats || {};
   const stages = data.stages || [];
   const reps = data.reps || [];
-  const channels = data.channels || [
-    { name: "Inbound", leads: 4, conversion: "32%", color: "bg-primary" },
-    { name: "Outbound", leads: 3, conversion: "18%", color: "bg-purple-500" },
-    { name: "Referral", leads: 2, conversion: "45%", color: "bg-success" },
-    { name: "Event", leads: 1, conversion: "22%", color: "bg-warning" },
-  ];
+  const channels = data.channels || [];
 
   return (
     <div className="space-y-6">
@@ -76,11 +178,15 @@ export default function DashboardsPage() {
               download
               className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted hover:text-foreground transition-colors"
             >
-              ↓ Export
+              Export
             </a>
           </div>
         }
       />
+
+      {/* AI Insights Panel */}
+      <AIInsightsPanel />
+
       <div className="grid grid-cols-6 gap-4">
         <StatCard label="Total Pipeline" value={formatCurrency(stats.totalPipeline || 0)} change="+18% QoQ" changeType="positive" />
         <StatCard label="Won Revenue" value={formatCurrency(stats.wonValue || 0)} change="This quarter" changeType="positive" />
@@ -119,9 +225,10 @@ export default function DashboardsPage() {
                   <span className="text-sm font-medium text-foreground">{ch.name}</span>
                 </div>
                 <span className="text-sm text-muted">{ch.leads} leads</span>
-                <span className="text-sm font-medium text-foreground">{ch.conversion} conv.</span>
+                <span className="text-sm font-medium text-foreground">{ch.conversion}% conv.</span>
               </div>
             ))}
+            {channels.length === 0 && <p className="text-xs text-muted">No channel data available</p>}
           </div>
         </div>
       </div>
@@ -155,17 +262,30 @@ export default function DashboardsPage() {
           </table>
         </div>
 
-        {/* Top Objections */}
+        {/* Forecast Summary */}
         <div className="rounded-xl border border-border bg-surface p-6">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Top Objections</h3>
-          <div className="space-y-3">
-            {objections.map((obj, i) => (
-              <div key={obj} className="flex items-center gap-3">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-background text-[11px] font-semibold text-muted">{i + 1}</span>
-                <span className="text-sm text-foreground flex-1">{obj}</span>
-                <span className="text-xs text-muted">{Math.floor(Math.random() * 8 + 2)} mentions</span>
-              </div>
-            ))}
+          <h3 className="text-sm font-semibold text-foreground mb-4">Forecast Summary</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted">Commit</span>
+              <span className="text-lg font-bold text-foreground">{formatCurrency(stats.forecastCommit || 0)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted">Best Case</span>
+              <span className="text-lg font-bold text-foreground">{formatCurrency(stats.bestCase || 0)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted">Coverage Ratio</span>
+              <span className="text-lg font-bold text-foreground">{stats.coverageRatio || 0}x</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted">Closing This Month</span>
+              <span className="text-sm font-semibold text-foreground">{stats.closingThisMonth || 0} deals · {formatCurrency(stats.closingValue || 0)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted">At Risk</span>
+              <span className="text-sm font-semibold text-danger">{stats.atRiskDeals || 0} deals</span>
+            </div>
           </div>
         </div>
       </div>
@@ -175,11 +295,11 @@ export default function DashboardsPage() {
         <h3 className="text-sm font-semibold text-foreground mb-4">Conversion Funnel</h3>
         <div className="flex items-end gap-2 h-40">
           {[
-            { label: "Leads", count: stats.totalLeads || 10, pct: 100, color: "bg-blue-500" },
-            { label: "Contacted", count: Math.round((stats.totalLeads || 10) * 0.7), pct: 70, color: "bg-indigo-500" },
-            { label: "Qualified", count: Math.round((stats.totalLeads || 10) * 0.4), pct: 40, color: "bg-purple-500" },
-            { label: "Proposal", count: Math.round((stats.totalDeals || 5) * 0.6), pct: 25, color: "bg-amber-500" },
-            { label: "Won", count: stats.wonDeals || 2, pct: 12, color: "bg-success" },
+            { label: "Leads", count: stats.totalLeads || 0, pct: 100, color: "bg-blue-500" },
+            { label: "Contacted", count: Math.round((stats.totalLeads || 0) * 0.7), pct: 70, color: "bg-indigo-500" },
+            { label: "Qualified", count: Math.round((stats.totalLeads || 0) * 0.4), pct: 40, color: "bg-purple-500" },
+            { label: "Proposal", count: stats.proposalsSent || 0, pct: stats.totalLeads > 0 ? Math.round(((stats.proposalsSent || 0) / stats.totalLeads) * 100) : 25, color: "bg-amber-500" },
+            { label: "Won", count: stats.wonDeals || 0, pct: stats.totalLeads > 0 ? Math.round(((stats.wonDeals || 0) / stats.totalLeads) * 100) : 12, color: "bg-emerald-500" },
           ].map((step) => (
             <div key={step.label} className="flex-1 flex flex-col items-center gap-1">
               <span className="text-xs font-semibold text-foreground">{step.count}</span>

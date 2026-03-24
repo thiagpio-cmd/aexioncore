@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
-import { unauthorized, validationError } from "@/lib/errors";
+import { unauthorized, forbidden, validationError } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
+import { actorFromSession, canPerform, buildScopeFilter } from "@/lib/authorization";
 import { z } from "zod";
 
 const ActivityCreateSchema = z.object({
@@ -27,12 +28,18 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
 
+    const actor = actorFromSession(session);
+    if (!actor || !canPerform(actor, "activity", "list")) {
+      return sendError(forbidden("You do not have permission to list activities"));
+    }
+
     const sp = request.nextUrl.searchParams;
     const leadId = sp.get("leadId");
     const opportunityId = sp.get("opportunityId");
     const type = sp.get("type");
 
-    const where: any = { organizationId: session.user.organizationId };
+    const scopeFilter = buildScopeFilter(actor, "activity");
+    const where: any = { organizationId: session.user.organizationId, ...scopeFilter };
     if (leadId) where.leadId = leadId;
     if (opportunityId) where.opportunityId = opportunityId;
     if (type) where.type = type;
@@ -57,6 +64,11 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
+
+    const actor = actorFromSession(session);
+    if (!actor || !canPerform(actor, "activity", "create")) {
+      return sendError(forbidden("You do not have permission to create activities"));
+    }
 
     const body = await request.json();
     const data = ActivityCreateSchema.parse(body);

@@ -6,22 +6,19 @@ import { unauthorized } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { buildScopeFilter, actorFromSession } from "@/lib/authorization";
 import { providerRegistry } from "@/lib/integrations/provider-registry";
+import { ensureProvidersInitialized } from "@/lib/integrations/init";
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
 
-    const actor = actorFromSession(session);
-    if (!actor) return sendError(unauthorized());
+    ensureProvidersInitialized();
 
-    const scopeFilter = buildScopeFilter(actor, "integration");
-
-    // Get strictly authorized integrations from DB for this tenant
+    // Integrations are org-scoped, not user-scoped
     const dbIntegrations = await prisma.integration.findMany({
-      where: { 
+      where: {
         organizationId: session.user.organizationId,
-        ...scopeFilter
       },
     });
 
@@ -67,10 +64,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Add any DB integrations that were active but not in registry (should be rare/impossible in v2)
+    // Add any DB integrations not already in the result (e.g., seeded integrations without providers)
     for (const int of dbIntegrations) {
-      if (!resultMap.has(int.id) && int.status !== "DISCONNECTED") {
-         resultMap.set(int.id, int);
+      const key = int.providerKey || int.slug;
+      const alreadyExists = Array.from(resultMap.values()).some(
+        (r: any) => r.providerKey === key || r.slug === key
+      );
+      if (!alreadyExists) {
+        resultMap.set(int.id, {
+          ...int,
+          isConfigured: false,
+        });
       }
     }
 
