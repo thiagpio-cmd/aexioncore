@@ -24,7 +24,10 @@ export default function AccountsPage() {
         title="Accounts"
         description="Manage your account portfolio"
         actions={
-          <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover">
+          <button
+            onClick={() => router.push("/accounts/new")}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+          >
             + New Account
           </button>
         }

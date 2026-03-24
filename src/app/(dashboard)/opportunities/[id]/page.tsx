@@ -505,6 +505,67 @@ export default function OpportunityDetailPage() {
             </div>
           </div>
 
+          {/* Stakeholders */}
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <h3 className="mb-3 text-sm font-semibold text-foreground">Key Stakeholders</h3>
+            <div className="space-y-2.5">
+              {deal.primaryContact ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-light text-[10px] font-bold text-primary">
+                    {getInitials(deal.primaryContact.name)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{deal.primaryContact.name}</p>
+                    <p className="text-[11px] text-muted">{deal.primaryContact.title || "Contact"} · Champion</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-muted">No primary contact linked</p>
+              )}
+              {deal.account?.company && (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-background text-[10px] font-bold text-muted">🏢</div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{deal.account.company.name}</p>
+                    <p className="text-[11px] text-muted">{deal.account.company.industry || "Company"}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Competitive Intelligence */}
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <h3 className="mb-3 text-sm font-semibold text-foreground">Competitive Landscape</h3>
+            <div className="space-y-2">
+              {["No direct competitors identified"].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg bg-background px-3 py-2">
+                  <span className="text-xs text-muted">{item}</span>
+                </div>
+              ))}
+              <p className="text-[10px] text-muted mt-2">Competitor tracking available in future release.</p>
+            </div>
+          </div>
+
+          {/* Objections */}
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <h3 className="mb-3 text-sm font-semibold text-foreground">Objections & Risks</h3>
+            {deal.probability < 50 ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 rounded-lg border border-danger/20 bg-danger-light px-3 py-2">
+                  <span className="text-xs font-medium text-danger">Low Probability ({deal.probability}%)</span>
+                </div>
+                {deal.stage === "NEGOTIATION" && (
+                  <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning-light px-3 py-2">
+                    <span className="text-xs font-medium text-warning">Potential pricing objection — deal in negotiation</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted">No major objections flagged. Deal health is good.</p>
+            )}
+          </div>
+
           <SuggestedPlaybooks stage={deal.stage} entityType="opportunity" />
 
           <AlertsPanel filterEntity="opportunity" compact title="Deal Alerts" maxItems={3} />

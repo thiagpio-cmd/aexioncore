@@ -108,15 +108,32 @@ export default function MeetingsPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {new Date(m.startTime) >= now && (
-                      <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover transition-colors">
+                    {new Date(m.startTime) >= now && m.location && (
+                      <a
+                        href={m.location.startsWith("http") ? m.location : `#`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover transition-colors"
+                      >
                         Join
-                      </button>
+                      </a>
                     )}
-                    <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground transition-colors">
+                    <button
+                      onClick={() => {
+                        const detail = document.getElementById(`meeting-detail-${m.id}`);
+                        if (detail) detail.classList.toggle("hidden");
+                      }}
+                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground transition-colors"
+                    >
                       Details
                     </button>
                   </div>
+                </div>
+                <div id={`meeting-detail-${m.id}`} className="hidden border-t border-border mt-3 pt-3 grid grid-cols-2 gap-3 text-xs">
+                  <div><span className="text-muted">Location:</span> <span className="text-foreground">{m.location || "Not specified"}</span></div>
+                  <div><span className="text-muted">Duration:</span> <span className="text-foreground">{m.duration || 30} minutes</span></div>
+                  <div><span className="text-muted">Attendees:</span> <span className="text-foreground">{attendees.length > 0 ? (Array.isArray(attendees) ? attendees.join(", ") : attendees) : "None"}</span></div>
+                  <div><span className="text-muted">Created:</span> <span className="text-foreground">{new Date(m.createdAt).toLocaleDateString()}</span></div>
                 </div>
               </div>
             );

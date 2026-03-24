@@ -13,7 +13,18 @@ export const OpportunityCreateSchema = z.object({
   expectedCloseDate: z.string().datetime().optional(),
 });
 
-export const OpportunityUpdateSchema = OpportunityCreateSchema.partial();
+export const OpportunityUpdateSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().optional(),
+  value: z.number().min(0).optional(),
+  stage: z.string().optional(),
+  stageId: z.string().optional(),
+  accountId: z.string().min(1).optional(),
+  ownerId: z.string().min(1).optional(),
+  ownerName: z.string().optional(),
+  probability: z.number().min(0).max(100).optional(),
+  expectedCloseDate: z.string().datetime().optional(),
+});
 
 export const OpportunityQuerySchema = z.object({
   page: z.string().default("1").transform(Number),

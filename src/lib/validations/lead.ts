@@ -14,7 +14,19 @@ export const LeadCreateSchema = z.object({
   ownerId: z.string().min(1, "Owner ID is required"),
 });
 
-export const LeadUpdateSchema = LeadCreateSchema.partial();
+export const LeadUpdateSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  title: z.string().optional(),
+  source: z.string().optional(),
+  status: z.enum(["NEW", "CONTACTED", "QUALIFIED", "CONVERTED", "DISQUALIFIED"]).optional(),
+  temperature: z.enum(["COLD", "COOL", "WARM", "HOT"]).optional(),
+  fitScore: z.number().min(0).max(100).optional(),
+  companyId: z.string().min(1).optional(),
+  contactId: z.string().optional(),
+  ownerId: z.string().min(1).optional(),
+});
 
 export const LeadQuerySchema = z.object({
   page: z.string().default("1").transform(Number),

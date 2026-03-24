@@ -284,6 +284,28 @@ export default function LeadDetailPage() {
 
         {/* Right Sidebar */}
         <div className="space-y-4">
+          {/* AI Channel Suggestion */}
+          {lead.status !== "CONVERTED" && lead.status !== "DISQUALIFIED" && (() => {
+            const channelScore: Record<string, number> = { email: 2, whatsapp: 3, phone: 1, linkedin: 1 };
+            const activityChannels = (activities || []).map(a => a.channel).filter(Boolean);
+            activityChannels.forEach(ch => { if (ch && channelScore[ch]) channelScore[ch] += 2; });
+            if (lead.temperature === "HOT") { channelScore.phone += 3; channelScore.whatsapp += 2; }
+            if (lead.temperature === "WARM") channelScore.email += 2;
+            if (lead.source === "linkedin") channelScore.linkedin += 3;
+            if (lead.source === "email" || lead.source === "web") channelScore.email += 2;
+            const best = Object.entries(channelScore).sort((a, b) => b[1] - a[1])[0];
+            const channelLabels: Record<string, string> = { email: "📧 Email", whatsapp: "💬 WhatsApp", phone: "📞 Phone Call", linkedin: "💼 LinkedIn" };
+            const timeHint = lead.temperature === "HOT" ? "Today — high urgency" : lead.temperature === "WARM" ? "Within 24h" : "Within 48h";
+            return (
+              <div className="rounded-xl border border-primary/20 bg-primary-light p-4">
+                <p className="text-[10px] font-semibold text-primary uppercase tracking-wider mb-2">AI Suggested Channel</p>
+                <p className="text-sm font-semibold text-foreground">{channelLabels[best[0]] || best[0]}</p>
+                <p className="text-xs text-muted mt-1">Best time: {timeHint}</p>
+                <p className="text-[11px] text-muted mt-2">Based on lead source ({lead.source}), temperature ({lead.temperature}), and {activityChannels.length} past interactions.</p>
+              </div>
+            );
+          })()}
+
           <div className="rounded-xl border border-border bg-surface p-5">
             <h3 className="mb-3 text-sm font-semibold text-foreground">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-2">

@@ -175,6 +175,7 @@ export const NAV_SECTIONS = [
       { label: "Integrations", href: "/integrations", icon: "plug", roles: [UserRole.ADMIN, UserRole.REVOPS] },
       { label: "Pipelines & Stages", href: "/settings/pipelines", icon: "git-merge", roles: [UserRole.ADMIN, UserRole.REVOPS] },
       { label: "Audit", href: "/settings/audit", icon: "check-circle", roles: [UserRole.ADMIN] },
+      { label: "Billing", href: "/settings/billing", icon: "file-text", roles: [UserRole.ADMIN] },
     ],
   },
 ];

@@ -12,7 +12,17 @@ export const TaskCreateSchema = z.object({
   dueDate: z.string().datetime().optional(),
 });
 
-export const TaskUpdateSchema = TaskCreateSchema.partial();
+export const TaskUpdateSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().optional(),
+  type: z.enum(["FOLLOW_UP", "CALL", "EMAIL", "MEETING", "APPROVAL", "OTHER"]).optional(),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).optional(),
+  status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"]).optional(),
+  leadId: z.string().optional(),
+  opportunityId: z.string().optional(),
+  ownerId: z.string().min(1).optional(),
+  dueDate: z.string().datetime().optional(),
+});
 
 export const TaskQuerySchema = z.object({
   page: z.string().default("1").transform(Number),

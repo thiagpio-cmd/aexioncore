@@ -6,7 +6,11 @@ export const AccountCreateSchema = z.object({
   companyId: z.string().min(1, "Company ID is required"),
 });
 
-export const AccountUpdateSchema = AccountCreateSchema.partial();
+export const AccountUpdateSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  status: z.string().optional(),
+  companyId: z.string().min(1).optional(),
+});
 
 export const AccountQuerySchema = z.object({
   page: z.string().default("1").transform(Number),

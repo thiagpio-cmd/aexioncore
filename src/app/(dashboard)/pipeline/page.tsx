@@ -4,7 +4,9 @@ import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useApi, apiPut } from "@/lib/hooks/use-api";
 import { useToast } from "@/components/shared/toast";
+import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/shared/page-header";
+import { CreateOpportunityModal } from "@/components/opportunities/create-opportunity-modal";
 import { formatCurrency, getInitials, cn } from "@/lib/utils";
 import { TableSkeleton } from "@/components/shared/skeleton";
 
@@ -117,6 +119,8 @@ export default function PipelinePage() {
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
 
+  const { user } = useAuth();
+  const [showCreate, setShowCreate] = useState(false);
   const { data: deals, loading, refetch } = useApi<Deal[]>("/api/opportunities?limit=100");
   const items = deals || [];
 
@@ -217,7 +221,10 @@ export default function PipelinePage() {
                 </button>
               ))}
             </div>
-            <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors">
+            <button
+              onClick={() => setShowCreate(true)}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
+            >
               + New Deal
             </button>
           </div>
@@ -454,6 +461,13 @@ export default function PipelinePage() {
           </div>
         </div>
       </div>
+
+      <CreateOpportunityModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={() => { setShowCreate(false); refetch(); }}
+        currentUserId={user?.id}
+      />
     </div>
   );
 }

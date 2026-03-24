@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApi } from "@/lib/hooks/use-api";
 import { PageHeader } from "@/components/shared/page-header";
 
@@ -21,6 +22,7 @@ const categoryConfig: Record<string, { label: string; color: string }> = {
 };
 
 export default function InsightsPage() {
+  const router = useRouter();
   const { data, loading } = useApi<any[]>("/api/insights");
   const items = data || [];
   const [category, setCategory] = useState("all");
@@ -79,7 +81,15 @@ export default function InsightsPage() {
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-[11px] text-muted">Source: {insight.source || "AI"}{relatedName ? ` · ${relatedName}` : ""}</p>
-                <button className="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary-hover transition-colors">Take Action</button>
+                <button
+                  onClick={() => {
+                    if (insight.leadId) router.push(`/leads/${insight.leadId}`);
+                    else if (insight.opportunityId) router.push(`/opportunities/${insight.opportunityId}`);
+                  }}
+                  className="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary-hover transition-colors"
+                >
+                  Take Action
+                </button>
               </div>
             </div>
           );
