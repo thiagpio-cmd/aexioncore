@@ -178,14 +178,6 @@ export default function LoginPage() {
         </button>
       </div>
 
-      {/* Demo credentials hint */}
-      <div className="mt-6 rounded-lg border border-border bg-background p-3">
-        <p className="mb-1 text-xs font-medium text-muted">Demo credentials:</p>
-        <p className="text-xs text-muted">
-          <span className="font-mono text-foreground">ana@aexion.io</span> / <span className="font-mono text-foreground">aexion123</span>
-        </p>
-      </div>
-
       {/* Footer */}
       <p className="mt-4 text-center text-sm text-muted">
         Don&apos;t have an account?{" "}
