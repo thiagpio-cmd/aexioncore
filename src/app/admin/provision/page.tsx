@@ -1,6 +1,8 @@
 "use client";
 
-import { ProvisionWizard } from "@/components/admin/provision-wizard";
+import dynamic from "next/dynamic";
+
+const ProvisionWizard = dynamic(() => import("@/components/admin/provision-wizard").then(m => m.ProvisionWizard), { ssr: false });
 
 export default function ProvisionPage() {
   return (
