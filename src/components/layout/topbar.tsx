@@ -48,9 +48,9 @@ export function Topbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-surface px-6">
+      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border/50 bg-surface/95 backdrop-blur-sm px-6">
         {/* Page title */}
-        <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+        <h1 className="text-[15px] font-semibold text-foreground tracking-tight">{title}</h1>
 
         {/* Right actions */}
         <div className="flex items-center gap-3">

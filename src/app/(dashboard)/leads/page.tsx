@@ -83,8 +83,8 @@ export default function LeadsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-border bg-surface">
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+      <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
+        <div className="flex items-center gap-3 border-b border-border/50 px-4 py-3">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted">
             <circle cx="9" cy="9" r="6" />
             <path d="m13.5 13.5 4 4" />
@@ -107,14 +107,14 @@ export default function LeadsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Lead</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Company</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Temperature</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Fit Score</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Source</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Owner</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Last Contact</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted/70 uppercase tracking-wider">Lead</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted/70 uppercase tracking-wider">Company</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted/70 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted/70 uppercase tracking-wider">Temperature</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted/70 uppercase tracking-wider">Fit Score</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted/70 uppercase tracking-wider">Source</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted/70 uppercase tracking-wider">Owner</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-muted/70 uppercase tracking-wider">Last Contact</th>
               </tr>
             </thead>
             <tbody>
@@ -122,7 +122,7 @@ export default function LeadsPage() {
                 <tr
                   key={lead.id}
                   onClick={() => router.push(`/leads/${lead.id}`)}
-                  className="border-b border-border last:border-0 cursor-pointer transition-colors hover:bg-background"
+                  className="border-b border-border/40 last:border-0 cursor-pointer transition-colors hover:bg-background/60"
                 >
                   <td className="px-4 py-3">
                     <div>

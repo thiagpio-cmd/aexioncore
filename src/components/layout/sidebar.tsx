@@ -115,9 +115,9 @@ export function Sidebar() {
   }).filter((section): section is NonNullable<typeof section> => section !== null && section.items.length > 0);
 
   return (
-    <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col border-r border-border bg-surface">
+    <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col border-r border-border/60 bg-surface shadow-sm">
       {/* Brand */}
-      <div className="flex h-16 items-center gap-2.5 px-5 border-b border-border">
+      <div className="flex h-14 items-center gap-2.5 px-5 border-b border-border/40">
         <div
           className="flex h-8 w-8 items-center justify-center rounded-lg"
           style={{ backgroundColor: org.primaryColor || "#2457FF" }}
@@ -199,8 +199,8 @@ export function Sidebar() {
       )}
 
       {/* User Section */}
-      <div className="border-t border-border p-3">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+      <div className="border-t border-border/40 p-3">
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-background/60 transition-colors">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-semibold text-primary">
             {getInitials(user.name)}
           </div>
@@ -226,7 +226,7 @@ export function Sidebar() {
 }
 
 // ─── Collapsible Navigation ─────────────────────────────────────────────────
-const ALWAYS_EXPANDED = new Set(["Operation"]);
+const ALWAYS_EXPANDED = new Set<string>();
 
 function NavSections({
   sections,
@@ -287,15 +287,13 @@ function NavSections({
                 hasActive && !isOpen && "text-primary"
               )}
             >
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted/80 flex-1 text-left">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted/60 flex-1 text-left select-none">
                 {section.title}
               </span>
-              {collapsible && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-                  className={cn("text-muted/50 transition-transform duration-200", isOpen ? "rotate-90" : "rotate-0")}>
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              )}
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+                className={cn("text-muted/40 transition-transform duration-200", isOpen ? "rotate-180" : "rotate-0")}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
             </button>
             {isOpen && (
               <ul className="space-y-0.5 mb-3">
@@ -306,10 +304,10 @@ function NavSections({
                       <Link
                         href={item.href}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          "flex items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13px] font-medium transition-all duration-150",
                           isActive
-                            ? "bg-primary-light text-primary"
-                            : "text-muted hover:bg-sidebar-hover hover:text-foreground"
+                            ? "bg-primary/[0.08] text-primary shadow-[inset_2px_0_0_0] shadow-primary"
+                            : "text-muted/80 hover:bg-background/80 hover:text-foreground"
                         )}
                       >
                         <NavIcon name={item.icon} />

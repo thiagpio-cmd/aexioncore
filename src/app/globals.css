@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #F7F8FA;
+  --color-background: #F8F9FB;
   --color-surface: #FFFFFF;
-  --color-foreground: #111827;
-  --color-muted: #6B7280;
-  --color-border: #E5E7EB;
+  --color-foreground: #0F172A;
+  --color-muted: #64748B;
+  --color-border: #E2E8F0;
   --color-primary: #2457FF;
   --color-primary-hover: #1D46CC;
   --color-primary-light: #EEF2FF;
@@ -56,6 +56,31 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #9CA3AF;
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(36, 87, 255, 0.12);
+  color: #0F172A;
+}
+
+/* Focus ring — accessible and premium */
+:focus-visible {
+  outline: 2px solid rgba(36, 87, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* Smooth transitions globally */
+*, *::before, *::after {
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 0ms;
+}
+
+/* Only animate interactive elements */
+a, button, input, select, textarea,
+[role="button"], [tabindex] {
+  transition-duration: 150ms;
 }
 
 /* Animations */
