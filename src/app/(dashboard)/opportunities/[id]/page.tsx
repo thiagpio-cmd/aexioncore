@@ -15,6 +15,7 @@ import { DetailSkeleton } from "@/components/shared/skeleton";
 import { CanonicalTimeline } from "@/components/shared/canonical-timeline";
 import { SuggestedPlaybooks } from "@/components/shared/suggested-playbooks";
 import { ExplainableScore } from "@/components/scoring/explainable-score";
+import { AICoachPanel } from "@/components/ai/ai-coach-panel";
 import type { ScoreResult } from "@/lib/scoring/engine";
 
 interface Opportunity {
@@ -444,6 +445,11 @@ export default function OpportunityDetailPage() {
 
         {/* Right Sidebar */}
         <div className="space-y-4">
+          {/* AI Coach Panel */}
+          {!["CLOSED_WON", "CLOSED_LOST"].includes(deal.stage) && (
+            <AICoachPanel entityType="opportunity" entityId={oppId} />
+          )}
+
           {/* Deal Information */}
           <div className="rounded-xl border border-border bg-surface p-5">
             <h3 className="mb-3 text-sm font-semibold text-foreground">Deal Information</h3>

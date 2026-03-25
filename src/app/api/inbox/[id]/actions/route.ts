@@ -347,6 +347,14 @@ export async function POST(request: NextRequest, ctx: Ctx) {
           },
         });
 
+        // Fire-and-forget AI processing for the new reply message
+        console.log(`[AI Trigger] Triggering AI processing for reply inbox message ${replyMessage.id}`);
+        fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/process-activity`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inboxMessageId: replyMessage.id }),
+        }).catch(() => {});
+
         // Mark original as read
         const updated = await prisma.inboxMessage.update({
           where: { id },
@@ -374,6 +382,14 @@ export async function POST(request: NextRequest, ctx: Ctx) {
             organizationId: orgId,
           },
         });
+
+        // Fire-and-forget AI processing for the logged activity
+        console.log(`[AI Trigger] Triggering AI processing for logged activity ${activity.id}`);
+        fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/process-activity`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ activityId: activity.id }),
+        }).catch(() => {});
 
         const updated = await prisma.inboxMessage.update({
           where: { id },

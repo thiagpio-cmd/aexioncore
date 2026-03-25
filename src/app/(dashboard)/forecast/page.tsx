@@ -15,8 +15,7 @@ function formatCurrency(v: number) {
 
 export default function ForecastPage() {
   const [view, setView] = useState<ViewMode>("overview");
-  const { data, loading } = useApi<any[]>("/api/forecast");
-  const items = data || [];
+  const { data, loading } = useApi<any>("/api/forecast");
 
   if (loading) {
     return (
@@ -26,7 +25,10 @@ export default function ForecastPage() {
     );
   }
 
-  if (items.length === 0) {
+  const snapshots: any[] = data?.snapshots || [];
+  const live = data?.live;
+
+  if (!live && snapshots.length === 0) {
     return (
       <div className="space-y-6">
         <PageHeader title="Forecast" subtitle="No forecast data available" />
@@ -37,14 +39,15 @@ export default function ForecastPage() {
     );
   }
 
-  const totalCommit = items.reduce((s, f) => s + (f.commit || 0), 0);
-  const totalBest = items.reduce((s, f) => s + (f.bestCase || 0), 0);
-  const totalPipeline = items.reduce((s, f) => s + (f.pipeline || 0), 0);
-  const totalTarget = items.reduce((s, f) => s + (f.target || 0), 0);
+  // Use live data for totals when available, fall back to snapshot aggregation
+  const totalCommit = live?.commit ?? snapshots.reduce((s: number, f: any) => s + (f.commit || 0), 0);
+  const totalBest = live?.bestCase ?? snapshots.reduce((s: number, f: any) => s + (f.bestCase || 0), 0);
+  const totalPipeline = live?.totalPipeline ?? snapshots.reduce((s: number, f: any) => s + (f.pipeline || 0), 0);
+  const totalTarget = live?.target ?? snapshots.reduce((s: number, f: any) => s + (f.target || 0), 0);
   const pipelineCoverage = totalTarget > 0 ? (totalPipeline / totalTarget).toFixed(1) : "0";
 
   // Group by quarter/year for display
-  const latestSnapshot = items[0];
+  const latestSnapshot = snapshots[0];
   const subtitle = latestSnapshot ? `Q${latestSnapshot.quarter} ${latestSnapshot.year} Revenue Forecast` : "Revenue Forecast";
 
   return (
@@ -106,7 +109,7 @@ export default function ForecastPage() {
               <th className="px-6 py-3 text-right text-xs font-medium text-muted">Progress</th>
             </tr></thead>
             <tbody className="divide-y divide-border">
-              {items.map((f) => (
+              {snapshots.map((f: any) => (
                 <tr key={f.id} className="hover:bg-background/30 transition-colors">
                   <td className="px-6 py-3.5 text-sm font-medium text-foreground">Q{f.quarter} {f.year}</td>
                   <td className="px-6 py-3.5 text-sm text-right text-muted">{formatCurrency(f.target || 0)}</td>
@@ -206,7 +209,7 @@ export default function ForecastPage() {
             <div className="rounded-xl border border-border bg-surface p-6">
               <p className="text-xs text-muted mb-1">Deals Needed</p>
               <p className="text-3xl font-bold text-foreground">
-                {totalCommit >= totalTarget ? 0 : Math.ceil((totalTarget - totalCommit) / Math.max(totalCommit / Math.max(items.length, 1), 50000))}
+                {totalCommit >= totalTarget ? 0 : Math.ceil((totalTarget - totalCommit) / Math.max(totalCommit / Math.max(live?.activeDeals || snapshots.length || 1, 1), 50000))}
               </p>
               <p className="text-xs text-muted mt-1">At current avg deal size</p>
             </div>

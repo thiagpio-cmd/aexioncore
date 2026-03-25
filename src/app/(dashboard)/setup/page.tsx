@@ -22,7 +22,7 @@ const CURRENCIES = [
   { code: "USD", label: "$ — US Dollar" },
   { code: "EUR", label: "€ — Euro" },
   { code: "GBP", label: "£ — British Pound" },
-  { code: "BRL", label: "R$ — Brazilian Real" },
+  { code: "CAD", label: "C$ — Canadian Dollar" },
 ];
 
 export default function SetupPage() {

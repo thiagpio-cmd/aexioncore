@@ -56,7 +56,7 @@ interface ProvisionResult {
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const INDUSTRIES = ["SaaS", "Real Estate", "Financial Services", "Healthcare", "Manufacturing", "Consulting", "E-Commerce", "Education", "Legal", "Other"];
-const CURRENCIES = ["USD", "BRL", "EUR", "GBP", "CAD", "AUD"];
+const CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD", "CHF"];
 const TIMEZONES = ["America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Sao_Paulo", "Europe/London", "Europe/Berlin", "Asia/Tokyo", "UTC"];
 const ROLES = ["SDR", "CLOSER", "MANAGER", "DIRECTOR", "REVOPS", "ADMIN", "VIEWER"];
 const MODULES = [

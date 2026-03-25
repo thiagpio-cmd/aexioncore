@@ -211,7 +211,7 @@ export async function ingestCanonicalEvents(
       const entities = await resolveEntities(senderEmail, ctx.organizationId);
       if (entities.resolved) result.resolved++;
 
-      await prisma.inboxMessage.create({
+      const createdMessage = await prisma.inboxMessage.create({
         data: {
           organizationId:  ctx.organizationId,
           channel:         classification.channel,
@@ -239,6 +239,15 @@ export async function ingestCanonicalEvents(
 
       existingIds.add(event.sourceExternalId);
       result.created++;
+
+      // Fire-and-forget AI processing for the newly ingested inbox message
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      console.log(`[AI Trigger] Triggering AI processing for ingested inbox message ${createdMessage.id}`);
+      fetch(`${baseUrl}/api/ai/process-activity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inboxMessageId: createdMessage.id }),
+      }).catch(() => {}); // Silently ignore failures
 
       // Emit a canonical activity record so the timeline reflects this
       await prisma.activity.create({

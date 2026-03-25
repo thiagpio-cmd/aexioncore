@@ -84,6 +84,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Fire-and-forget AI processing (don't await, don't block response)
+    console.log(`[AI Trigger] Triggering AI processing for activity ${activity.id}`);
+    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/process-activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ activityId: activity.id }),
+    }).catch(() => {}); // Silently ignore failures
+
     return sendSuccess(activity, 201);
   } catch (error: any) {
     if (error.name === "ZodError") return sendError(validationError("Invalid activity data", error.errors));

@@ -54,19 +54,19 @@ export type ResolutionMethod =
 
 /**
  * Normalize phone to a comparable format.
- * Strips non-digits, handles common Brazilian formats.
+ * Strips non-digits, handles common US formats.
  */
 export function normalizePhone(phone: string): string {
   // Remove everything except digits and +
   let clean = phone.replace(/[^\d+]/g, "");
 
-  // Add Brazil country code if not present
+  // Add US country code if not present
   if (clean.startsWith("0")) {
-    clean = "+55" + clean.substring(1);
+    clean = "+1" + clean.substring(1);
   } else if (!clean.startsWith("+")) {
-    // Assume Brazilian if no country code
+    // Assume US if no country code
     if (clean.length === 11 || clean.length === 10) {
-      clean = "+55" + clean;
+      clean = "+1" + clean;
     }
   }
 

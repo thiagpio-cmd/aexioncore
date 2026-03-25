@@ -30,7 +30,7 @@ export default function SettingsPage() {
 
   // Profile form state
   const [profileName, setProfileName] = useState(user?.name || "");
-  const [profileTimezone, setProfileTimezone] = useState("America/Sao_Paulo (BRT)");
+  const [profileTimezone, setProfileTimezone] = useState("America/New_York (EST)");
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Password form state
@@ -199,8 +199,10 @@ export default function SettingsPage() {
                   <div>
                     <label className="block text-xs font-medium text-muted mb-1.5">Timezone</label>
                     <select value={profileTimezone} onChange={(e) => setProfileTimezone(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none">
-                      <option>America/Sao_Paulo (BRT)</option>
                       <option>America/New_York (EST)</option>
+                      <option>America/Chicago (CST)</option>
+                      <option>America/Denver (MST)</option>
+                      <option>America/Los_Angeles (PST)</option>
                       <option>Europe/London (GMT)</option>
                     </select>
                   </div>
@@ -268,7 +270,7 @@ export default function SettingsPage() {
                       <option>USD - US Dollar</option>
                       <option>EUR - Euro</option>
                       <option>GBP - British Pound</option>
-                      <option>BRL - Brazilian Real</option>
+                      <option>CAD - Canadian Dollar</option>
                     </select>
                   </div>
                   <div>
