@@ -25,3 +25,9 @@ prisma/dev.db-journal
 *.cert
 credentials.json
 service-account.json
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
