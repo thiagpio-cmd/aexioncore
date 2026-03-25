@@ -130,7 +130,7 @@ export default function IntegrationsPage() {
     }
 
     // API key providers (like Twilio) connect immediately without redirect
-    if (connectData?.connected) {
+    if ((connectData as any)?.connected) {
       setConnecting(null);
       toastSuccess(`${integration.name} connected successfully!`);
       refetch();
