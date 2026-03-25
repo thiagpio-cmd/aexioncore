@@ -16,6 +16,7 @@ import { CanonicalTimeline } from "@/components/shared/canonical-timeline";
 import { SuggestedPlaybooks } from "@/components/shared/suggested-playbooks";
 import { ExplainableScore } from "@/components/scoring/explainable-score";
 import { AICoachPanel } from "@/components/ai/ai-coach-panel";
+import { EmailComposer } from "@/components/ai/email-composer";
 import { DealRiskCard } from "@/components/ai/deal-risk-card";
 import type { ScoreResult } from "@/lib/scoring/engine";
 
@@ -74,6 +75,7 @@ export default function OpportunityDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [activityType, setActivityType] = useState<string | null>(null);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
 
   const { data: deal, loading: dealLoading, refetch } = useApi<Opportunity>(`/api/opportunities/${oppId}`);
   const { data: activities, loading: activitiesLoading, refetch: refetchActivities } = useApi<Activity[]>(`/api/activities?opportunityId=${oppId}`);
@@ -453,7 +455,12 @@ export default function OpportunityDetailPage() {
         <div className="space-y-4">
           {/* AI Coach Panel */}
           {!["CLOSED_WON", "CLOSED_LOST"].includes(deal.stage) && (
-            <AICoachPanel entityType="opportunity" entityId={oppId} />
+            <AICoachPanel
+              entityType="opportunity"
+              entityId={oppId}
+              onScheduleCall={() => setActivityType("CALL")}
+              onDraftEmail={() => setShowEmailComposer(true)}
+            />
           )}
 
           {/* Deal Information */}
@@ -597,6 +604,14 @@ export default function OpportunityDetailPage() {
         onCreated={() => refetchActivities()}
         defaultType={activityType || "NOTE"}
         opportunityId={oppId}
+      />
+
+      <EmailComposer
+        open={showEmailComposer}
+        onClose={() => setShowEmailComposer(false)}
+        opportunityId={oppId}
+        contactName={deal.primaryContact?.name || deal.account?.name || ""}
+        contactEmail={deal.primaryContact?.email || ""}
       />
     </div>
   );

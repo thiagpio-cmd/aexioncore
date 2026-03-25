@@ -289,7 +289,12 @@ export default function LeadDetailPage() {
         <div className="space-y-4">
           {/* AI Coach Panel */}
           {lead.status !== "CONVERTED" && lead.status !== "DISQUALIFIED" && (
-            <AICoachPanel entityType="lead" entityId={leadId} />
+            <AICoachPanel
+              entityType="lead"
+              entityId={leadId}
+              onScheduleCall={() => setActivityType("CALL")}
+              onDraftEmail={() => setShowEmailComposer(true)}
+            />
           )}
 
           {/* AI Channel Suggestion */}

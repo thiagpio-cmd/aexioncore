@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, FormField, inputStyles, selectStyles } from "@/components/shared/modal";
 import { useToast } from "@/components/shared/toast";
 import { apiPost } from "@/lib/hooks/use-api";
@@ -13,10 +13,18 @@ interface CreateLeadModalProps {
   currentUserId?: string;
 }
 
+type CompanyOption = { id: string; name: string };
+type UserOption = { id: string; name: string };
+
 export function CreateLeadModal({ open, onClose, onCreated, currentUserId }: CreateLeadModalProps) {
   const { toastSuccess, toastError } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
+  const [users, setUsers] = useState<UserOption[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -31,6 +39,44 @@ export function CreateLeadModal({ open, onClose, onCreated, currentUserId }: Cre
     ownerId: currentUserId || "",
   });
 
+  // Fetch companies and users when modal opens
+  useEffect(() => {
+    if (!open) return;
+
+    setLoadingCompanies(true);
+    fetch("/api/accounts?limit=100")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          // Extract unique companies from accounts
+          const companyMap = new Map<string, string>();
+          for (const account of json.data) {
+            if (account.company?.id && account.company?.name) {
+              companyMap.set(account.company.id, account.company.name);
+            }
+          }
+          setCompanies(
+            Array.from(companyMap.entries()).map(([id, name]) => ({ id, name }))
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingCompanies(false));
+
+    setLoadingUsers(true);
+    fetch("/api/users")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setUsers(
+            json.data.map((u: any) => ({ id: u.id, name: u.name }))
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingUsers(false));
+  }, [open]);
+
   function set(field: string, value: string | number) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -41,8 +87,8 @@ export function CreateLeadModal({ open, onClose, onCreated, currentUserId }: Cre
     if (!form.name.trim()) e.name = "Name is required";
     if (!form.email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Invalid email";
-    if (!form.companyId.trim()) e.companyId = "Company ID is required";
-    if (!form.ownerId.trim()) e.ownerId = "Owner ID is required";
+    if (!form.companyId.trim()) e.companyId = "Company is required";
+    if (!form.ownerId.trim()) e.ownerId = "Owner is required";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -141,23 +187,43 @@ export function CreateLeadModal({ open, onClose, onCreated, currentUserId }: Cre
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="Company ID" required error={errors.companyId}>
-            <input
-              type="text"
+          <FormField label="Company" required error={errors.companyId}>
+            <select
               value={form.companyId}
               onChange={(e) => set("companyId", e.target.value)}
-              placeholder="Company ID"
-              className={inputStyles}
-            />
+              className={selectStyles}
+              disabled={loadingCompanies}
+            >
+              <option value="">
+                {loadingCompanies ? "Loading companies..." : "Select a company"}
+              </option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </FormField>
-          <FormField label="Owner ID" required error={errors.ownerId}>
-            <input
-              type="text"
+          <FormField label="Owner" required error={errors.ownerId}>
+            <select
               value={form.ownerId}
               onChange={(e) => set("ownerId", e.target.value)}
-              placeholder="Owner ID"
-              className={inputStyles}
-            />
+              className={selectStyles}
+              disabled={loadingUsers}
+            >
+              <option value="">
+                {loadingUsers ? "Loading users..." : "Select owner"}
+              </option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+              {/* Fallback: if users couldn't load but we have currentUserId */}
+              {users.length === 0 && currentUserId && (
+                <option value={currentUserId}>Current User</option>
+              )}
+            </select>
           </FormField>
         </div>
 

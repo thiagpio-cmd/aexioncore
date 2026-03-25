@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSession } from "next-auth/react";
 import { PageHeader } from "@/components/shared/page-header";
 import { useApi } from "@/lib/hooks/use-api";
 import { CardSkeleton } from "@/components/shared/skeleton";
+import { CreateMeetingModal } from "@/components/meetings/create-meeting-modal";
 
 const typeConfig: Record<string, { color: string; label: string }> = {
   DISCOVERY: { color: "bg-blue-100 text-blue-700", label: "Discovery" },
@@ -20,9 +22,11 @@ const typeConfig: Record<string, { color: string; label: string }> = {
 };
 
 export default function MeetingsPage() {
+  const { data: session } = useSession();
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
+  const [showCreate, setShowCreate] = useState(false);
 
-  const { data: meetings, loading } = useApi<any[]>("/api/meetings?limit=50");
+  const { data: meetings, loading, refetch } = useApi<any[]>("/api/meetings?limit=50");
 
   const now = new Date();
 
@@ -46,7 +50,22 @@ export default function MeetingsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Meetings" subtitle={`${upcoming.length} upcoming meetings`} />
+      <PageHeader
+        title="Meetings"
+        subtitle={`${upcoming.length} upcoming meetings`}
+        actions={
+          <button
+            onClick={() => setShowCreate(true)}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors flex items-center gap-2"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            New Meeting
+          </button>
+        }
+      />
 
       <div className="flex gap-2">
         <button
@@ -145,6 +164,12 @@ export default function MeetingsPage() {
           )}
         </div>
       )}
+      <CreateMeetingModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={() => refetch()}
+        currentUserId={session?.user?.id}
+      />
     </div>
   );
 }

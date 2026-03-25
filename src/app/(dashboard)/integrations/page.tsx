@@ -31,6 +31,40 @@ const INTEGRATION_CATEGORIES: Record<string, string> = {
 /** Only these slugs have real provider implementations with actual OAuth + sync */
 const REAL_PROVIDER_SLUGS = new Set(["gmail", "google-calendar", "outlook", "slack", "twilio"]);
 
+const SETUP_ENV_VARS: Record<string, { envVars: { name: string; description: string }[] }> = {
+  gmail: {
+    envVars: [
+      { name: "GOOGLE_CLIENT_ID", description: "OAuth 2.0 Client ID from Google Cloud Console" },
+      { name: "GOOGLE_CLIENT_SECRET", description: "OAuth 2.0 Client Secret from Google Cloud Console" },
+    ],
+  },
+  "google-calendar": {
+    envVars: [
+      { name: "GOOGLE_CLIENT_ID", description: "OAuth 2.0 Client ID from Google Cloud Console (shared with Gmail)" },
+      { name: "GOOGLE_CLIENT_SECRET", description: "OAuth 2.0 Client Secret from Google Cloud Console (shared with Gmail)" },
+    ],
+  },
+  outlook: {
+    envVars: [
+      { name: "MICROSOFT_CLIENT_ID", description: "Application (client) ID from Azure AD App Registration" },
+      { name: "MICROSOFT_CLIENT_SECRET", description: "Client secret from Azure AD App Registration" },
+    ],
+  },
+  slack: {
+    envVars: [
+      { name: "SLACK_CLIENT_ID", description: "Client ID from Slack App settings" },
+      { name: "SLACK_CLIENT_SECRET", description: "Client Secret from Slack App settings" },
+    ],
+  },
+  twilio: {
+    envVars: [
+      { name: "TWILIO_ACCOUNT_SID", description: "Account SID from the Twilio Console dashboard" },
+      { name: "TWILIO_AUTH_TOKEN", description: "Auth Token from the Twilio Console dashboard" },
+      { name: "TWILIO_PHONE_NUMBER", description: "Twilio phone number for sending SMS and making calls" },
+    ],
+  },
+};
+
 const COMING_SOON_ITEMS = [
   { slug: "hubspot",    name: "HubSpot",    description: "Bi-directional sync with HubSpot CRM contacts, deals, and pipelines." },
   { slug: "salesforce", name: "Salesforce",  description: "Import and export leads, opportunities, and accounts with Salesforce." },
@@ -142,6 +176,7 @@ export default function IntegrationsPage() {
   };
 
   const [disconnectTarget, setDisconnectTarget] = useState<any | null>(null);
+  const [setupTarget, setSetupTarget] = useState<any | null>(null);
 
   const handleDisconnect = async (integration: any) => {
     setDisconnectTarget(integration);
@@ -370,9 +405,8 @@ export default function IntegrationsPage() {
 
                 {int.isConfigured === false ? (
                   <button
-                    disabled
-                    className="w-full rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs font-medium text-amber-600 cursor-help"
-                    title="Platform admin needs to configure OAuth credentials."
+                    onClick={() => setSetupTarget(int)}
+                    className="w-full rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-500/20 transition-colors cursor-pointer"
                   >
                     Configuration Required
                   </button>
@@ -526,6 +560,48 @@ export default function IntegrationsPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Setup Required Modal */}
+      <Modal
+        open={!!setupTarget}
+        onClose={() => setSetupTarget(null)}
+        title={`Setup Required: ${setupTarget?.name || ""}`}
+      >
+        {setupTarget && (() => {
+          const slug = setupTarget.providerKey || setupTarget.slug;
+          const envInfo = SETUP_ENV_VARS[slug];
+          return (
+            <div className="space-y-4">
+              <p className="text-sm text-muted">
+                To connect {setupTarget.name}, the following environment variables must be configured by a platform administrator:
+              </p>
+              <div className="space-y-2">
+                {envInfo?.envVars.map((v) => (
+                  <div key={v.name} className="rounded-lg border border-border bg-background px-3 py-2.5">
+                    <code className="text-xs font-semibold text-primary">{v.name}</code>
+                    <p className="text-xs text-muted mt-0.5">{v.description}</p>
+                  </div>
+                )) || (
+                  <p className="text-sm text-muted">
+                    OAuth credentials are required. Contact your platform administrator for setup details.
+                  </p>
+                )}
+              </div>
+              <p className="text-xs text-muted">
+                Add these to your <code className="rounded bg-background px-1 py-0.5 text-primary">.env</code> file and restart the application.
+              </p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setSetupTarget(null)}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );
