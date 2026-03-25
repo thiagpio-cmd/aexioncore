@@ -40,18 +40,12 @@ export async function POST(request: NextRequest) {
       return sendError(badRequest(`Provider "${providerKey}" is not registered`));
     }
 
-    if (provider.metadata.authType !== "oauth2") {
-      return sendError(
-        badRequest(`Provider "${providerKey}" does not support OAuth.`)
-      );
-    }
-
     if (!provider.isConfigured()) {
       return sendError({
         name: "ServiceUnavailable",
         statusCode: 503,
         code: "PROVIDER_NOT_CONFIGURED",
-        message: "Platform admin has not configured OAuth credentials for this provider.",
+        message: `${provider.metadata.name} is not configured. Contact your administrator to set up the required credentials.`,
       });
     }
 
@@ -71,7 +65,7 @@ export async function POST(request: NextRequest) {
       integration = await prisma.integration.update({
         where: { id: existing.id },
         data: {
-          status: "CONNECTING",
+          status: provider.metadata.authType === "api_key" ? "CONNECTED" : "CONNECTING",
           providerKey,
         },
       });
@@ -85,13 +79,26 @@ export async function POST(request: NextRequest) {
           domain: provider.metadata.domain,
           authType: provider.metadata.authType,
           syncMode: provider.metadata.syncMode,
-          status: "CONNECTING",
+          status: provider.metadata.authType === "api_key" ? "CONNECTED" : "CONNECTING",
           description: provider.metadata.description,
         },
       });
     }
 
-    // Build state token: HMAC-signed base64-encoded JSON
+    // API key providers don't need OAuth — they connect immediately
+    if (provider.metadata.authType === "api_key") {
+      writeAuditLog({
+        organizationId: session.user.organizationId,
+        userId: session.user.id,
+        action: "UPDATE",
+        objectType: "Integration",
+        objectId: integration.id,
+        details: { action: "connected_api_key", provider: providerKey },
+      });
+      return sendSuccess({ integrationId: integration.id, connected: true });
+    }
+
+    // OAuth providers — build state token and redirect
     const payload = JSON.stringify({
       integrationId: integration.id,
       userId: session.user.id,

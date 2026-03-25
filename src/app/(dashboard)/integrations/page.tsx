@@ -29,7 +29,7 @@ const INTEGRATION_CATEGORIES: Record<string, string> = {
 };
 
 /** Only these slugs have real provider implementations with actual OAuth + sync */
-const REAL_PROVIDER_SLUGS = new Set(["gmail", "google-calendar"]);
+const REAL_PROVIDER_SLUGS = new Set(["gmail", "google-calendar", "outlook", "slack", "twilio"]);
 
 const COMING_SOON_ITEMS = [
   { slug: "hubspot",    name: "HubSpot",    description: "Bi-directional sync with HubSpot CRM contacts, deals, and pipelines." },
@@ -126,6 +126,14 @@ export default function IntegrationsPage() {
 
     if (connectData?.authorizationUrl) {
       window.location.href = connectData.authorizationUrl;
+      return;
+    }
+
+    // API key providers (like Twilio) connect immediately without redirect
+    if (connectData?.connected) {
+      setConnecting(null);
+      toastSuccess(`${integration.name} connected successfully!`);
+      refetch();
       return;
     }
 
