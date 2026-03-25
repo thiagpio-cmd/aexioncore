@@ -1,9 +1,27 @@
 node_modules/
 .next/
 dist/
-.env.local
-.env
-prisma/dev.db
-prisma/dev.db-journal
 *.tsbuildinfo
 .DS_Store
+
+# Environment files (secrets)
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.staging
+
+# Database files
+prisma/dev.db
+prisma/dev.db-journal
+
+# Credentials and keys
+*.pem
+*.key
+*.cert
+credentials.json
+service-account.json

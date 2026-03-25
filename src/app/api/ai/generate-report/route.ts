@@ -6,6 +6,7 @@ import { unauthorized, badRequest } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { requireRole } from "@/server/auth";
 import { openaiTaskProvider } from "@/lib/ai/providers/openai-tasks";
+import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 type ReportType =
   | "weekly_digest"
@@ -55,6 +56,11 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
+
+    // Rate limiting
+    const rateKey = `ai:${(session.user as any).id || getClientIp(request)}`;
+    const rateCheck = checkRateLimit(rateKey, RATE_LIMITS.ai);
+    if (!rateCheck.allowed) return rateLimitResponse(rateCheck);
 
     const roleError = requireRole(session.user as any, "SDR");
     if (roleError) return roleError;

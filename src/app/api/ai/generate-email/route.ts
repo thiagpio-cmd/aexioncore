@@ -5,6 +5,7 @@ import { unauthorized, badRequest } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { openaiTaskProvider } from "@/lib/ai/providers/openai-tasks";
 import { prisma } from "@/lib/db";
+import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 /**
  * POST /api/ai/generate-email
@@ -44,6 +45,11 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
+
+    // Rate limiting
+    const rateKey = `ai:${(session.user as any).id || getClientIp(request)}`;
+    const rateCheck = checkRateLimit(rateKey, RATE_LIMITS.ai);
+    if (!rateCheck.allowed) return rateLimitResponse(rateCheck);
 
     const body = await request.json();
     const {

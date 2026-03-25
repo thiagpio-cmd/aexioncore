@@ -6,6 +6,7 @@ import { badRequest, notFound } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { processActivity, type ActivityInput } from "@/lib/ai/activity-processor";
 import { executeActions } from "@/lib/ai/action-executor";
+import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 /**
  * POST /api/ai/process-activity
@@ -25,6 +26,13 @@ import { executeActions } from "@/lib/ai/action-executor";
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+
+    // Rate limiting — apply to authenticated (UI) calls; internal fire-and-forget calls skip
+    if (session?.user) {
+      const rateKey = `ai:${(session.user as any).id}`;
+      const rateCheck = checkRateLimit(rateKey, RATE_LIMITS.ai);
+      if (!rateCheck.allowed) return rateLimitResponse(rateCheck);
+    }
 
     const body = await request.json();
     const { activityId, inboxMessageId } = body;

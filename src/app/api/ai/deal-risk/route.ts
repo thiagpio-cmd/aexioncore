@@ -6,6 +6,7 @@ import { unauthorized, badRequest, notFound } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { openaiTaskProvider } from "@/lib/ai/providers/openai-tasks";
 import { actorFromSession, canPerform } from "@/lib/authorization";
+import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -83,6 +84,11 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
+
+    // Rate limiting
+    const rateKey = `ai:${(session.user as any).id || getClientIp(request)}`;
+    const rateCheck = checkRateLimit(rateKey, RATE_LIMITS.ai);
+    if (!rateCheck.allowed) return rateLimitResponse(rateCheck);
 
     const actor = actorFromSession(session);
     if (!actor) return sendError(unauthorized());

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
 import { unauthorized, badRequest } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
+import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 /**
  * POST /api/ai/process-batch
@@ -20,6 +21,11 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
+
+    // Rate limiting
+    const rateKey = `ai:${(session.user as any).id || getClientIp(request)}`;
+    const rateCheck = checkRateLimit(rateKey, RATE_LIMITS.ai);
+    if (!rateCheck.allowed) return rateLimitResponse(rateCheck);
 
     const body = await request.json();
     const { entityType, limit = 20 } = body;

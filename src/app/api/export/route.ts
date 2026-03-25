@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 import { actorFromSession, buildScopeFilter, canPerform } from "@/lib/authorization";
+import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 function escapeCSV(value: string | number | null | undefined): string {
   if (value == null) return "";
@@ -25,6 +26,11 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return new Response("Unauthorized", { status: 401 });
     }
+
+    // Rate limiting
+    const rateKey = `export:${(session.user as any).id || getClientIp(request)}`;
+    const rateCheck = checkRateLimit(rateKey, RATE_LIMITS.export);
+    if (!rateCheck.allowed) return rateLimitResponse(rateCheck);
 
     const orgId = session.user.organizationId;
     const actor = actorFromSession(session)!;

@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { requireRole } from "@/server/auth";
 import { geminiProvider } from "@/lib/ai/providers/gemini-provider";
 import { openaiTaskProvider } from "@/lib/ai/providers/openai-tasks";
+import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 /**
  * GET /api/ai/insights
@@ -18,6 +19,11 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
+
+    // Rate limiting
+    const rateKey = `ai:${(session.user as any).id || getClientIp(request)}`;
+    const rateCheck = checkRateLimit(rateKey, RATE_LIMITS.ai);
+    if (!rateCheck.allowed) return rateLimitResponse(rateCheck);
 
     const roleError = requireRole(session.user as any, "SDR");
     if (roleError) return roleError;

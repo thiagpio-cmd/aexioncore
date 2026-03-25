@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { rateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limiter";
 
 // Apply rate limiting inside the authorize callback
 const rateLimitedAuthOptions = {
@@ -21,13 +21,19 @@ const rateLimitedAuthOptions = {
           ...provider.options,
           authorize: async (credentials: any, req: any) => {
             // Extract IP from headers for rate limiting
-            const ip = req?.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-              || req?.headers?.["x-real-ip"]
-              || "unknown";
+            const ip =
+              req?.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() ||
+              req?.headers?.["x-real-ip"] ||
+              "unknown";
 
-            const { success } = rateLimit(`auth:${ip}`, 10, 60000);
-            if (!success) {
-              throw new Error("Too many login attempts. Please try again later.");
+            const rateCheck = checkRateLimit(
+              `login:${ip}`,
+              RATE_LIMITS.login
+            );
+            if (!rateCheck.allowed) {
+              throw new Error(
+                "Too many login attempts. Please try again later."
+              );
             }
 
             return originalAuthorize?.(credentials, req) ?? null;

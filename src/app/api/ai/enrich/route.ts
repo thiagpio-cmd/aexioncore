@@ -5,11 +5,7 @@ import { unauthorized, forbidden, badRequest } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { requireRole } from "@/server/auth";
 import { geminiProvider } from "@/lib/ai/providers/gemini-provider";
-
-// Simple in-memory rate limiter: max 20 requests per minute per user
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_MAX = 20;
-const RATE_LIMIT_WINDOW_MS = 60_000;
+import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 /**
  * POST /api/ai/enrich
@@ -29,17 +25,9 @@ export async function POST(request: NextRequest) {
     if (roleError) return roleError;
 
     // Rate limiting per user
-    const userId = (session.user as any).id;
-    const now = Date.now();
-    const userRate = rateLimitMap.get(userId);
-    if (userRate && now < userRate.resetAt) {
-      if (userRate.count >= RATE_LIMIT_MAX) {
-        return sendError(badRequest("Rate limit exceeded. Please wait before making more AI enrichment requests."));
-      }
-      userRate.count++;
-    } else {
-      rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    }
+    const rateKey = `ai:${(session.user as any).id || getClientIp(request)}`;
+    const rateCheck = checkRateLimit(rateKey, RATE_LIMITS.ai);
+    if (!rateCheck.allowed) return rateLimitResponse(rateCheck);
 
     const body = await request.json();
     const { task, data } = body;
