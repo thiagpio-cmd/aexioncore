@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
           // If JSON parsing fails, try to extract subject/body
           const lines = result.text.trim().split("\n");
           const subjectLine = lines.find((l: string) => l.toLowerCase().startsWith("subject:"));
-          const subject = subjectLine ? subjectLine.replace(/^subject:\s*/i, "").trim() : `${PURPOSE_LABELS[purpose]} - ${contactName}`;
+          const subject = subjectLine ? subjectLine.replace(/^subject:\s*/i, "").trim() : `${PURPOSE_LABELS[purpose as EmailPurpose] || purpose} - ${contactName}`;
           const bodyText = lines
             .filter((l: string) => !l.toLowerCase().startsWith("subject:"))
             .join("\n")

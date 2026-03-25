@@ -163,6 +163,107 @@ async function resolveEntities(
 }
 
 /**
+ * Ingest a single calendar event into Meeting + Activity records.
+ * Deduplicates via sourceExternalId on the Meeting model.
+ */
+async function ingestCalendarEvent(
+  event: CanonicalEvent,
+  ctx: IngestionContext,
+  result: IngestionResult,
+  existingIds: Set<string | null>
+): Promise<void> {
+  const payload = event.normalizedPayload ?? {};
+  const attendees: any[] = payload.attendees ?? [];
+
+  // Check if Meeting with this sourceExternalId already exists
+  const existingMeeting = await prisma.meeting.findFirst({
+    where: {
+      organizationId: ctx.organizationId,
+      sourceExternalId: event.sourceExternalId,
+    },
+  });
+
+  if (existingMeeting) {
+    result.skipped++;
+    existingIds.add(event.sourceExternalId);
+    return;
+  }
+
+  // Resolve entities using the first non-organizer attendee email
+  const counterpartyEmail = event.counterpartyEmail ?? null;
+  const entities = await resolveEntities(counterpartyEmail, ctx.organizationId);
+  if (entities.resolved) result.resolved++;
+
+  // Determine location: prefer explicit location, then conference link, then "Virtual"
+  const location =
+    payload.location ||
+    payload.hangoutLink ||
+    payload.conferenceData?.entryPoints?.[0]?.uri ||
+    "Virtual";
+
+  // Parse start/end times
+  const startTime = payload.start ? new Date(payload.start) : event.occurredAt ?? new Date();
+  const endTime = payload.end ? new Date(payload.end) : undefined;
+
+  // Build attendees JSON array
+  const attendeeEmails = attendees
+    .filter((a: any) => a.email)
+    .map((a: any) => a.email);
+
+  if (!ctx.ownerId) {
+    result.failed++;
+    result.errors.push(
+      `Calendar event ${event.sourceExternalId}: no ownerId available for Meeting creation`
+    );
+    return;
+  }
+
+  await prisma.meeting.create({
+    data: {
+      organizationId:   ctx.organizationId,
+      title:            payload.title ?? "(Untitled event)",
+      description:      payload.description ?? null,
+      startTime,
+      endTime:          endTime ?? null,
+      location,
+      attendees:        JSON.stringify(attendeeEmails),
+      ownerId:          ctx.ownerId,
+      // Entity resolution
+      leadId:           entities.leadId ?? undefined,
+      contactId:        entities.contactId ?? undefined,
+      opportunityId:    entities.opportunityId ?? undefined,
+      // Source attribution
+      sourceSystem:     event.provider,
+      sourceExternalId: event.sourceExternalId,
+    },
+  });
+
+  existingIds.add(event.sourceExternalId);
+  result.created++;
+
+  // Emit a canonical Activity record for the timeline
+  const isCancelled = event.eventType === "CALENDAR_EVENT_CANCELLED";
+  await prisma.activity.create({
+    data: {
+      type:           isCancelled ? "MEETING_CANCELLED" : "MEETING_SCHEDULED",
+      subject:        payload.title ?? "(Untitled event)",
+      body:           payload.description ?? "",
+      channel:        "CALENDAR",
+      direction:      "internal",
+      sourceSystem:   event.provider,
+      externalId:     event.sourceExternalId,
+      occurredAt:     event.occurredAt ?? new Date(),
+      organizationId: ctx.organizationId,
+      leadId:         entities.leadId,
+      opportunityId:  entities.opportunityId,
+      creatorId:      ctx.ownerId ?? undefined,
+    },
+  }).catch(() => {
+    // Activity is best-effort; Meeting is the critical write
+  });
+}
+
+/**
  * Ingest a batch of CanonicalEvents from any integration provider
  * into InboxMessage rows. Safe to call multiple times for the same event
  * (idempotent via sourceExternalId dedup).
@@ -180,15 +281,28 @@ export async function ingestCanonicalEvents(
     .map((e) => e.sourceExternalId)
     .filter(Boolean);
 
-  const existing = await prisma.inboxMessage.findMany({
-    where: {
-      organizationId: ctx.organizationId,
-      sourceExternalId: { in: externalIds },
-    },
-    select: { sourceExternalId: true },
-  });
+  // Check both InboxMessage and Meeting tables for existing records
+  const [existingMessages, existingMeetings] = await Promise.all([
+    prisma.inboxMessage.findMany({
+      where: {
+        organizationId: ctx.organizationId,
+        sourceExternalId: { in: externalIds },
+      },
+      select: { sourceExternalId: true },
+    }),
+    prisma.meeting.findMany({
+      where: {
+        organizationId: ctx.organizationId,
+        sourceExternalId: { in: externalIds },
+      },
+      select: { sourceExternalId: true },
+    }),
+  ]);
 
-  const existingIds = new Set(existing.map((m) => m.sourceExternalId));
+  const existingIds = new Set([
+    ...existingMessages.map((m) => m.sourceExternalId),
+    ...existingMeetings.map((m) => m.sourceExternalId),
+  ]);
 
   for (const event of events) {
     if (!event.sourceExternalId) {
@@ -203,6 +317,13 @@ export async function ingestCanonicalEvents(
     }
 
     try {
+      // ── Calendar events → Meeting + Activity ─────────────────────────
+      if (event.domain === "calendar") {
+        await ingestCalendarEvent(event, ctx, result, existingIds);
+        continue;
+      }
+
+      // ── Email events → InboxMessage + Activity (existing path) ───────
       const classification = classifyGmailMessage(event);
       const payload = event.normalizedPayload ?? {};
       const senderEmail = extractEmail(payload.from ?? event.actorExternalId);

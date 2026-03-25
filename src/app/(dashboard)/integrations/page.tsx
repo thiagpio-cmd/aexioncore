@@ -11,21 +11,68 @@ import { Modal } from "@/components/shared/modal";
 import { HealthStatusBadge } from "@/components/integrations/health-status";
 import { formatRelativeTime } from "@/lib/utils";
 
+// ─── Static Metadata ────────────────────────────────────────────────────────
+
 const INTEGRATION_ICONS: Record<string, string> = {
-  gmail: "📧", "google-calendar": "📆", outlook: "📨", whatsapp: "💬", slack: "💼",
-  hubspot: "🔶", salesforce: "☁️", zapier: "⚡", stripe: "💳",
-  calendly: "📅", zoom: "🎥", teams: "👥", jira: "📋",
+  gmail: "📧", "google-calendar": "📆", outlook: "📨", slack: "💬",
+  twilio: "📞", hubspot: "🔶", salesforce: "☁️", zapier: "⚡",
+  stripe: "💳", calendly: "📅", zoom: "🎥", teams: "👥", jira: "📋",
+  whatsapp: "💬",
 };
 
 const INTEGRATION_CATEGORIES: Record<string, string> = {
-  gmail: "Communication", "google-calendar": "Scheduling", outlook: "Communication",
-  whatsapp: "Communication", slack: "Communication", hubspot: "CRM", salesforce: "CRM",
-  zapier: "Automation", stripe: "Payments", calendly: "Scheduling",
-  zoom: "Meetings", teams: "Meetings", jira: "Project Management",
+  gmail: "Email", "google-calendar": "Calendar", outlook: "Email + Calendar",
+  slack: "Chat + Alerts", twilio: "Phone + SMS", hubspot: "CRM",
+  salesforce: "CRM", zapier: "Automation", stripe: "Payments",
+  calendly: "Scheduling", zoom: "Meetings", teams: "Meetings", jira: "Projects",
+  whatsapp: "Messaging",
 };
 
 /** Only these slugs have real provider implementations with actual OAuth + sync */
 const REAL_PROVIDER_SLUGS = new Set(["gmail", "google-calendar"]);
+
+const COMING_SOON_ITEMS = [
+  { slug: "hubspot",    name: "HubSpot",    description: "Bi-directional sync with HubSpot CRM contacts, deals, and pipelines." },
+  { slug: "salesforce", name: "Salesforce",  description: "Import and export leads, opportunities, and accounts with Salesforce." },
+  { slug: "zapier",     name: "Zapier",      description: "Connect with 5,000+ apps through Zapier automations." },
+  { slug: "stripe",     name: "Stripe",      description: "Track payments, subscriptions, and revenue data in real time." },
+  { slug: "calendly",   name: "Calendly",    description: "Auto-schedule meetings and sync availability with your calendar." },
+  { slug: "zoom",       name: "Zoom",        description: "Launch and track Zoom meetings directly from opportunities." },
+];
+
+function getIntegrationDescription(slug: string): string {
+  const descriptions: Record<string, string> = {
+    gmail: "Sync emails, track threads, and auto-log communication with contacts.",
+    "google-calendar": "Sync calendar events, schedule meetings, and track availability.",
+    outlook: "Connect Microsoft Outlook for email sync and calendar integration.",
+    slack: "Get notifications, alerts, and updates in your Slack workspace.",
+    twilio: "Send SMS, make calls, and log phone activity automatically.",
+    whatsapp: "Send and receive WhatsApp messages directly from the CRM.",
+    hubspot: "Bi-directional sync with HubSpot CRM data.",
+    salesforce: "Import and export data with Salesforce.",
+    zapier: "Connect with 5,000+ apps through Zapier automation.",
+    stripe: "Track payments, subscriptions, and revenue data.",
+    calendly: "Auto-schedule meetings and sync with your calendar.",
+    zoom: "Launch and track Zoom meetings from opportunities.",
+    teams: "Microsoft Teams integration for calls and meetings.",
+    jira: "Sync tasks and issues with Jira projects.",
+  };
+  return descriptions[slug] || "Connect this integration to enhance your workflow.";
+}
+
+function getFeatureTags(slug: string): string[] {
+  const tags: Record<string, string[]> = {
+    gmail: ["Email Sync", "Thread Tracking", "Auto-log"],
+    "google-calendar": ["Event Sync", "Scheduling", "Availability"],
+    outlook: ["Email", "Calendar", "Contacts"],
+    slack: ["Notifications", "Alerts", "Channels"],
+    twilio: ["SMS", "Phone Calls", "Voicemail"],
+    whatsapp: ["Messages", "Media", "Templates"],
+  };
+  return tags[slug] || [];
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export default function IntegrationsPage() {
   const searchParams = useSearchParams();
@@ -33,6 +80,7 @@ export default function IntegrationsPage() {
   const { toastSuccess, toastError } = useToast();
   const [connecting, setConnecting] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [notified, setNotified] = useState<Set<string>>(new Set());
   const items = data || [];
 
   // Handle OAuth redirect results from URL params
@@ -43,7 +91,6 @@ export default function IntegrationsPage() {
       setBanner({ type: "success", message: "Integration connected successfully!" });
       toastSuccess("Integration connected successfully!");
       refetch();
-      // Clean up URL params
       const url = new URL(window.location.href);
       url.searchParams.delete("connected");
       window.history.replaceState({}, "", url.pathname);
@@ -51,7 +98,6 @@ export default function IntegrationsPage() {
       const msg = decodeURIComponent(error);
       setBanner({ type: "error", message: msg });
       toastError(msg);
-      // Clean up URL params
       const url = new URL(window.location.href);
       url.searchParams.delete("error");
       window.history.replaceState({}, "", url.pathname);
@@ -60,7 +106,6 @@ export default function IntegrationsPage() {
 
   const handleConnect = async (integration: any) => {
     const key = integration.providerKey || integration.slug;
-    // Block connection attempts for integrations that have no real provider
     if (!REAL_PROVIDER_SLUGS.has(key)) {
       toastError(`${integration.name} integration is not yet available. Coming soon.`);
       return;
@@ -68,7 +113,6 @@ export default function IntegrationsPage() {
 
     setConnecting(integration.id);
 
-    // Try real OAuth flow via dynamic tenant endpoint
     const { data: connectData, error } = await apiPost<{ authorizationUrl?: string; integrationId?: string }>(
       `/api/integrations/connect`,
       { providerKey: key }
@@ -81,12 +125,10 @@ export default function IntegrationsPage() {
     }
 
     if (connectData?.authorizationUrl) {
-      // Real OAuth redirect
       window.location.href = connectData.authorizationUrl;
       return;
     }
 
-    // No authorization URL returned — provider misconfigured
     setConnecting(null);
     toastError(`${integration.name} connection is not properly configured.`);
   };
@@ -108,25 +150,40 @@ export default function IntegrationsPage() {
     refetch();
   };
 
+  const handleNotifyMe = (slug: string) => {
+    setNotified((prev) => new Set(prev).add(slug));
+    toastSuccess("We'll notify you when this integration is available!");
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
         <PageHeader title="Integrations" subtitle="Loading..." />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
         </div>
       </div>
     );
   }
 
-  const connected = items.filter((i) => i.status.toLowerCase() === "connected");
-  const disconnected = items.filter((i) => i.status.toLowerCase() !== "connected");
+  // Split items into connected vs disconnected (from API)
+  const connectedItems = items.filter((i) => i.status.toLowerCase() === "connected");
+  const disconnectedItems = items.filter((i) => i.status.toLowerCase() !== "connected");
+
+  // Available = disconnected items that have real providers
+  const availableItems = disconnectedItems.filter((i) => REAL_PROVIDER_SLUGS.has(i.providerKey || i.slug));
+
+  // Coming soon = hardcoded list, minus anything already in the API response
+  const existingSlugs = new Set(items.map((i) => i.providerKey || i.slug));
+  const comingSoonItems = COMING_SOON_ITEMS.filter((cs) => !existingSlugs.has(cs.slug));
+  // Also add API items that are disconnected and NOT real providers
+  const comingSoonFromApi = disconnectedItems.filter((i) => !REAL_PROVIDER_SLUGS.has(i.providerKey || i.slug));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Integrations"
-        subtitle={`${connected.length} connected · ${disconnected.filter((i) => REAL_PROVIDER_SLUGS.has(i.providerKey || i.slug)).length} available`}
+        subtitle="Connect your tools in one click"
       />
 
       {/* Success/Error Banners */}
@@ -139,9 +196,7 @@ export default function IntegrationsPage() {
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="text-sm">
-              {banner.type === "success" ? "✓" : "!"}
-            </span>
+            <span className="text-sm">{banner.type === "success" ? "✓" : "!"}</span>
             <p className="text-sm font-medium">{banner.message}</p>
           </div>
           <button
@@ -153,108 +208,94 @@ export default function IntegrationsPage() {
         </div>
       )}
 
-      {/* Stats bar */}
-      <div className="flex items-center gap-6 rounded-xl border border-border bg-surface px-5 py-3">
-        <div>
-          <span className="text-xs text-muted">Total Integrations</span>
-          <p className="text-lg font-bold text-foreground">{items.length}</p>
-        </div>
-        <div className="h-8 w-px bg-border" />
-        <div>
-          <span className="text-xs text-muted">Connected</span>
-          <p className="text-lg font-bold text-success">{connected.length}</p>
-        </div>
-        <div className="h-8 w-px bg-border" />
-        <div>
-          <span className="text-xs text-muted">Avg Health</span>
-          <p className="text-lg font-bold text-foreground">
-            {connected.length > 0 ? Math.round(connected.reduce((s: number, i: any) => s + (i.healthPercent || 0), 0) / connected.length) : 0}%
-          </p>
-        </div>
-        <div className="h-8 w-px bg-border" />
-        <div>
-          <span className="text-xs text-muted">Total Events</span>
-          <p className="text-lg font-bold text-foreground">
-            {items.reduce((s: number, i: any) => s + (i.eventsReceived || 0), 0).toLocaleString()}
-          </p>
-        </div>
-      </div>
+      {/* ─── CONNECTED SECTION ───────────────────────────────────────── */}
+      {connectedItems.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            </div>
+            <h2 className="text-sm font-semibold text-foreground tracking-wide uppercase">
+              Connected
+            </h2>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+              {connectedItems.length}
+            </span>
+          </div>
 
-      {/* Connected Integrations */}
-      {connected.length > 0 && (
-        <div>
-          <h2 className="text-sm font-semibold text-foreground mb-3">Connected</h2>
-          <div className="grid grid-cols-3 gap-4">
-            {connected.map((int) => (
-              <div key={int.id} className="rounded-xl border border-border bg-surface p-5 hover:shadow-sm transition-shadow">
-                <div className="flex items-start justify-between mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {connectedItems.map((int) => (
+              <div
+                key={int.id}
+                className="group relative rounded-xl border border-emerald-200 bg-gradient-to-b from-emerald-50/50 to-surface p-5 hover:shadow-md transition-all duration-200"
+              >
+                {/* Status indicator line */}
+                <div className="absolute top-0 left-4 right-4 h-[2px] rounded-full bg-emerald-400" />
+
+                <div className="flex items-start justify-between mb-4 pt-1">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{INTEGRATION_ICONS[int.slug] || "🔗"}</span>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100/80 text-xl">
+                      {INTEGRATION_ICONS[int.slug] || "🔗"}
+                    </div>
                     <div>
                       <h3 className="text-sm font-semibold text-foreground">{int.name}</h3>
-                      <p className="text-xs text-muted">{INTEGRATION_CATEGORIES[int.slug] || "Integration"}</p>
+                      <p className="text-[11px] text-muted">{INTEGRATION_CATEGORIES[int.slug] || "Integration"}</p>
                     </div>
                   </div>
-                  <HealthStatusBadge status={int.healthStatus || "healthy"} />
+                  <HealthStatusBadge status={int.healthStatus || "healthy"} compact />
                 </div>
-                {/* Health percent bar */}
-                <div className="mb-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] text-muted">Health</span>
-                    <span className="text-[10px] font-semibold text-foreground">{int.healthPercent ?? 0}%</span>
+
+                {/* Sync stats */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-[11px] font-medium text-emerald-700">Synced</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-background overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        (int.healthPercent ?? 0) >= 80
-                          ? "bg-emerald-500"
-                          : (int.healthPercent ?? 0) >= 50
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
-                      }`}
-                      style={{ width: `${int.healthPercent ?? 0}%` }}
-                    />
-                  </div>
+                  <span className="text-[11px] text-muted">
+                    {(int.itemsPersisted ?? 0).toLocaleString()} items
+                  </span>
+                  {(int.itemsFailed ?? 0) > 0 && (
+                    <span className="text-[11px] text-danger font-medium">
+                      {int.itemsFailed} failed
+                    </span>
+                  )}
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-center mb-3">
-                  <div className="rounded-lg bg-background px-2 py-1.5">
-                    <p className="text-xs font-semibold text-foreground">{(int.itemsFetched ?? 0).toLocaleString()}</p>
-                    <p className="text-[10px] text-muted">Fetched</p>
-                  </div>
-                  <div className="rounded-lg bg-background px-2 py-1.5">
-                    <p className="text-xs font-semibold text-success">{(int.itemsPersisted ?? 0).toLocaleString()}</p>
-                    <p className="text-[10px] text-muted">Synced</p>
-                  </div>
-                  <div className={`rounded-lg bg-background px-2 py-1.5 ${(int.itemsFailed ?? 0) > 0 ? "text-danger" : "text-foreground"}`}>
-                    <p className="text-xs font-semibold">{int.itemsFailed ?? 0}</p>
-                    <p className="text-[10px] text-muted">Failed</p>
-                  </div>
-                </div>
-                {int.lastError && (
-                  <div className="mb-3 rounded-lg border border-danger/20 bg-danger/5 p-2">
-                    <p className="text-[10px] font-medium text-danger line-clamp-2" title={int.lastError}>
-                      Warning: {int.lastError}
-                    </p>
-                  </div>
-                )}
-                {int.isConfigured === false && (
-                  <div className="mb-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2">
-                    <p className="text-[10px] font-medium text-amber-600 line-clamp-2">
-                      Warning: Platform admin removed OAuth credentials. Sync disabled.
-                    </p>
-                  </div>
-                )}
-                <p className="text-[11px] text-muted mb-3">
+
+                {/* Last sync time */}
+                <p className="text-[11px] text-muted mb-4">
                   Last sync: {int.lastSync ? formatRelativeTime(int.lastSync) : "Never"}
                 </p>
+
+                {/* Error banner */}
+                {int.lastError && (
+                  <div className="mb-4 rounded-lg border border-danger/20 bg-danger/5 px-3 py-2">
+                    <p className="text-[10px] font-medium text-danger line-clamp-1" title={int.lastError}>
+                      {int.lastError}
+                    </p>
+                  </div>
+                )}
+
+                {/* Config warning */}
+                {int.isConfigured === false && (
+                  <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                    <p className="text-[10px] font-medium text-amber-600">
+                      OAuth credentials removed. Sync disabled.
+                    </p>
+                  </div>
+                )}
+
+                {/* Actions */}
                 <div className="flex gap-2">
-                  <Link href={`/integrations/${int.id}`} className="flex-1 rounded-lg border border-border px-3 py-2 text-center text-xs font-medium text-foreground hover:bg-background transition-colors">
-                    Settings
+                  <Link
+                    href={`/integrations/${int.id}`}
+                    className="flex-1 rounded-lg bg-foreground/5 px-3 py-2 text-center text-xs font-semibold text-foreground hover:bg-foreground/10 transition-colors"
+                  >
+                    Manage
                   </Link>
                   <button
                     onClick={() => handleDisconnect(int)}
                     disabled={connecting === int.id}
-                    className="rounded-lg border border-danger px-3 py-2 text-xs font-medium text-danger hover:bg-danger-light transition-colors disabled:opacity-50"
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted hover:text-danger hover:border-danger/30 transition-colors disabled:opacity-50"
                   >
                     {connecting === int.id ? "..." : "Disconnect"}
                   </button>
@@ -262,90 +303,187 @@ export default function IntegrationsPage() {
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Available Integrations */}
-      {(() => {
-        const available = disconnected.filter((i) => REAL_PROVIDER_SLUGS.has(i.providerKey || i.slug));
-        const comingSoon = disconnected.filter((i) => !REAL_PROVIDER_SLUGS.has(i.providerKey || i.slug));
-        return (
-          <>
-            {available.length > 0 && (
-              <div>
-                <h2 className="text-sm font-semibold text-foreground mb-3">Available</h2>
-                <div className="grid grid-cols-3 gap-4">
-                  {available.map((int) => (
-                    <div key={int.id} className="rounded-xl border border-border bg-surface p-5 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{INTEGRATION_ICONS[int.slug] || "🔗"}</span>
-                          <div>
-                            <h3 className="text-sm font-semibold text-foreground">{int.name}</h3>
-                            <p className="text-xs text-muted">{int.description || INTEGRATION_CATEGORIES[int.slug] || "Integration"}</p>
-                          </div>
-                        </div>
-                        <span className="rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-medium text-primary">
-                          Ready
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted mb-4">
-                        {getIntegrationDescription(int.slug)}
-                      </p>
-                      {int.isConfigured === false ? (
-                        <button
-                          disabled
-                          className="w-full rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-600 transition-colors opacity-90 cursor-help"
-                          title="Platform missing credentials. Check documentation."
-                        >
-                          Configuration Required
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleConnect(int)}
-                          disabled={connecting === int.id}
-                          className="w-full rounded-lg border border-primary bg-primary-light px-3 py-2 text-xs font-medium text-primary hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
-                        >
-                          {connecting === int.id ? "Connecting..." : "Connect"}
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+      {/* ─── AVAILABLE SECTION ───────────────────────────────────────── */}
+      {availableItems.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-primary">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+            </div>
+            <h2 className="text-sm font-semibold text-foreground tracking-wide uppercase">
+              Available
+            </h2>
+            <span className="text-[11px] text-muted font-medium">Connect Now</span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+              {availableItems.length}
+            </span>
+          </div>
 
-            {comingSoon.length > 0 && (
-              <div>
-                <h2 className="text-sm font-semibold text-foreground mb-3">Coming Soon</h2>
-                <div className="grid grid-cols-3 gap-4">
-                  {comingSoon.map((int) => (
-                    <div key={int.id} className="rounded-xl border border-border bg-surface p-5 opacity-60">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl grayscale">{INTEGRATION_ICONS[int.slug] || "🔗"}</span>
-                          <div>
-                            <h3 className="text-sm font-semibold text-foreground">{int.name}</h3>
-                            <p className="text-xs text-muted">{int.description || INTEGRATION_CATEGORIES[int.slug] || "Integration"}</p>
-                          </div>
-                        </div>
-                        <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-[10px] font-medium text-muted">
-                          Coming Soon
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted mb-4">
-                        {getIntegrationDescription(int.slug)}
-                      </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {availableItems.map((int) => (
+              <div
+                key={int.id}
+                className="group rounded-xl border border-border bg-surface p-5 hover:border-primary/30 hover:shadow-md transition-all duration-200"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-xl group-hover:scale-105 transition-transform">
+                      {INTEGRATION_ICONS[int.slug] || "🔗"}
                     </div>
-                  ))}
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">{int.name}</h3>
+                      <p className="text-[11px] text-primary font-medium">{INTEGRATION_CATEGORIES[int.slug] || "Integration"}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
-        );
-      })()}
 
-      {items.length === 0 && (
+                <p className="text-xs text-muted leading-relaxed mb-3">
+                  {getIntegrationDescription(int.slug)}
+                </p>
+
+                {/* Feature tags */}
+                {getFeatureTags(int.slug).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {getFeatureTags(int.slug).map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary/80"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {int.isConfigured === false ? (
+                  <button
+                    disabled
+                    className="w-full rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs font-medium text-amber-600 cursor-help"
+                    title="Platform admin needs to configure OAuth credentials."
+                  >
+                    Configuration Required
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleConnect(int)}
+                    disabled={connecting === int.id}
+                    className="w-full rounded-lg bg-primary px-3 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm hover:shadow transition-all disabled:opacity-50"
+                  >
+                    {connecting === int.id ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Connecting...
+                      </span>
+                    ) : (
+                      "Connect"
+                    )}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ─── COMING SOON SECTION ─────────────────────────────────────── */}
+      {(comingSoonItems.length > 0 || comingSoonFromApi.length > 0) && (
+        <section>
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground/5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <h2 className="text-sm font-semibold text-muted tracking-wide uppercase">
+              Coming Soon
+            </h2>
+            <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-[11px] font-medium text-muted">
+              {comingSoonItems.length + comingSoonFromApi.length}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Hardcoded coming soon */}
+            {comingSoonItems.map((cs) => (
+              <div
+                key={cs.slug}
+                className="rounded-xl border border-border/60 bg-surface/50 p-5 opacity-75 hover:opacity-100 transition-opacity"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-foreground/5 text-xl grayscale">
+                      {INTEGRATION_ICONS[cs.slug] || "🔗"}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground/80">{cs.name}</h3>
+                      <p className="text-[11px] text-muted">{INTEGRATION_CATEGORIES[cs.slug] || "Integration"}</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted leading-relaxed mb-4">
+                  {cs.description}
+                </p>
+                <button
+                  onClick={() => handleNotifyMe(cs.slug)}
+                  disabled={notified.has(cs.slug)}
+                  className={`w-full rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                    notified.has(cs.slug)
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-600 cursor-default"
+                      : "border-border bg-background text-muted hover:text-foreground hover:border-foreground/20"
+                  }`}
+                >
+                  {notified.has(cs.slug) ? "Notified" : "Notify Me"}
+                </button>
+              </div>
+            ))}
+
+            {/* API-sourced coming soon (legacy seeded without real providers) */}
+            {comingSoonFromApi.map((int) => (
+              <div
+                key={int.id}
+                className="rounded-xl border border-border/60 bg-surface/50 p-5 opacity-75 hover:opacity-100 transition-opacity"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-foreground/5 text-xl grayscale">
+                      {INTEGRATION_ICONS[int.slug] || "🔗"}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground/80">{int.name}</h3>
+                      <p className="text-[11px] text-muted">{INTEGRATION_CATEGORIES[int.slug] || "Integration"}</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted leading-relaxed mb-4">
+                  {getIntegrationDescription(int.slug)}
+                </p>
+                <button
+                  onClick={() => handleNotifyMe(int.slug)}
+                  disabled={notified.has(int.slug)}
+                  className={`w-full rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                    notified.has(int.slug)
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-600 cursor-default"
+                      : "border-border bg-background text-muted hover:text-foreground hover:border-foreground/20"
+                  }`}
+                >
+                  {notified.has(int.slug) ? "Notified" : "Notify Me"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {items.length === 0 && comingSoonItems.length === 0 && (
         <div className="flex flex-col items-center justify-center h-64 text-muted">
           <p className="text-sm">No integrations available.</p>
         </div>
@@ -383,23 +521,4 @@ export default function IntegrationsPage() {
       </Modal>
     </div>
   );
-}
-
-function getIntegrationDescription(slug: string): string {
-  const descriptions: Record<string, string> = {
-    gmail: "Sync emails, track threads, and auto-log communication with contacts.",
-    "google-calendar": "Sync Google Calendar events, schedule meetings, and track availability.",
-    outlook: "Connect Microsoft Outlook for email sync and calendar integration.",
-    whatsapp: "Send and receive WhatsApp messages directly from the CRM.",
-    slack: "Get notifications and updates in your Slack workspace.",
-    hubspot: "Bi-directional sync with HubSpot CRM data.",
-    salesforce: "Import and export data with Salesforce.",
-    zapier: "Connect with 5,000+ apps through Zapier automation.",
-    stripe: "Track payments, subscriptions, and revenue data.",
-    calendly: "Auto-schedule meetings and sync with your calendar.",
-    zoom: "Launch and track Zoom meetings from opportunities.",
-    teams: "Microsoft Teams integration for calls and meetings.",
-    jira: "Sync tasks and issues with Jira projects.",
-  };
-  return descriptions[slug] || "Connect this integration to enhance your workflow.";
 }
