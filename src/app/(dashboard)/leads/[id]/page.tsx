@@ -17,6 +17,7 @@ import { CanonicalTimeline } from "@/components/shared/canonical-timeline";
 import { SuggestedPlaybooks } from "@/components/shared/suggested-playbooks";
 import { ExplainableScore } from "@/components/scoring/explainable-score";
 import { AICoachPanel } from "@/components/ai/ai-coach-panel";
+import { EmailComposer } from "@/components/ai/email-composer";
 import type { ScoreResult } from "@/lib/scoring/engine";
 
 interface Lead {
@@ -69,6 +70,7 @@ export default function LeadDetailPage() {
   }, [searchParams]);
   const [showConvert, setShowConvert] = useState(false);
   const [activityType, setActivityType] = useState<string | null>(null);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
 
   const { data: lead, loading: leadLoading, refetch } = useApi<Lead>(`/api/leads/${leadId}`);
   const { data: activities, loading: activitiesLoading, refetch: refetchActivities } = useApi<Activity[]>(`/api/activities?leadId=${leadId}`);
@@ -330,6 +332,17 @@ export default function LeadDetailPage() {
                   {action.label}
                 </button>
               ))}
+              <button
+                onClick={() => setShowEmailComposer(true)}
+                className="col-span-2 rounded-lg border border-primary/30 bg-primary-light px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10 flex items-center justify-center gap-1.5"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+                AI Email
+              </button>
             </div>
           </div>
 
@@ -390,6 +403,15 @@ export default function LeadDetailPage() {
         onCreated={() => refetchActivities()}
         defaultType={activityType || "NOTE"}
         leadId={leadId}
+      />
+
+      <EmailComposer
+        open={showEmailComposer}
+        onClose={() => setShowEmailComposer(false)}
+        leadId={leadId}
+        contactEmail={lead.email}
+        contactName={lead.name}
+        defaultPurpose="follow_up"
       />
     </div>
   );

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useApi } from "@/lib/hooks/use-api";
+import { apiPost } from "@/lib/hooks/use-api";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
+import { AIReportModal, type GeneratedReport } from "@/components/ai/ai-report-modal";
 import { cn } from "@/lib/utils";
 
 type Period = "7d" | "30d" | "90d" | "all";
@@ -121,6 +123,173 @@ function AIInsightsPanel() {
   );
 }
 
+// ── Report Generation Dropdown ───────────────────────────────────────────
+
+type ReportType = "weekly_digest" | "monthly_review" | "pipeline_analysis" | "team_performance" | "forecast_accuracy";
+type ReportPeriod = "7d" | "30d" | "90d";
+
+const reportTypeOptions: { value: ReportType; label: string }[] = [
+  { value: "weekly_digest", label: "Weekly Digest" },
+  { value: "monthly_review", label: "Monthly Review" },
+  { value: "pipeline_analysis", label: "Pipeline Analysis" },
+  { value: "team_performance", label: "Team Performance" },
+  { value: "forecast_accuracy", label: "Forecast Accuracy" },
+];
+
+const reportPeriodOptions: { value: ReportPeriod; label: string }[] = [
+  { value: "7d", label: "7 days" },
+  { value: "30d", label: "30 days" },
+  { value: "90d", label: "90 days" },
+];
+
+function GenerateReportButton() {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState<ReportType>("weekly_digest");
+  const [selectedPeriod, setSelectedPeriod] = useState<ReportPeriod>("7d");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [report, setReport] = useState<GeneratedReport | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [dropdownOpen]);
+
+  const generateReport = useCallback(async (type?: ReportType, period?: ReportPeriod) => {
+    const rType = type || selectedType;
+    const rPeriod = period || selectedPeriod;
+
+    setDropdownOpen(false);
+    setModalOpen(true);
+    setReportLoading(true);
+    setReport(null);
+
+    const { data, error } = await apiPost<GeneratedReport>("/api/ai/generate-report", {
+      type: rType,
+      period: rPeriod,
+      format: "detailed",
+    });
+
+    if (data) {
+      setReport(data);
+    } else {
+      console.error("Report generation failed:", error);
+    }
+
+    setReportLoading(false);
+  }, [selectedType, selectedPeriod]);
+
+  const handleRegenerate = useCallback(() => {
+    if (report) {
+      generateReport(report.type as ReportType, report.period as ReportPeriod);
+    } else {
+      generateReport();
+    }
+  }, [report, generateReport]);
+
+  return (
+    <>
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          className="rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors flex items-center gap-1.5"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+          Generate Report
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+
+        {dropdownOpen && (
+          <div className="absolute right-0 top-full mt-1 z-50 w-72 rounded-xl border border-border bg-surface p-4 shadow-xl animate-scale-in">
+            <p className="text-xs font-semibold text-foreground mb-3">Generate Executive Report</p>
+
+            {/* Report Type */}
+            <div className="mb-3">
+              <p className="text-[10px] font-medium text-muted uppercase tracking-wider mb-1.5">Report Type</p>
+              <div className="space-y-1">
+                {reportTypeOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectedType(opt.value)}
+                    className={cn(
+                      "w-full rounded-lg px-3 py-1.5 text-xs text-left transition-colors",
+                      selectedType === opt.value
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-foreground hover:bg-background"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Period */}
+            <div className="mb-4">
+              <p className="text-[10px] font-medium text-muted uppercase tracking-wider mb-1.5">Period</p>
+              <div className="flex items-center gap-1">
+                {reportPeriodOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectedPeriod(opt.value)}
+                    className={cn(
+                      "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                      selectedPeriod === opt.value
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted hover:text-foreground bg-background"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Generate button */}
+            <button
+              onClick={() => generateReport()}
+              className="w-full rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+              Generate Report
+            </button>
+          </div>
+        )}
+      </div>
+
+      <AIReportModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        report={report}
+        loading={reportLoading}
+        onRegenerate={handleRegenerate}
+      />
+    </>
+  );
+}
+
+// ── Main Dashboard Page ──────────────────────────────────────────────────
+
 export default function DashboardsPage() {
   const [period, setPeriod] = useState<Period>("30d");
   const { data, loading, error } = useApi<any>("/api/dashboard");
@@ -173,6 +342,7 @@ export default function DashboardsPage() {
                 </button>
               ))}
             </div>
+            <GenerateReportButton />
             <a
               href="/api/export?type=leads"
               download

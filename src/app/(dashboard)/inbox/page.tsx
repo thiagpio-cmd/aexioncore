@@ -7,6 +7,7 @@ import { useToast } from "@/components/shared/toast";
 import { PageHeader } from "@/components/shared/page-header";
 import { CardSkeleton } from "@/components/shared/skeleton";
 import { Modal, FormField, inputStyles, selectStyles } from "@/components/shared/modal";
+import { EmailComposer } from "@/components/ai/email-composer";
 
 const channelConfig: Record<string, { label: string; color: string; icon: string }> = {
   WHATSAPP: { label: "WhatsApp", color: "bg-green-100 text-green-700", icon: "💬" },
@@ -24,6 +25,7 @@ export default function InboxPage() {
   const [replyText, setReplyText] = useState("");
   const [marking, setMarking] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [aiComposeOpen, setAiComposeOpen] = useState(false);
 
   if (loading) {
     return (
@@ -147,6 +149,17 @@ export default function InboxPage() {
           ))}
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => setAiComposeOpen(true)}
+            className="rounded-lg border border-primary/30 bg-primary-light px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors flex items-center gap-1.5"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+            AI Assist
+          </button>
           <button
             onClick={() => setComposeOpen(true)}
             className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-hover transition-colors flex items-center gap-1.5"
@@ -348,6 +361,11 @@ export default function InboxPage() {
         open={composeOpen}
         onClose={() => setComposeOpen(false)}
         onSent={() => refetch()}
+      />
+
+      <EmailComposer
+        open={aiComposeOpen}
+        onClose={() => setAiComposeOpen(false)}
       />
     </div>
   );

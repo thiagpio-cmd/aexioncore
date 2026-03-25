@@ -16,6 +16,7 @@ import { CanonicalTimeline } from "@/components/shared/canonical-timeline";
 import { SuggestedPlaybooks } from "@/components/shared/suggested-playbooks";
 import { ExplainableScore } from "@/components/scoring/explainable-score";
 import { AICoachPanel } from "@/components/ai/ai-coach-panel";
+import { DealRiskCard } from "@/components/ai/deal-risk-card";
 import type { ScoreResult } from "@/lib/scoring/engine";
 
 interface Opportunity {
@@ -347,6 +348,11 @@ export default function OpportunityDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Deal Risk Analysis */}
+          {!["CLOSED_WON", "CLOSED_LOST"].includes(deal.stage) && (
+            <DealRiskCard opportunityId={oppId} />
+          )}
 
           {/* Deal Summary Card */}
           <div className="rounded-xl border border-border bg-surface p-5">
