@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { KeyboardShortcutsProvider } from "@/components/shared/keyboard-shortcuts";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -39,6 +40,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <KeyboardShortcutsProvider>
     <div className="flex min-h-screen bg-background">
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -78,6 +80,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 p-4 lg:p-6">{children}</main>
       </div>
     </div>
+    </KeyboardShortcutsProvider>
   );
 }
 

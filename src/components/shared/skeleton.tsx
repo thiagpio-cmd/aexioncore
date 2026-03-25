@@ -47,6 +47,51 @@ export function CardSkeleton() {
   );
 }
 
+/** Stat card skeleton — alias for CardSkeleton with richer layout */
+export function StatCardSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-5 w-5 rounded" />
+      </div>
+      <Skeleton className="h-8 w-28" />
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-4 w-12 rounded-full" />
+        <Skeleton className="h-2.5 w-16" />
+      </div>
+    </div>
+  );
+}
+
+/** Kanban / pipeline skeleton */
+export function KanbanSkeleton({ columns = 4 }: { columns?: number }) {
+  return (
+    <div className="flex gap-4 overflow-hidden">
+      {Array.from({ length: columns }).map((_, col) => (
+        <div key={col} className="flex-1 min-w-[260px] space-y-3">
+          {/* Column header */}
+          <div className="flex items-center justify-between rounded-lg bg-surface border border-border px-3 py-2.5">
+            <Skeleton className="h-3.5 w-20" />
+            <Skeleton className="h-5 w-5 rounded-full" />
+          </div>
+          {/* Cards */}
+          {Array.from({ length: col === 0 ? 3 : col === 1 ? 2 : 1 }).map((_, card) => (
+            <div key={card} className="rounded-xl border border-border bg-surface p-4 space-y-3">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+              <div className="flex items-center justify-between pt-1">
+                <Skeleton className="h-6 w-6 rounded-full" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Detail page skeleton */
 export function DetailSkeleton() {
   return (

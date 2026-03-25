@@ -102,3 +102,13 @@ a, button, input, select, textarea,
 .animate-scale-in {
   animation: scale-in 0.15s ease-out;
 }
+
+/* Card hover effect */
+.card-hover {
+  transition: all 0.15s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
