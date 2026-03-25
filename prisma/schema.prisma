@@ -30,6 +30,9 @@ model Organization {
   // Module activation (JSON array of enabled module keys)
   enabledModules String?   @default("[\"commercial\",\"data\",\"reports\",\"automation\",\"post_sale\",\"playbooks\"]")
 
+  // Role permission overrides (JSON: serialized role permission overrides)
+  rolePermissions String?
+
   // Setup state
   setupCompleted Boolean   @default(false)
   setupStep      Int       @default(0)

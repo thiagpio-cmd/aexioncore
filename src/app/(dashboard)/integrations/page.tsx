@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useApi, apiPost } from "@/lib/hooks/use-api";
 import { useToast } from "@/components/shared/toast";
 import { PageHeader } from "@/components/shared/page-header";
@@ -110,6 +111,8 @@ function getFeatureTags(slug: string): string[] {
 
 export default function IntegrationsPage() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
   const { data, loading, refetch } = useApi<any[]>("/api/integrations");
   const { toastSuccess, toastError } = useToast();
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -568,40 +571,65 @@ export default function IntegrationsPage() {
         onClose={() => setSetupTarget(null)}
         title={`Setup Required: ${setupTarget?.name || ""}`}
       >
-        {setupTarget && (() => {
-          const slug = setupTarget.providerKey || setupTarget.slug;
-          const envInfo = SETUP_ENV_VARS[slug];
-          return (
-            <div className="space-y-4">
-              <p className="text-sm text-muted">
-                To connect {setupTarget.name}, the following environment variables must be configured by a platform administrator:
-              </p>
-              <div className="space-y-2">
-                {envInfo?.envVars.map((v) => (
-                  <div key={v.name} className="rounded-lg border border-border bg-background px-3 py-2.5">
-                    <code className="text-xs font-semibold text-primary">{v.name}</code>
-                    <p className="text-xs text-muted mt-0.5">{v.description}</p>
-                  </div>
-                )) || (
-                  <p className="text-sm text-muted">
-                    OAuth credentials are required. Contact your platform administrator for setup details.
+        {setupTarget && (
+          <div className="space-y-4">
+            {isAdmin ? (
+              <>
+                <p className="text-sm text-muted">
+                  {setupTarget.name} requires OAuth credentials before your team can connect.
+                  Configure them in the Integration Settings page.
+                </p>
+                <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+                  <p className="text-sm text-foreground font-medium mb-1">
+                    As an admin, you can set this up now:
                   </p>
-                )}
-              </div>
-              <p className="text-xs text-muted">
-                Add these to your <code className="rounded bg-background px-1 py-0.5 text-primary">.env</code> file and restart the application.
-              </p>
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setSetupTarget(null)}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
-                >
-                  Got it
-                </button>
-              </div>
-            </div>
-          );
-        })()}
+                  <p className="text-xs text-muted">
+                    Go to Settings &rarr; Integrations to enter your OAuth Client ID and Secret.
+                    Once configured, all team members will be able to connect {setupTarget.name} with one click.
+                  </p>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setSetupTarget(null)}
+                    className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground transition-colors"
+                  >
+                    Later
+                  </button>
+                  <Link
+                    href="/settings/integrations"
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
+                    onClick={() => setSetupTarget(null)}
+                  >
+                    Go to Settings
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted">
+                  {setupTarget.name} has not been configured yet.
+                  An administrator needs to set up the OAuth credentials before this integration can be used.
+                </p>
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                  <p className="text-sm text-amber-800 font-medium">
+                    Contact your administrator
+                  </p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    Ask a team admin to go to Settings &rarr; Integrations and configure the {setupTarget.name} credentials.
+                  </p>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setSetupTarget(null)}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
+                  >
+                    Got it
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   );

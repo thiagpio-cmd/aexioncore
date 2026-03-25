@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Modal, FormField, inputStyles } from "@/components/shared/modal";
@@ -60,12 +60,46 @@ const defaultRoles: RoleDef[] = [
   { role: UserRole.VIEWER, description: "Read-only access to assigned data", permissions: ["Dashboards (Read)", "Reports (Read)", "Pipeline (Read)"] },
 ];
 
+function mergeWithDefaults(saved: RoleDef[] | null): RoleDef[] {
+  if (!saved) return defaultRoles;
+  // Use saved roles, but ensure all default role keys exist
+  return defaultRoles.map((def) => {
+    const override = saved.find((s) => s.role === def.role);
+    return override || def;
+  });
+}
+
 export default function SettingsRolesPage() {
-  const { toastSuccess } = useToast();
+  const { toastSuccess, toastError } = useToast();
   const [roles, setRoles] = useState<RoleDef[]>(defaultRoles);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [editingRole, setEditingRole] = useState<RoleDef | null>(null);
   const [editDescription, setEditDescription] = useState("");
   const [editPermissions, setEditPermissions] = useState<Set<string>>(new Set());
+
+  // Fetch saved roles on mount
+  const fetchRoles = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/roles");
+      const json = await res.json();
+      if (json.success) {
+        setRoles(mergeWithDefaults(json.data.rolePermissions));
+      } else {
+        // If unauthorized or error, fall back to defaults
+        setRoles(defaultRoles);
+      }
+    } catch {
+      setRoles(defaultRoles);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
 
   function openEdit(role: RoleDef) {
     setEditingRole(role);
@@ -85,19 +119,56 @@ export default function SettingsRolesPage() {
     });
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!editingRole) return;
 
-    setRoles((prev) =>
-      prev.map((r) =>
-        r.role === editingRole.role
-          ? { ...r, description: editDescription, permissions: Array.from(editPermissions) }
-          : r
-      )
+    const updatedRoles = roles.map((r) =>
+      r.role === editingRole.role
+        ? { ...r, description: editDescription, permissions: Array.from(editPermissions) }
+        : r
     );
 
-    toastSuccess(`${editingRole.role} role updated`);
+    // Optimistically update local state
+    setRoles(updatedRoles);
     setEditingRole(null);
+
+    // Persist to API
+    setSaving(true);
+    try {
+      const res = await fetch("/api/roles", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roles: updatedRoles }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toastSuccess(`${editingRole.role} role updated and saved`);
+      } else {
+        toastError(json.error?.message || "Failed to save role changes");
+        // Revert on failure
+        await fetchRoles();
+      }
+    } catch {
+      toastError("Network error — could not save role changes");
+      await fetchRoles();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div>
+        <Link href="/settings" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6" /></svg>
+          Back to Settings
+        </Link>
+        <PageHeader title="Roles & Permissions" subtitle="Loading..." />
+        <div className="mt-8 flex items-center justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -107,6 +178,14 @@ export default function SettingsRolesPage() {
         Back to Settings
       </Link>
       <PageHeader title="Roles & Permissions" subtitle={`${roles.length} roles configured`} />
+
+      {saving && (
+        <div className="mt-2 flex items-center gap-2 text-xs text-muted">
+          <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          Saving changes...
+        </div>
+      )}
+
       <div className="mt-4 space-y-4">
         {roles.map((r) => (
           <div key={r.role} className="rounded-xl border border-border bg-surface p-5">
@@ -117,7 +196,8 @@ export default function SettingsRolesPage() {
               </div>
               <button
                 onClick={() => openEdit(r)}
-                className="rounded-lg border border-border px-3 py-1 text-xs font-medium text-muted hover:text-foreground transition-colors"
+                disabled={saving}
+                className="rounded-lg border border-border px-3 py-1 text-xs font-medium text-muted hover:text-foreground transition-colors disabled:opacity-50"
               >
                 Edit
               </button>
