@@ -3,25 +3,29 @@ import { NextRequest, NextResponse } from "next/server";
 
 // ─── CORS Configuration ────────────────────────────────────────────────────
 
-function getAllowedOrigin(): string {
-  return process.env.NEXTAUTH_URL || "http://localhost:3000";
+function getAllowedOrigins(): string[] {
+  const origins = [
+    process.env.NEXTAUTH_URL || "http://localhost:3000",
+    "https://aexioncore.vercel.app",
+  ];
+  // Also allow any *.vercel.app preview deploy
+  return origins.map((o) => {
+    try { return new URL(o).origin; } catch { return o; }
+  });
+}
+
+function isAllowedOrigin(origin: string): boolean {
+  const allowed = getAllowedOrigins();
+  if (allowed.includes(origin)) return true;
+  // Allow any Vercel preview deploy
+  if (origin.endsWith(".vercel.app")) return true;
+  return false;
 }
 
 function handleCors(request: NextRequest, response: NextResponse): NextResponse {
   const origin = request.headers.get("origin");
-  const allowedOrigin = getAllowedOrigin();
 
-  // Parse the allowed origin to get just the origin part (protocol + host + port)
-  let parsedAllowed: string;
-  try {
-    const url = new URL(allowedOrigin);
-    parsedAllowed = url.origin;
-  } catch {
-    parsedAllowed = allowedOrigin;
-  }
-
-  // Set CORS headers if origin matches
-  if (origin === parsedAllowed) {
+  if (origin && isAllowedOrigin(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -51,16 +55,7 @@ function handleApiCors(request: NextRequest): NextResponse | null {
 
   // For non-preflight requests with an origin header, validate origin
   if (origin) {
-    const allowedOrigin = getAllowedOrigin();
-    let parsedAllowed: string;
-    try {
-      const url = new URL(allowedOrigin);
-      parsedAllowed = url.origin;
-    } catch {
-      parsedAllowed = allowedOrigin;
-    }
-
-    if (origin !== parsedAllowed) {
+    if (!isAllowedOrigin(origin)) {
       // Block cross-origin API requests from unknown origins
       // Exception: webhook and callback routes that receive external requests
       const pathname = request.nextUrl.pathname;
