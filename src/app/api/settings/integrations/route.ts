@@ -135,7 +135,9 @@ export async function GET() {
     const roleErr = requireRole(user, "ADMIN");
     if (roleErr) return roleErr;
 
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
     const results = await Promise.all(
       PROVIDERS.map(async (p) => {
