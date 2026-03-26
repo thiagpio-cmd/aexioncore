@@ -43,7 +43,9 @@ const MAX_EVENTS_PER_SYNC = 250;
 function getOAuthConfig(): OAuthConfig {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   const redirectUri = `${baseUrl}/api/integrations/callback/google-calendar`;
 
   if (!clientId || !clientSecret) {

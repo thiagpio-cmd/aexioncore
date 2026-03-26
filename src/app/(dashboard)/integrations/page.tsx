@@ -12,6 +12,16 @@ import { Modal } from "@/components/shared/modal";
 import { HealthStatusBadge } from "@/components/integrations/health-status";
 import { formatRelativeTime } from "@/lib/utils";
 
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface AvailableProvider {
+  key: string;
+  name: string;
+  configured: boolean;
+  type: string;
+  domain: string;
+}
+
 // ─── Static Metadata ────────────────────────────────────────────────────────
 
 const INTEGRATION_ICONS: Record<string, string> = {
@@ -31,40 +41,6 @@ const INTEGRATION_CATEGORIES: Record<string, string> = {
 
 /** Only these slugs have real provider implementations with actual OAuth + sync */
 const REAL_PROVIDER_SLUGS = new Set(["gmail", "google-calendar", "outlook", "slack", "twilio"]);
-
-const SETUP_ENV_VARS: Record<string, { envVars: { name: string; description: string }[] }> = {
-  gmail: {
-    envVars: [
-      { name: "GOOGLE_CLIENT_ID", description: "OAuth 2.0 Client ID from Google Cloud Console" },
-      { name: "GOOGLE_CLIENT_SECRET", description: "OAuth 2.0 Client Secret from Google Cloud Console" },
-    ],
-  },
-  "google-calendar": {
-    envVars: [
-      { name: "GOOGLE_CLIENT_ID", description: "OAuth 2.0 Client ID from Google Cloud Console (shared with Gmail)" },
-      { name: "GOOGLE_CLIENT_SECRET", description: "OAuth 2.0 Client Secret from Google Cloud Console (shared with Gmail)" },
-    ],
-  },
-  outlook: {
-    envVars: [
-      { name: "MICROSOFT_CLIENT_ID", description: "Application (client) ID from Azure AD App Registration" },
-      { name: "MICROSOFT_CLIENT_SECRET", description: "Client secret from Azure AD App Registration" },
-    ],
-  },
-  slack: {
-    envVars: [
-      { name: "SLACK_CLIENT_ID", description: "Client ID from Slack App settings" },
-      { name: "SLACK_CLIENT_SECRET", description: "Client Secret from Slack App settings" },
-    ],
-  },
-  twilio: {
-    envVars: [
-      { name: "TWILIO_ACCOUNT_SID", description: "Account SID from the Twilio Console dashboard" },
-      { name: "TWILIO_AUTH_TOKEN", description: "Auth Token from the Twilio Console dashboard" },
-      { name: "TWILIO_PHONE_NUMBER", description: "Twilio phone number for sending SMS and making calls" },
-    ],
-  },
-};
 
 const COMING_SOON_ITEMS = [
   { slug: "hubspot",    name: "HubSpot",    description: "Bi-directional sync with HubSpot CRM contacts, deals, and pipelines." },
@@ -114,11 +90,20 @@ export default function IntegrationsPage() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
   const { data, loading, refetch } = useApi<any[]>("/api/integrations");
+  const { data: availableData } = useApi<{ providers: AvailableProvider[] }>("/api/integrations/available");
   const { toastSuccess, toastError } = useToast();
   const [connecting, setConnecting] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [notified, setNotified] = useState<Set<string>>(new Set());
   const items = data || [];
+
+  // Build a lookup map: providerKey -> configured status from the /available endpoint
+  const configuredMap = new Map<string, boolean>();
+  if (availableData?.providers) {
+    for (const p of availableData.providers) {
+      configuredMap.set(p.key, p.configured);
+    }
+  }
 
   // Handle OAuth redirect results from URL params
   useEffect(() => {
@@ -224,6 +209,69 @@ export default function IntegrationsPage() {
   const comingSoonItems = COMING_SOON_ITEMS.filter((cs) => !existingSlugs.has(cs.slug));
   // Also add API items that are disconnected and NOT real providers
   const comingSoonFromApi = disconnectedItems.filter((i) => !REAL_PROVIDER_SLUGS.has(i.providerKey || i.slug));
+
+  /**
+   * Determine the button to render for an available (disconnected) integration.
+   * Uses the /api/integrations/available data to check server-side config.
+   */
+  function renderAvailableButton(int: any) {
+    const key = int.providerKey || int.slug;
+    const isProviderConfigured = configuredMap.get(key) ?? false;
+
+    // Twilio: always show "Configure in Settings"
+    if (key === "twilio") {
+      return (
+        <Link
+          href="/settings/integrations"
+          className="block w-full rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-center text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+        >
+          Configure in Settings &rarr;
+        </Link>
+      );
+    }
+
+    // Provider IS configured: show working "Connect" button
+    if (isProviderConfigured) {
+      return (
+        <button
+          onClick={() => handleConnect(int)}
+          disabled={connecting === int.id}
+          className="w-full rounded-lg bg-primary px-3 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm hover:shadow transition-all disabled:opacity-50"
+        >
+          {connecting === int.id ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Connecting...
+            </span>
+          ) : (
+            "Connect"
+          )}
+        </button>
+      );
+    }
+
+    // Provider NOT configured + Admin: show "Setup Required" with modal
+    if (isAdmin) {
+      return (
+        <button
+          onClick={() => setSetupTarget(int)}
+          className="w-full rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-500/20 transition-colors cursor-pointer"
+        >
+          Setup Required
+        </button>
+      );
+    }
+
+    // Provider NOT configured + non-admin: show "Coming Soon"
+    return (
+      <span className="block w-full rounded-lg border border-border bg-foreground/5 px-3 py-2.5 text-center text-xs font-medium text-muted cursor-default">
+        Coming Soon
+      </span>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -406,32 +454,7 @@ export default function IntegrationsPage() {
                   </div>
                 )}
 
-                {int.isConfigured === false ? (
-                  <button
-                    onClick={() => setSetupTarget(int)}
-                    className="w-full rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-500/20 transition-colors cursor-pointer"
-                  >
-                    Configuration Required
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleConnect(int)}
-                    disabled={connecting === int.id}
-                    className="w-full rounded-lg bg-primary px-3 py-2.5 text-xs font-semibold text-white hover:bg-primary-hover shadow-sm hover:shadow transition-all disabled:opacity-50"
-                  >
-                    {connecting === int.id ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Connecting...
-                      </span>
-                    ) : (
-                      "Connect"
-                    )}
-                  </button>
-                )}
+                {renderAvailableButton(int)}
               </div>
             ))}
           </div>
@@ -573,61 +596,34 @@ export default function IntegrationsPage() {
       >
         {setupTarget && (
           <div className="space-y-4">
-            {isAdmin ? (
-              <>
-                <p className="text-sm text-muted">
-                  {setupTarget.name} requires OAuth credentials before your team can connect.
-                  Configure them in the Integration Settings page.
-                </p>
-                <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
-                  <p className="text-sm text-foreground font-medium mb-1">
-                    As an admin, you can set this up now:
-                  </p>
-                  <p className="text-xs text-muted">
-                    Go to Settings &rarr; Integrations to enter your OAuth Client ID and Secret.
-                    Once configured, all team members will be able to connect {setupTarget.name} with one click.
-                  </p>
-                </div>
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => setSetupTarget(null)}
-                    className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground transition-colors"
-                  >
-                    Later
-                  </button>
-                  <Link
-                    href="/settings/integrations"
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
-                    onClick={() => setSetupTarget(null)}
-                  >
-                    Go to Settings
-                  </Link>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-muted">
-                  {setupTarget.name} has not been configured yet.
-                  An administrator needs to set up the OAuth credentials before this integration can be used.
-                </p>
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-                  <p className="text-sm text-amber-800 font-medium">
-                    Contact your administrator
-                  </p>
-                  <p className="text-xs text-amber-700 mt-1">
-                    Ask a team admin to go to Settings &rarr; Integrations and configure the {setupTarget.name} credentials.
-                  </p>
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => setSetupTarget(null)}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
-                  >
-                    Got it
-                  </button>
-                </div>
-              </>
-            )}
+            <p className="text-sm text-muted">
+              {setupTarget.name} requires OAuth credentials before your team can connect.
+              Configure them in the Integration Settings page.
+            </p>
+            <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+              <p className="text-sm text-foreground font-medium mb-1">
+                As an admin, you can set this up now:
+              </p>
+              <p className="text-xs text-muted">
+                Go to Settings &rarr; Integrations to enter your OAuth Client ID and Secret.
+                Once configured, all team members will be able to connect {setupTarget.name} with one click.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setSetupTarget(null)}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground transition-colors"
+              >
+                Later
+              </button>
+              <Link
+                href="/settings/integrations"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
+                onClick={() => setSetupTarget(null)}
+              >
+                Go to Settings
+              </Link>
+            </div>
           </div>
         )}
       </Modal>

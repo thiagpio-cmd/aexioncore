@@ -44,7 +44,9 @@ const MAX_MESSAGES_PER_SYNC = 100;
 function getOAuthConfig(): OAuthConfig {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   const redirectUri =
     process.env.GOOGLE_REDIRECT_URI ??
     `${baseUrl}/api/integrations/callback/gmail`;
