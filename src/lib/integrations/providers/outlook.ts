@@ -23,6 +23,7 @@ import {
   type WebhookValidationResult,
   type HealthCheckResult,
 } from "../provider-contract";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -50,9 +51,7 @@ const MAX_EVENTS_PER_SYNC = 50;
 function getOAuthConfig(): OAuthConfig {
   const clientId = process.env.MICROSOFT_CLIENT_ID;
   const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
-  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = getBaseUrl();
   const redirectUri = `${baseUrl}/api/integrations/callback/outlook`;
 
   if (!clientId || !clientSecret) {

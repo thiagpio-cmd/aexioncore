@@ -5,6 +5,7 @@ import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
 import { unauthorized, badRequest } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 /**
  * POST /api/ai/process-batch
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     const clampedLimit = Math.min(Math.max(1, limit), 100);
     const organizationId = session.user.organizationId;
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
 
     let triggered = 0;
     let skipped = 0;
@@ -84,7 +85,13 @@ export async function POST(request: NextRequest) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ activityId: activity.id }),
-        }).catch(() => {});
+        })
+          .then(async (res) => {
+            if (!res.ok) console.error(`[AI:process-batch] HTTP ${res.status} for activity:${activity.id}`);
+          })
+          .catch((err) => {
+            console.error(`[AI:process-batch] Network error for activity:${activity.id}:`, err.message);
+          });
 
         triggered++;
       }
@@ -128,7 +135,13 @@ export async function POST(request: NextRequest) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ inboxMessageId: message.id }),
-        }).catch(() => {});
+        })
+          .then(async (res) => {
+            if (!res.ok) console.error(`[AI:process-batch] HTTP ${res.status} for inboxMessage:${message.id}`);
+          })
+          .catch((err) => {
+            console.error(`[AI:process-batch] Network error for inboxMessage:${message.id}:`, err.message);
+          });
 
         triggered++;
       }

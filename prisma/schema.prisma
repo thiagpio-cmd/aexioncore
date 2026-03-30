@@ -39,9 +39,9 @@ model Organization {
 
   // Org settings
   industry       String?
-  defaultCurrency String?  @default("BRL")
+  defaultCurrency String?  @default("USD")
   fiscalYearStart Int?     @default(1)
-  timezone        String?  @default("America/Sao_Paulo")
+  timezone        String?  @default("UTC")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -102,10 +102,25 @@ model User {
   createdActivities Activity[] @relation("ActivityCreator")
   auditLogs       AuditLog[]
   reports         SavedReport[] @relation("UserReports")
+  passwordResetTokens PasswordResetToken[]
 
   @@index([organizationId])
   @@index([email])
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model Company {
@@ -278,6 +293,12 @@ model Opportunity {
 
   probability    Int      @default(0)
   expectedCloseDate DateTime?
+  closedAt       DateTime?
+
+  // Loss tracking
+  lossReason     String?   // PRICE, COMPETITOR, TIMING, FIT, NO_BUDGET, NO_DECISION, OTHER
+  lossNotes      String?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

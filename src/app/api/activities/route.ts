@@ -6,6 +6,7 @@ import { unauthorized, forbidden, validationError } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { actorFromSession, canPerform, buildScopeFilter } from "@/lib/authorization";
 import { z } from "zod";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 const ActivityCreateSchema = z.object({
   type: z.enum([
@@ -86,11 +87,17 @@ export async function POST(request: NextRequest) {
 
     // Fire-and-forget AI processing (don't await, don't block response)
     console.log(`[AI Trigger] Triggering AI processing for activity ${activity.id}`);
-    fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/process-activity`, {
+    fetch(`${getBaseUrl()}/api/ai/process-activity`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ activityId: activity.id }),
-    }).catch(() => {}); // Silently ignore failures
+    })
+      .then(async (res) => {
+        if (!res.ok) console.error(`[AI:process-activity] HTTP ${res.status} for activity:${activity.id}`);
+      })
+      .catch((err) => {
+        console.error(`[AI:process-activity] Network error for activity:${activity.id}:`, err.message);
+      });
 
     return sendSuccess(activity, 201);
   } catch (error: any) {

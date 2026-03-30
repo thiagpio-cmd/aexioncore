@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { unauthorized, forbidden } from "@/lib/errors";
 import { sendError } from "@/lib/api-response";
+import { ROLE_LEVEL } from "@/lib/authorization";
 
 export interface SessionUser {
   id: string;
@@ -36,25 +37,15 @@ export async function requireSession(): Promise<
 
 /**
  * Require a minimum role level.
- * Role hierarchy: USER/SDR/CLOSER < MANAGER < DIRECTOR/ADMIN
+ * Role hierarchy: VIEWER < SDR/CLOSER < REVOPS < MANAGER < DIRECTOR < ADMIN
+ * Uses canonical ROLE_LEVEL from authorization.ts (single source of truth).
  */
-const ROLE_LEVELS: Record<string, number> = {
-  USER: 1,
-  SDR: 1,
-  CLOSER: 1,
-  VIEWER: 1,
-  REVOPS: 2,
-  MANAGER: 3,
-  DIRECTOR: 4,
-  ADMIN: 5,
-};
-
 export function requireRole(
   user: SessionUser,
   minimumRole: string
 ): Response | null {
-  const userLevel = ROLE_LEVELS[user.role] ?? 0;
-  const requiredLevel = ROLE_LEVELS[minimumRole] ?? 0;
+  const userLevel = ROLE_LEVEL[user.role] ?? 0;
+  const requiredLevel = ROLE_LEVEL[minimumRole] ?? 0;
   if (userLevel < requiredLevel) {
     return sendError(forbidden("Insufficient permissions for this action"));
   }
@@ -77,7 +68,7 @@ export function requireOwnership(
     return sendError(forbidden("You don't have access to this resource"));
   }
   // Regular users can only see their own records
-  if (ROLE_LEVELS[user.role] <= 1 && recordOwnerId && recordOwnerId !== user.id) {
+  if (ROLE_LEVEL[user.role] <= 1 && recordOwnerId && recordOwnerId !== user.id) {
     return sendError(forbidden("You don't have access to this resource"));
   }
   return null;
@@ -94,7 +85,7 @@ export function tenantWhere(
   const where: Record<string, string> = {
     organizationId: user.organizationId,
   };
-  if (ROLE_LEVELS[user.role] <= 1) {
+  if (ROLE_LEVEL[user.role] <= 1) {
     where[ownerField] = user.id;
   }
   return where;

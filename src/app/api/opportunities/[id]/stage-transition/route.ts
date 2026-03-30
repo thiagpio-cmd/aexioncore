@@ -11,6 +11,8 @@ import { z } from "zod";
 const TransitionSchema = z.object({
   targetStage: z.string().min(1),
   note: z.string().optional(),
+  lossReason: z.enum(["PRICE", "COMPETITOR", "TIMING", "FIT", "NO_BUDGET", "NO_DECISION", "OTHER"]).optional(),
+  lossNotes: z.string().optional(),
   nextStepTask: z.object({
     title: z.string().min(1),
     dueDate: z.string().optional(),

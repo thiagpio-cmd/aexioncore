@@ -56,7 +56,7 @@ export interface Subject {
 
 // ─── Role Hierarchy ─────────────────────────────────────────────────────────
 
-const ROLE_LEVEL: Record<string, number> = {
+export const ROLE_LEVEL: Record<string, number> = {
   VIEWER: 0,
   SDR: 1,
   CLOSER: 1,
@@ -66,7 +66,7 @@ const ROLE_LEVEL: Record<string, number> = {
   ADMIN: 5,
 };
 
-function roleLevel(role: string): number {
+export function roleLevel(role: string): number {
   return ROLE_LEVEL[role] ?? 0;
 }
 

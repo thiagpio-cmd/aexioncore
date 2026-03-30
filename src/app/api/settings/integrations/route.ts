@@ -12,6 +12,7 @@ import { badRequest } from "@/lib/errors";
 import { requireSession, requireRole } from "@/server/auth";
 import { encrypt, decrypt, maskToken } from "@/lib/integrations/credential-vault";
 import { writeAuditLog } from "@/server/audit";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 // ─── Provider definitions ───────────────────────────────────────────────────
 
@@ -135,9 +136,7 @@ export async function GET() {
     const roleErr = requireRole(user, "ADMIN");
     if (roleErr) return roleErr;
 
-    const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl();
 
     const results = await Promise.all(
       PROVIDERS.map(async (p) => {

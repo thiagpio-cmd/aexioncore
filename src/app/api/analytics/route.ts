@@ -5,6 +5,7 @@ import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
 import { unauthorized } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { requireRole } from "@/server/auth";
+import { ROLE_LEVEL } from "@/lib/authorization";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,8 +17,7 @@ export async function GET(request: NextRequest) {
     const now = new Date();
 
     // SDR/CLOSER (role level <= 1) only see their own data
-    const ROLE_LEVELS: Record<string, number> = { USER: 1, SDR: 1, CLOSER: 1, VIEWER: 1, REVOPS: 2, MANAGER: 3, DIRECTOR: 4, ADMIN: 5 };
-    const userLevel = ROLE_LEVELS[session.user.role] ?? 0;
+    const userLevel = ROLE_LEVEL[session.user.role] ?? 0;
     const ownerFilter = userLevel <= 1 ? { ownerId: userId } : {};
     const creatorFilter = userLevel <= 1 ? { creatorId: userId } : {};
 

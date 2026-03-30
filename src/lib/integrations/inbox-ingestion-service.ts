@@ -12,6 +12,7 @@
 
 import { prisma } from "@/lib/db";
 import type { CanonicalEvent } from "@/lib/integrations/provider-contract";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 export interface IngestionContext {
   organizationId: string;
@@ -362,13 +363,19 @@ export async function ingestCanonicalEvents(
       result.created++;
 
       // Fire-and-forget AI processing for the newly ingested inbox message
-      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      const baseUrl = getBaseUrl();
       console.log(`[AI Trigger] Triggering AI processing for ingested inbox message ${createdMessage.id}`);
       fetch(`${baseUrl}/api/ai/process-activity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ inboxMessageId: createdMessage.id }),
-      }).catch(() => {}); // Silently ignore failures
+      })
+        .then(async (res) => {
+          if (!res.ok) console.error(`[AI:process-activity] HTTP ${res.status} for inboxMessage:${createdMessage.id}`);
+        })
+        .catch((err) => {
+          console.error(`[AI:process-activity] Network error for inboxMessage:${createdMessage.id}:`, err.message);
+        });
 
       // Emit a canonical activity record so the timeline reflects this
       await prisma.activity.create({
@@ -466,7 +473,9 @@ export async function relinkMessages(
         leadId: entities.leadId,
         opportunityId: entities.opportunityId,
       },
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error(`[Relink] Failed to update activity for message ${msg.sourceExternalId}:`, err.message);
+    });
 
     updated++;
   }

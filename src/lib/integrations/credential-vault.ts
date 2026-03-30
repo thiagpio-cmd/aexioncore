@@ -17,8 +17,8 @@ const ALGORITHM = "aes-256-cbc";
 const IV_LENGTH = 16;
 
 function getEncryptionKey(): Buffer {
-  const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) throw new Error("NEXTAUTH_SECRET environment variable is required for credential encryption. Cannot start without it.");
+  const secret = process.env.ENCRYPTION_KEY || process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error("ENCRYPTION_KEY or NEXTAUTH_SECRET environment variable is required for credential encryption.");
   // Derive a 32-byte key from the secret
   return createHash("sha256").update(secret).digest();
 }

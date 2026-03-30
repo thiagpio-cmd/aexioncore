@@ -78,7 +78,7 @@ interface DateRange {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatBRL(value: number): string {
+function formatCurrency(value: number): string {
   return value.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
@@ -304,7 +304,7 @@ export class ReportEngine {
       id: "pipeline-metrics",
       title: "Pipeline Overview",
       type: "metrics",
-      content: `Total pipeline: ${formatBRL(totalValue)}. ${opportunities.length} deals with average size ${formatBRL(avgValue)}. Win rate: ${winRate}%.`,
+      content: `Total pipeline: ${formatCurrency(totalValue)}. ${opportunities.length} deals with average size ${formatCurrency(avgValue)}. Win rate: ${winRate}%.`,
       data: {
         totalValue,
         dealCount: opportunities.length,
@@ -648,7 +648,7 @@ export class ReportEngine {
       id: "team-performance",
       title: "Team Performance",
       type: "table",
-      content: `${activeReps.length} active reps. Total revenue: ${formatBRL(activeReps.reduce((s, r) => s + r.revenue, 0))}. Total overdue tasks: ${activeReps.reduce((s, r) => s + r.overdueTasks, 0)}.`,
+      content: `${activeReps.length} active reps. Total revenue: ${formatCurrency(activeReps.reduce((s, r) => s + r.revenue, 0))}. Total overdue tasks: ${activeReps.reduce((s, r) => s + r.overdueTasks, 0)}.`,
       data: {
         reps: activeReps.sort((a, b) => b.revenue - a.revenue),
         totals: {
@@ -715,7 +715,7 @@ export class ReportEngine {
       id: "forecast-overview",
       title: "Forecast Overview",
       type: "metrics",
-      content: `Forecast commit: ${formatBRL(commitValue)}. Best case: ${formatBRL(bestCaseValue)}. Weighted pipeline: ${formatBRL(Math.round(weightedValue))}. ${closingSoon.length} deals expected to close within 30 days.`,
+      content: `Forecast commit: ${formatCurrency(commitValue)}. Best case: ${formatCurrency(bestCaseValue)}. Weighted pipeline: ${formatCurrency(Math.round(weightedValue))}. ${closingSoon.length} deals expected to close within 30 days.`,
       data: {
         commit: commitValue,
         bestCase: bestCaseValue,
@@ -777,7 +777,7 @@ export class ReportEngine {
     if (pipelineMetrics?.data) {
       const d = pipelineMetrics.data as Record<string, unknown>;
       keyFindings.push(
-        `Pipeline contains ${d.dealCount} deals worth ${formatBRL(d.totalValue as number)} with a ${d.winRate}% win rate.`
+        `Pipeline contains ${d.dealCount} deals worth ${formatCurrency(d.totalValue as number)} with a ${d.winRate}% win rate.`
       );
     }
 
@@ -795,7 +795,7 @@ export class ReportEngine {
     if (forecastOverview?.data) {
       const d = forecastOverview.data as Record<string, unknown>;
       keyFindings.push(
-        `Forecast commit at ${formatBRL(d.commit as number)}, weighted pipeline at ${formatBRL(d.weighted as number)}.`
+        `Forecast commit at ${formatCurrency(d.commit as number)}, weighted pipeline at ${formatCurrency(d.weighted as number)}.`
       );
     }
 

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
 import { unauthorized, notFound, forbidden } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
+import { ROLE_LEVEL } from "@/lib/authorization";
 
 // GET /api/reports/[id] — Read a single saved report
 export async function GET(
@@ -62,10 +63,9 @@ export async function DELETE(
     }
 
     // Only ADMIN or the report creator can delete/archive
-    const ROLE_LEVELS: Record<string, number> = { USER: 1, SDR: 1, CLOSER: 1, VIEWER: 1, REVOPS: 2, MANAGER: 3, DIRECTOR: 4, ADMIN: 5 };
-    const userLevel = ROLE_LEVELS[(session.user as any).role] ?? 0;
+    const userLevel = ROLE_LEVEL[(session.user as any).role] ?? 0;
     const isOwner = report.createdById === (session.user as any).id;
-    if (userLevel < ROLE_LEVELS.ADMIN && !isOwner) {
+    if (userLevel < ROLE_LEVEL.ADMIN && !isOwner) {
       return sendError(forbidden("Only admins or the report creator can archive reports"));
     }
 

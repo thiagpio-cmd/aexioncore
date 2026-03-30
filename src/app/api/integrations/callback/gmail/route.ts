@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         if (!payloadB64 || !signature) throw new Error("Invalid state format");
 
         // Verify HMAC signature
-        const hmacSecret = process.env.NEXTAUTH_SECRET || "";
+        const hmacSecret = process.env.HMAC_SECRET || process.env.NEXTAUTH_SECRET || "";
         const expectedSig = createHmac("sha256", hmacSecret).update(payloadB64).digest("base64url");
         const sigBuffer = Buffer.from(signature, "base64url");
         const expectedBuffer = Buffer.from(expectedSig, "base64url");

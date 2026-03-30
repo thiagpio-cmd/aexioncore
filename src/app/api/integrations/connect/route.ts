@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       ts: Date.now(),
     });
     const payloadB64 = Buffer.from(payload).toString("base64url");
-    const hmacSecret = process.env.NEXTAUTH_SECRET || "";
+    const hmacSecret = process.env.HMAC_SECRET || process.env.NEXTAUTH_SECRET || "";
     const signature = createHmac("sha256", hmacSecret).update(payloadB64).digest("base64url");
     const state = `${payloadB64}.${signature}`;
 

@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
+  DIRECT_URL: "postgresql://fake:fake@localhost:5432/fake"
+  NEXTAUTH_SECRET: "ci-test-secret-minimum-32-characters-long"
+  NEXTAUTH_URL: "http://localhost:3000"
+  ADMIN_SECRET: "ci-admin-secret"
+
+jobs:
+  quality:
+    name: Type Check + Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm exec prisma generate
+
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
+      - name: Unit tests
+        run: pnpm test -- --reporter=verbose

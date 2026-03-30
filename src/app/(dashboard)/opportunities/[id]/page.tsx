@@ -76,6 +76,9 @@ export default function OpportunityDetailPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [activityType, setActivityType] = useState<string | null>(null);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [showLossModal, setShowLossModal] = useState(false);
+  const [lossReason, setLossReason] = useState("");
+  const [lossNotes, setLossNotes] = useState("");
 
   const { data: deal, loading: dealLoading, refetch } = useApi<Opportunity>(`/api/opportunities/${oppId}`);
   const { data: activities, loading: activitiesLoading, refetch: refetchActivities } = useApi<Activity[]>(`/api/activities?opportunityId=${oppId}`);
@@ -152,6 +155,11 @@ export default function OpportunityDetailPage() {
             disabled={updating}
             onChange={async (e) => {
               const newStage = e.target.value;
+              if (newStage === "CLOSED_LOST") {
+                setLossReason(""); setLossNotes(""); setShowLossModal(true);
+                e.target.value = deal.stage; // reset select
+                return;
+              }
               setUpdating(true);
               const { error } = await apiPost(`/api/opportunities/${oppId}/stage-transition`, { targetStage: newStage });
               setUpdating(false);
@@ -189,19 +197,69 @@ export default function OpportunityDetailPage() {
           {!["CLOSED_WON", "CLOSED_LOST"].includes(deal.stage) && (
             <button
               disabled={updating}
-              onClick={async () => {
-                setUpdating(true);
-                const { error } = await apiPost(`/api/opportunities/${oppId}/stage-transition`, { targetStage: "CLOSED_LOST" });
-                setUpdating(false);
-                if (error) { toastError(error); return; }
-                toastSuccess("Deal marked as lost");
-                refetch();
-                refetchActivities();
-              }}
+              onClick={() => { setLossReason(""); setLossNotes(""); setShowLossModal(true); }}
               className="rounded-lg border border-danger px-3 py-2 text-sm font-medium text-danger hover:bg-danger-light transition-colors disabled:opacity-50"
             >
               Register Loss
             </button>
+          )}
+
+          {/* Loss Reason Modal */}
+          {showLossModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+              <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Why was this deal lost?</h3>
+                <select
+                  value={lossReason}
+                  onChange={(e) => setLossReason(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground mb-3"
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="PRICE">Price / Budget</option>
+                  <option value="COMPETITOR">Lost to Competitor</option>
+                  <option value="TIMING">Bad Timing</option>
+                  <option value="FIT">Product Fit</option>
+                  <option value="NO_BUDGET">No Budget</option>
+                  <option value="NO_DECISION">No Decision Made</option>
+                  <option value="OTHER">Other</option>
+                </select>
+                <textarea
+                  value={lossNotes}
+                  onChange={(e) => setLossNotes(e.target.value)}
+                  placeholder="Additional notes (optional)"
+                  rows={3}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground resize-none mb-4"
+                />
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowLossModal(false)}
+                    className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-background transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={!lossReason || updating}
+                    onClick={async () => {
+                      setUpdating(true);
+                      const { error } = await apiPost(`/api/opportunities/${oppId}/stage-transition`, {
+                        targetStage: "CLOSED_LOST",
+                        lossReason,
+                        lossNotes: lossNotes || undefined,
+                      });
+                      setUpdating(false);
+                      setShowLossModal(false);
+                      if (error) { toastError(error); return; }
+                      toastSuccess("Deal marked as lost");
+                      refetch();
+                      refetchActivities();
+                    }}
+                    className="rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                  >
+                    {updating ? "Saving..." : "Confirm Loss"}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
           <button
             onClick={async () => {

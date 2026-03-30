@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -349,11 +350,17 @@ export async function POST(request: NextRequest, ctx: Ctx) {
 
         // Fire-and-forget AI processing for the new reply message
         console.log(`[AI Trigger] Triggering AI processing for reply inbox message ${replyMessage.id}`);
-        fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/process-activity`, {
+        fetch(`${getBaseUrl()}/api/ai/process-activity`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ inboxMessageId: replyMessage.id }),
-        }).catch(() => {});
+        })
+          .then(async (res) => {
+            if (!res.ok) console.error(`[AI:process-activity] HTTP ${res.status} for inboxMessage:${replyMessage.id}`);
+          })
+          .catch((err) => {
+            console.error(`[AI:process-activity] Network error for inboxMessage:${replyMessage.id}:`, err.message);
+          });
 
         // Mark original as read
         const updated = await prisma.inboxMessage.update({
@@ -385,11 +392,17 @@ export async function POST(request: NextRequest, ctx: Ctx) {
 
         // Fire-and-forget AI processing for the logged activity
         console.log(`[AI Trigger] Triggering AI processing for logged activity ${activity.id}`);
-        fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/process-activity`, {
+        fetch(`${getBaseUrl()}/api/ai/process-activity`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ activityId: activity.id }),
-        }).catch(() => {});
+        })
+          .then(async (res) => {
+            if (!res.ok) console.error(`[AI:process-activity] HTTP ${res.status} for activity:${activity.id}`);
+          })
+          .catch((err) => {
+            console.error(`[AI:process-activity] Network error for activity:${activity.id}:`, err.message);
+          });
 
         const updated = await prisma.inboxMessage.update({
           where: { id },

@@ -8,14 +8,20 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate sending email
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSent(true);
-    }, 1200);
+    try {
+      await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+    } catch {
+      // Always show success to not reveal if email exists
+    }
+    setIsLoading(false);
+    setIsSent(true);
   }
 
   return (

@@ -22,6 +22,7 @@ import {
   type WebhookValidationResult,
   type HealthCheckResult,
 } from "../provider-contract";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -39,9 +40,7 @@ const SLACK_SCOPES = [
 function getOAuthConfig(): OAuthConfig {
   const clientId = process.env.SLACK_CLIENT_ID;
   const clientSecret = process.env.SLACK_CLIENT_SECRET;
-  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = getBaseUrl();
   const redirectUri = `${baseUrl}/api/integrations/callback/slack`;
 
   if (!clientId || !clientSecret) {

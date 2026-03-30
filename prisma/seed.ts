@@ -3,6 +3,14 @@ import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+// ─── Production Guard ─────────────────────────────────────────────────────────
+// Seed data contains hardcoded credentials (aexion123, demo123) and runs
+// deleteMany on all tables. Never allow this in production.
+if (process.env.NODE_ENV === "production") {
+  console.error("[Seed] REFUSED: Seed is disabled in production to prevent data loss and credential exposure.");
+  process.exit(1);
+}
+
 // ─── Date Helpers ─────────────────────────────────────────────────────────────
 const now = new Date();
 const d = (daysAgo: number, hours = 10) => {

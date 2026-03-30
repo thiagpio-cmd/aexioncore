@@ -41,12 +41,9 @@ describe("Opportunity Stage Transitions", () => {
     expect(OPP_STAGE_TRANSITIONS.DISCOVERY).toContain("CLOSED_LOST");
   });
 
-  it("cannot skip from DISCOVERY to CLOSED_WON", () => {
-    expect(OPP_STAGE_TRANSITIONS.DISCOVERY).not.toContain("CLOSED_WON");
-  });
-
-  it("cannot skip from DISCOVERY to NEGOTIATION", () => {
-    expect(OPP_STAGE_TRANSITIONS.DISCOVERY).not.toContain("NEGOTIATION");
+  it("DISCOVERY allows flexible progression including skip-stage", () => {
+    expect(OPP_STAGE_TRANSITIONS.DISCOVERY).toContain("CLOSED_WON");
+    expect(OPP_STAGE_TRANSITIONS.DISCOVERY).toContain("NEGOTIATION");
   });
 
   it("NEGOTIATION can close won or lost", () => {
@@ -54,8 +51,8 @@ describe("Opportunity Stage Transitions", () => {
     expect(OPP_STAGE_TRANSITIONS.NEGOTIATION).toContain("CLOSED_LOST");
   });
 
-  it("CLOSED_WON is terminal", () => {
-    expect(OPP_STAGE_TRANSITIONS.CLOSED_WON).toEqual([]);
+  it("CLOSED_WON can be re-opened to DISCOVERY", () => {
+    expect(OPP_STAGE_TRANSITIONS.CLOSED_WON).toContain("DISCOVERY");
   });
 
   it("CLOSED_LOST can be re-opened to DISCOVERY", () => {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { ApiError } from "@/lib/errors";
 
 describe("API Response Contract", () => {
   describe("successResponse", () => {
@@ -41,24 +42,21 @@ describe("API Response Contract", () => {
 
   describe("errorResponse", () => {
     it("formats error correctly", () => {
-      const result = errorResponse({ code: "NOT_FOUND", message: "Lead not found", statusCode: 404 });
+      const result = errorResponse(new ApiError(404, "NOT_FOUND", "Lead not found"));
       expect(result.success).toBe(false);
       expect(result.error.code).toBe("NOT_FOUND");
       expect(result.error.message).toBe("Lead not found");
     });
 
     it("includes details when provided", () => {
-      const result = errorResponse({
-        code: "VALIDATION",
-        message: "Invalid",
-        statusCode: 422,
-        details: { field: "email", reason: "required" },
-      });
+      const result = errorResponse(
+        new ApiError(422, "VALIDATION", "Invalid", { field: "email", reason: "required" })
+      );
       expect(result.error.details).toEqual({ field: "email", reason: "required" });
     });
 
     it("omits details when not provided", () => {
-      const result = errorResponse({ code: "UNAUTHORIZED", message: "Unauthorized", statusCode: 401 });
+      const result = errorResponse(new ApiError(401, "UNAUTHORIZED", "Unauthorized"));
       expect(result.error.details).toBeUndefined();
     });
   });
