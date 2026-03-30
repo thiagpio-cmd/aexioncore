@@ -56,6 +56,7 @@ model Organization {
   integrations Integration[]
   auditLogs  AuditLog[]
   revenueEvents RevenueEvent[]
+  transcripts MeetingTranscript[]
 
   @@map("organizations")
 }
@@ -161,6 +162,7 @@ model Contact {
   leads Lead[]
   meetings Meeting[]
   primaryOpportunities Opportunity[] @relation("OpportunityPrimaryContact")
+  transcripts MeetingTranscript[] @relation("TranscriptContact")
 
   @@index([companyId])
   @@index([email])
@@ -194,6 +196,7 @@ model Account {
   updatedAt      DateTime @updatedAt
 
   opportunities Opportunity[]
+  transcripts MeetingTranscript[] @relation("TranscriptAccount")
 
   @@index([organizationId])
   @@index([companyId])
@@ -230,6 +233,7 @@ model Lead {
   meetings   Meeting[]
   insights   Insight[]
   tasks      Task[]    @relation("TaskLead")
+  transcripts MeetingTranscript[] @relation("TranscriptLead")
 
   @@index([organizationId])
   @@index([email])
@@ -309,6 +313,7 @@ model Opportunity {
   tasks      Task[]
   insights   Insight[]
   meetings   Meeting[] @relation("MeetingOpportunity")
+  transcripts MeetingTranscript[] @relation("TranscriptOpportunity")
 
   @@index([organizationId])
   @@index([accountId])
@@ -407,10 +412,61 @@ model Meeting {
   sourceSystem     String?
   sourceExternalId String?
 
+  transcripts MeetingTranscript[] @relation("TranscriptMeeting")
+
   @@index([ownerId])
   @@index([opportunityId])
   @@index([sourceExternalId])
   @@map("meetings")
+}
+
+model MeetingTranscript {
+  id              String    @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Source
+  source          String
+  externalId      String?
+
+  // Content
+  title           String?
+  rawTranscript   String
+  summary         String?
+  actionItems     String?
+  sentiment       String?
+  keyTopics       String?
+  nextSteps       String?
+  objections      String?
+  buyingSignals   String?
+  duration        Int?
+  participants    String?
+
+  // Entity links
+  meetingId       String?
+  meeting         Meeting?  @relation("TranscriptMeeting", fields: [meetingId], references: [id])
+  leadId          String?
+  lead            Lead?     @relation("TranscriptLead", fields: [leadId], references: [id])
+  opportunityId   String?
+  opportunity     Opportunity? @relation("TranscriptOpportunity", fields: [opportunityId], references: [id])
+  accountId       String?
+  account         Account?  @relation("TranscriptAccount", fields: [accountId], references: [id])
+  contactId       String?
+  contact         Contact?  @relation("TranscriptContact", fields: [contactId], references: [id])
+
+  // Processing
+  processedAt     DateTime?
+  processingError String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([organizationId])
+  @@index([source])
+  @@index([opportunityId])
+  @@index([leadId])
+  @@index([meetingId])
+  @@index([externalId])
+  @@map("meeting_transcripts")
 }
 
 model InboxMessage {

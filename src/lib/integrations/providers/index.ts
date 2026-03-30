@@ -16,6 +16,7 @@ import { GoogleCalendarProvider } from "./google-calendar";
 import { OutlookProvider } from "./outlook";
 import { TwilioProvider } from "./twilio";
 import { SlackProvider } from "./slack";
+import { ZoomProvider } from "./zoom";
 
 /**
  * Register all available integration providers with the registry.
@@ -27,6 +28,7 @@ export function registerAllProviders(): void {
   providerRegistry.register(new OutlookProvider());
   providerRegistry.register(new TwilioProvider());
   providerRegistry.register(new SlackProvider());
+  providerRegistry.register(new ZoomProvider());
 }
 
 // Re-export individual providers for direct use
@@ -35,3 +37,4 @@ export { GoogleCalendarProvider } from "./google-calendar";
 export { OutlookProvider } from "./outlook";
 export { TwilioProvider } from "./twilio";
 export { SlackProvider } from "./slack";
+export { ZoomProvider } from "./zoom";
