@@ -6,6 +6,7 @@ import { unauthorized, validationError, badRequest, forbidden } from "@/lib/erro
 import { authOptions } from "@/lib/auth";
 import { ContactCreateSchema, ContactQuerySchema } from "@/lib/validations/contact";
 import { actorFromSession, buildScopeFilter, canPerform } from "@/lib/authorization";
+import { auditCreate } from "@/server/audit";
 
 export async function GET(request: NextRequest) {
   try {
@@ -87,6 +88,13 @@ export async function POST(request: NextRequest) {
         organizationId: session.user.organizationId,
       },
       include: { company: { select: { id: true, name: true } } },
+    });
+
+    // ── Audit log ─────────────────────────────────────────────────────────
+    // Log ID only — not the full email — to avoid PII in structured logs.
+    auditCreate(session.user.organizationId, session.user.id, "Contact", contact.id, {
+      name: contact.name,
+      companyId: contact.companyId,
     });
 
     return sendSuccess(contact, 201);

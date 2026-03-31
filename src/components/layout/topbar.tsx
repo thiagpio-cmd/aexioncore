@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useApi } from "@/lib/hooks/use-api";
 import { NAV_ITEMS } from "@/lib/constants";
 import { GlobalSearch } from "@/components/layout/global-search";
+import { ExecutionScoreBadge } from "@/components/ExecutionScoreBadge";
 
 function getPageTitle(pathname: string): string {
   if (pathname === "/") return "Home";
@@ -30,6 +31,10 @@ export function Topbar() {
         .toUpperCase()
         .slice(0, 2)
     : "?";
+
+  const { data: execScoreData } = useApi<{ score: number }>(
+    user?.id ? `/api/users/${user.id}/execution-score` : null
+  );
 
   const toggleSearch = useCallback(() => {
     setSearchOpen((prev) => !prev);
@@ -82,6 +87,13 @@ export function Topbar() {
 
           {/* Notifications — linked to alerts */}
           <NotificationBell />
+
+          {/* Execution Score */}
+          {execScoreData?.score != null && (
+            <div className="flex items-center gap-1" title="Score de Execucao">
+              <ExecutionScoreBadge score={execScoreData.score} size="sm" />
+            </div>
+          )}
 
           {/* User avatar */}
           <button

@@ -17,29 +17,18 @@ export async function GET() {
     await prisma.$queryRaw`SELECT 1`;
     checks.database = { status: "ok", latency_ms: Date.now() - dbStart };
   } catch (err) {
+    // SECURITY: do not expose internal DB error details to unauthenticated callers
+    console.error("[health] DB check failed:", err);
     checks.database = {
       status: "error",
-      error: err instanceof Error ? err.message : "Unknown",
+      error: "Connection failed",
     };
   }
 
-  // AI availability
-  checks.ai_native = { status: "ok" };
-  checks.ai_openai = {
-    status: process.env.OPENAI_API_KEY ? "ok" : "error",
-    error: process.env.OPENAI_API_KEY ? undefined : "API key not configured",
-  };
-
-  // Integration config
-  checks.integrations_google = {
-    status: process.env.GOOGLE_CLIENT_ID ? "ok" : "error",
-  };
-  checks.integrations_microsoft = {
-    status: process.env.MICROSOFT_CLIENT_ID ? "ok" : "error",
-  };
-  checks.integrations_slack = {
-    status: process.env.SLACK_CLIENT_ID ? "ok" : "error",
-  };
+  // Service availability checks — do NOT expose which specific API keys
+  // or credentials are configured. That leaks infrastructure details to
+  // unauthenticated callers.
+  checks.services = { status: "ok" };
 
   const allOk = Object.values(checks).every((c) => c.status === "ok");
 

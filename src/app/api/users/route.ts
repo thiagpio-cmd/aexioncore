@@ -3,9 +3,10 @@ import { getServerSession } from "next-auth";
 import * as bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
-import { unauthorized, forbidden, badRequest, conflictError } from "@/lib/errors";
+import { unauthorized, forbidden, badRequest, conflictError, validationError } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { requireRole } from "@/server/auth";
+import { UserCreateSchema } from "@/lib/validations/user";
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,14 +49,12 @@ export async function POST(request: NextRequest) {
     if (roleError) return roleError;
 
     const body = await request.json();
-
-    if (!body.name?.trim()) return sendError(badRequest("Name is required"));
-    if (!body.email?.trim()) return sendError(badRequest("Email is required"));
-    if (!body.role?.trim()) return sendError(badRequest("Role is required"));
+    const data = UserCreateSchema.parse(body);
+    const email = data.email.toLowerCase();
 
     // Check if email already exists
     const existing = await prisma.user.findUnique({
-      where: { email: body.email.trim().toLowerCase() },
+      where: { email },
     });
     if (existing) {
       return sendError(conflictError("A user with this email already exists"));
@@ -67,13 +66,13 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.create({
       data: {
-        name: body.name.trim(),
-        email: body.email.trim().toLowerCase(),
+        name: data.name,
+        email,
         password: hashedPassword,
-        role: body.role,
-        workspace: body.workspace || "SDR",
+        role: data.role,
+        workspace: data.workspace || "SDR",
         organizationId: session.user.organizationId,
-        teamId: body.teamId || null,
+        teamId: data.teamId || null,
         isActive: true,
       },
       select: {
@@ -91,6 +90,7 @@ export async function POST(request: NextRequest) {
 
     return sendSuccess(user, 201);
   } catch (error: any) {
+    if (error.name === "ZodError") return sendError(validationError("Invalid user data", error.errors));
     console.error("POST /api/users error:", error);
     return sendUnhandledError();
   }

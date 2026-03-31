@@ -13,11 +13,15 @@ const REQUIRED_VARS = [
 ] as const;
 
 const OPTIONAL_VARS = [
+  "ANTHROPIC_API_KEY",
   "OPENAI_API_KEY",
   "GOOGLE_CLIENT_ID",
   "GOOGLE_CLIENT_SECRET",
   "GOOGLE_GEMINI_API_KEY",
   "ADMIN_SECRET",
+  "SENTRY_DSN",
+  "SENTRY_ORG",
+  "SENTRY_PROJECT",
 ] as const;
 
 export interface EnvCheckResult {

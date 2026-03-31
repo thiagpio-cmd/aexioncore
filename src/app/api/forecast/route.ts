@@ -2,9 +2,11 @@ import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
-import { unauthorized, badRequest } from "@/lib/errors";
+import { unauthorized, validationError } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { requireRole } from "@/server/auth";
+import { ForecastCreateSchema } from "@/lib/validations/forecast";
+import { auditCreate } from "@/server/audit";
 
 export async function GET(request: NextRequest) {
   try {
@@ -120,25 +122,37 @@ export async function POST(request: NextRequest) {
     const roleError = requireRole(session.user as any, "MANAGER");
     if (roleError) return roleError;
 
+    // ── Zod validation — prevents type coercion attacks and injection ─────
     const body = await request.json();
-    const { quarter, year, commit, bestCase, pipeline, target } = body;
+    const parsed = ForecastCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return sendError(validationError("Dados de previsão inválidos", parsed.error.issues));
+    }
 
-    if (!quarter || !year) return sendError(badRequest("quarter and year are required"));
+    const { quarter, year, commit, bestCase, pipeline, target } = parsed.data;
 
     const forecast = await prisma.forecastSnapshot.create({
       data: {
         organizationId: session.user.organizationId,
         quarter,
-        year: Number(year),
-        commit: Number(commit) || 0,
-        bestCase: Number(bestCase) || 0,
-        pipeline: Number(pipeline) || 0,
-        target: Number(target) || 0,
+        year,
+        commit,
+        bestCase,
+        pipeline,
+        target,
       },
+    });
+
+    // ── Audit log ─────────────────────────────────────────────────────────
+    auditCreate(session.user.organizationId, session.user.id, "ForecastSnapshot", forecast.id, {
+      quarter,
+      year,
+      target,
     });
 
     return sendSuccess(forecast, 201);
   } catch (error: any) {
+    if (error.name === "ZodError") return sendError(validationError("Dados inválidos", error.errors));
     console.error("POST /api/forecast error:", error);
     return sendUnhandledError();
   }

@@ -43,6 +43,15 @@ model Organization {
   fiscalYearStart Int?     @default(1)
   timezone        String?  @default("UTC")
 
+  // New: BRL / engine configuration
+  defaultCurrencyCode String? @default("BRL")
+  icpProfileId        String?
+
+  // Money Engine configuration
+  defaultCommissionRate Float?          // padrão 0.03 (3%)
+  moneyEngineEnabled    Boolean  @default(true)
+  pressureThresholds    Json?           // thresholds configuráveis por org
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -57,6 +66,22 @@ model Organization {
   auditLogs  AuditLog[]
   revenueEvents RevenueEvent[]
   transcripts MeetingTranscript[]
+
+  // New engine relations
+  dealScores        DealScore[]
+  behavioralSignals BehavioralSignal[]
+  toneAnalyses      ToneAnalysis[]
+  debriefSessions   DebriefSession[]
+  icpProfiles       ICPProfile[]
+  icpScores         ICPScore[]
+  notifications     Notification[]
+
+  // Phase-2 engine relations
+  debriefs             Debrief[]
+  behavioralSnapshots  BehavioralSnapshot[]
+  moneySnapshots       MoneySnapshot[]
+  actionProposals      ActionProposal[]
+  customerProfiles     CustomerProfile[]
 
   @@map("organizations")
 }
@@ -92,6 +117,13 @@ model User {
   image          String?
   isActive       Boolean  @default(true)
   notificationPrefs String?
+
+  // Behavioral scoring (computado pelo engine)
+  executionScore   Int?     // 0-100
+  behavioralFlags  Json?    // string[] — flags comportamentais detectadas
+  performanceTrend String?  // 'improving' | 'stable' | 'declining'
+  lastScoredAt     DateTime?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -104,6 +136,15 @@ model User {
   auditLogs       AuditLog[]
   reports         SavedReport[] @relation("UserReports")
   passwordResetTokens PasswordResetToken[]
+
+  // New engine relations
+  debriefSessions DebriefSession[]
+  notifications   Notification[]
+
+  // Phase-2 engine relations
+  debriefs             Debrief[]
+  behavioralSnapshots  BehavioralSnapshot[]
+  actionProposals      ActionProposal[]
 
   @@index([organizationId])
   @@index([email])
@@ -163,6 +204,7 @@ model Contact {
   meetings Meeting[]
   primaryOpportunities Opportunity[] @relation("OpportunityPrimaryContact")
   transcripts MeetingTranscript[] @relation("TranscriptContact")
+  customerProfiles CustomerProfile[]
 
   @@index([companyId])
   @@index([email])
@@ -178,7 +220,7 @@ model Account {
   name           String
   status         String   @default("active")
   ownerId        String?
-  
+
   // Post-Sale Journey Tracking
   isCustomer          Boolean   @default(false)
   becameCustomerAt    DateTime?
@@ -230,10 +272,20 @@ model Lead {
   sourceSystem     String?
   sourceExternalId String?
 
+  // New: ICP fit score link
+  icpScoreId String?
+
   meetings   Meeting[]
   insights   Insight[]
   tasks      Task[]    @relation("TaskLead")
   transcripts MeetingTranscript[] @relation("TranscriptLead")
+
+  // New engine relations
+  behavioralSignals BehavioralSignal[]
+  toneAnalyses      ToneAnalysis[]
+  debriefSessions   DebriefSession[]
+  icpScores         ICPScore[]
+  notifications     Notification[]
 
   @@index([organizationId])
   @@index([email])
@@ -310,10 +362,40 @@ model Opportunity {
   sourceSystem     String?
   sourceExternalId String?
 
+  // New: BRL value and ICP fit score link
+  valueBRL   Int?    @default(0)
+  icpScoreId String?
+
+  // Money & Intelligence scoring (Phase-2)
+  moneyAtRisk          Float?   // R$ em risco calculado
+  commissionAtRisk     Float?   // comissão em risco
+  delayCost            Float?   // custo por dia de atraso
+  riskScore            Int?     // 0-100 — risco geral do negócio
+  intentScore          Int?     // 0-100 — intenção de compra detectada
+  momentumScore        Int?     // 0-100 — velocidade e ritmo do negócio
+  readinessScore       Int?     // 0-100 — prontidão para fechar
+  priceSensitivity     Int?     // 0-100 — sensibilidade ao preço
+  competitivePressure  Int?     // 0-100 — pressão competitiva percebida
+  riskReasons          Json?    // string[] — razões detalhadas do risco
+  lastScoredAt         DateTime?
+
   tasks      Task[]
   insights   Insight[]
   meetings   Meeting[] @relation("MeetingOpportunity")
   transcripts MeetingTranscript[] @relation("TranscriptOpportunity")
+
+  // New engine relations
+  dealScores        DealScore[]
+  behavioralSignals BehavioralSignal[]
+  toneAnalyses      ToneAnalysis[]
+  debriefSessions   DebriefSession[]
+  icpScores         ICPScore[]
+  notifications     Notification[]
+
+  // Phase-2 engine relations
+  debriefs        Debrief[]
+  moneySnapshots  MoneySnapshot[]
+  actionProposals ActionProposal[]
 
   @@index([organizationId])
   @@index([accountId])
@@ -834,4 +916,744 @@ model SavedReport {
   @@index([organizationId])
   @@index([createdById])
   @@map("saved_reports")
+}
+
+// ============================================================================
+// Engine Models — Money / Scoring
+// ============================================================================
+
+model DealScore {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  opportunityId  String
+  opportunity    Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  // Financial values in BRL cents
+  totalValueBRL    Int
+  weightedValueBRL Int
+
+  // Scores (0-100)
+  riskScore     Int   // higher = more risk
+  momentumScore Int   // higher = more recent activity
+  healthScore   Int   // overall deal health
+
+  // Velocity indicators
+  velocityDays Int?  // avg days per stage
+  stuckDays    Int?  // days without activity
+
+  // AI-generated content (JSON strings)
+  signals         String? // JSON array of signal objects
+  narrative       String? // AI-generated Portuguese deal narrative
+  recommendations String? // JSON array of action recommendations
+
+  computedAt DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([opportunityId])
+  @@index([computedAt])
+  @@map("deal_scores")
+}
+
+// ============================================================================
+// Engine Models — Behavioral
+// ============================================================================
+
+model BehavioralSignal {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  leadId        String?
+  lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  // Signal classification
+  signalType String // BUYING_SIGNAL, RISK_SIGNAL, MOMENTUM_SIGNAL, CHURN_SIGNAL
+  category   String // ENGAGEMENT, OBJECTION, URGENCY, COMPETITOR, BUDGET, AUTHORITY
+  source     String // EMAIL, TRANSCRIPT, ACTIVITY, MANUAL
+
+  strength    Int    // 1-10
+  description String
+
+  detectedAt DateTime
+  expiresAt  DateTime? // signals decay over time
+
+  metadata String? // JSON: additional context
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([opportunityId])
+  @@index([leadId])
+  @@index([signalType])
+  @@index([detectedAt])
+  @@map("behavioral_signals")
+}
+
+// ============================================================================
+// Engine Models — Tone Analysis
+// ============================================================================
+
+model ToneAnalysis {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Source reference
+  sourceType String // EMAIL, TRANSCRIPT, ACTIVITY
+  sourceId   String // ID of the source record
+
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  leadId        String?
+  lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  // Tone output
+  overallTone    String  // POSITIVE, NEUTRAL, NEGATIVE, URGENT, COLD
+  confidence     Int     // 0-100
+  sentimentScore Float   // -1.0 to 1.0
+  urgencyLevel   Int     // 1-5
+
+  // Detailed breakdown (JSON strings)
+  keyPhrases    String? // JSON array of key phrases
+  toneBreakdown String? // JSON: {positive, negative, neutral, urgent} percentages
+
+  analyzedAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([opportunityId])
+  @@index([leadId])
+  @@index([sourceId])
+  @@map("tone_analyses")
+}
+
+// ============================================================================
+// Engine Models — Smart Debrief
+// ============================================================================
+
+model DebriefSession {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User     @relation(fields: [createdById], references: [id])
+
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  leadId        String?
+  lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  title     String
+  inputType String // TEXT, FILE, AUDIO, STRUCTURED
+  rawInput  String // the submitted text/transcript
+
+  // AI output (JSON strings)
+  aiInterpretation String? // JSON: what AI understood
+  suggestedTasks   String? // JSON array of task suggestions
+  suggestedUpdates String? // JSON: field updates to apply to opportunity/lead
+
+  // Approval lifecycle
+  userApproved Boolean   @default(false)
+  approvedAt   DateTime?
+  appliedAt    DateTime? // when suggestions were applied to records
+
+  status    String   @default("PENDING") // PENDING, APPROVED, APPLIED, REJECTED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([opportunityId])
+  @@index([leadId])
+  @@index([createdById])
+  @@map("debrief_sessions")
+}
+
+// ============================================================================
+// Engine Models — ICP
+// ============================================================================
+
+model ICPProfile {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  version  Int     @default(1)
+  isActive Boolean @default(true)
+  name     String  // e.g., "ICP v1 - Alto Padrão Imobiliário"
+
+  // Firmographic ideal
+  idealIndustries          String? // JSON array of industry strings
+  idealCompanySizeMin      Int?
+  idealCompanySizeMax      Int?
+  idealAnnualRevenueMinBRL Int?
+  idealAnnualRevenueMaxBRL Int?
+
+  // Psychographic model (JSON strings)
+  bigFiveProfile    String? // JSON: {openness, conscientiousness, extraversion, agreeableness, neuroticism} 0-10
+  motivationProfile String? // JSON: Deci & Ryan — {autonomy, competence, relatedness} scores
+  decisionStyle     String? // ANALYTICAL, INTUITIVE, CONSENSUS, AUTHORITATIVE
+  riskTolerance     String? // LOW, MEDIUM, HIGH
+  valueDrivers      String? // JSON array: e.g., ["ROI","TIME_TO_VALUE","INTEGRATION"]
+
+  // Performance benchmarks (from closed-won deals)
+  avgDealValueBRL    Int?
+  avgSalesCycleDays  Int?
+  avgWinRate         Int?    // 0-100
+  topObjections      String? // JSON array
+  topWinReasons      String? // JSON array
+  sampleSize         Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  icpScores ICPScore[]
+
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+  @@map("icp_profiles")
+}
+
+model ICPScore {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  icpProfileId String
+  icpProfile   ICPProfile @relation(fields: [icpProfileId], references: [id], onDelete: Cascade)
+
+  leadId        String?
+  lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+
+  // Scores (0-100)
+  fitScore          Int
+  firmographicScore Int
+  psychographicScore Int
+
+  breakdown  String? // JSON: per-dimension scores
+  scoreLabel String? // CHAMPION, HIGH_FIT, MEDIUM_FIT, LOW_FIT, DISQUALIFIED
+
+  computedAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([icpProfileId])
+  @@index([leadId])
+  @@index([opportunityId])
+  @@map("icp_scores")
+}
+
+// ============================================================================
+// Engine Models — New MVP Extensions (appended, no existing models modified)
+// ============================================================================
+
+// 1. DealScoreSnapshot — Scoring engine persistence (versioned score records)
+model DealScoreSnapshot {
+  id             String   @id @default(cuid())
+  organizationId String
+  opportunityId  String?
+  leadId         String?
+
+  fitScore       Float
+  velocityScore  Float
+  riskScore      Float
+  momentumScore  Float
+  overallScore   Float
+
+  scoreBreakdown Json     // component-level detail
+  previousScore  Float?
+  scoreDelta     Float?
+
+  scoredBy       String   // engine version identifier
+  scoredAt       DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([opportunityId])
+  @@index([leadId])
+  @@index([organizationId, scoredAt])
+  @@map("deal_score_snapshots")
+}
+
+// 2. BehavioralPattern — Behavioral pattern tracking (flexible entity signals)
+model BehavioralPattern {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  entityType     String   // lead|opportunity|contact|account
+  entityId       String
+
+  signalType     String   // response_time|email_open|no_reply_streak|meeting_acceptance|objection_raised
+  signalValue    Json     // flexible payload: numeric, boolean, string
+  intensity      Float    // 0-1 normalized
+
+  detectedAt     DateTime @default(now())
+  source         String   // email|calendar|transcript|manual
+  metadata       Json?
+
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([entityId, entityType])
+  @@index([organizationId, signalType])
+  @@index([detectedAt])
+  @@map("behavioral_patterns")
+}
+
+// 3. ToneProfile — AI tone analysis per interaction
+model ToneProfile {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  entityType     String   // lead|opportunity|contact
+  entityId       String
+
+  toneLabel      String   // warm|cold|neutral|anxious|enthusiastic|resistant|evaluating
+  confidenceScore Float   // 0-1
+
+  rawSignals     Json     // array of contributing phrases/signals
+  analyzedFrom   String   // transcript|email|activity
+  sourceId       String   // the source record id
+
+  analyzedAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([entityId, entityType])
+  @@index([organizationId, toneLabel])
+  @@index([sourceId])
+  @@map("tone_profiles")
+}
+
+// 4. ICPDefinition — Dynamic Ideal Customer Profile (calibrated model)
+model ICPDefinition {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  version        Int      @default(1)
+
+  psychographicModel Json  // Big Five, DISC, lifestyle, archetypes
+  firmographicModel  Json  // industry, size, revenue range, growth stage
+  behavioralModel    Json  // buying patterns, typical objections, decision velocity
+
+  topSignals     Json     // array of signals correlated with closed-won
+  antiPatterns   Json     // signals correlated with churn/loss
+  fitThresholds  Json     // min scores per dimension
+
+  calibratedFromDeals Int @default(0)
+  lastCalibratedAt   DateTime?
+  isActive           Boolean  @default(true)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, version])
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+  @@map("icp_definitions")
+}
+
+// 5. DealDebrief — Smart Debrief submission and AI extraction
+model DealDebrief {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  submittedBy    String   // userId
+  opportunityId  String?
+  leadId         String?
+
+  inputType      String   // text|file|audio
+  rawInput       String   // the user's raw submission text
+
+  audioUrl       String?
+  fileUrl        String?
+
+  aiExtraction   Json?    // structured extraction: tasks, signals, entities, money amounts, next steps
+  extractedTasks Json?    // array of task suggestions
+  extractedSignals Json?  // array of behavioral/tone signals
+  extractedMoney Json?    // amounts, currency, deal size signals
+
+  status         String   @default("pending") // pending|processing|extracted|approved|rejected
+
+  approvedAt     DateTime?
+  approvedBy     String?  // userId
+  rejectionReason String?
+  processedAt    DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([opportunityId])
+  @@index([leadId])
+  @@index([submittedBy])
+  @@index([organizationId, status])
+  @@map("deal_debriefs")
+}
+
+// 6. MoneyEvent — Revenue/money engine tracking
+model MoneyEvent {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  eventType      String   // deal_created|deal_updated|deal_won|deal_lost|forecast_change|arr_change|mrr_change|expansion|churn|contraction
+
+  opportunityId  String?
+  accountId      String?
+
+  currency       String   @default("BRL")
+  amount         Decimal  @db.Decimal(18, 2)
+  previousAmount Decimal? @db.Decimal(18, 2)
+  delta          Decimal? @db.Decimal(18, 2)
+  deltaPercent   Float?
+
+  period         String?  // e.g. "2025-Q1"
+  moneyMetadata  Json     // detailed breakdown: ARR, MRR, TCV, ACV, discount, etc.
+
+  triggeredBy    String   // system|user|ai
+  triggeredById  String?  // userId if user-triggered
+
+  occurredAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([opportunityId])
+  @@index([accountId])
+  @@index([organizationId, eventType])
+  @@index([organizationId, occurredAt])
+  @@map("money_events")
+}
+
+// 7. NotificationEvent — Notification engine (extended model)
+model NotificationEvent {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  userId         String   // recipient
+
+  type           String   // deal_risk|score_drop|debrief_ready|icp_match|money_alert|behavioral_signal|task_due|system
+  title          String
+  body           String
+  data           Json?    // contextual payload for deep-link
+
+  channel        String   @default("in_app")  // in_app|email|slack
+  priority       String   @default("medium")  // low|medium|high|critical
+
+  isRead         Boolean  @default(false)
+  readAt         DateTime?
+  isDismissed    Boolean  @default(false)
+  dismissedAt    DateTime?
+
+  sentAt         DateTime?
+  deliveryStatus String   @default("pending") // pending|sent|failed|delivered
+
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([userId, deliveryStatus])
+  @@index([organizationId, type])
+  @@map("notification_events")
+}
+
+// 8. NarrativeReport — AI-generated narrative summaries
+model NarrativeReport {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  reportType     String   // deal_summary|pipeline_health|icp_match|weekly_digest|risk_brief|win_loss
+  entityType     String?  // opportunity|lead|account|pipeline
+  entityId       String?
+
+  narrative      String   // the full AI-generated text
+  keyInsights    Json     // structured array of bullet insights
+  recommendations Json    // structured array of action recommendations
+  dataSnapshot   Json     // the raw metrics/data that generated this narrative
+
+  generatedBy    String   // ai model or engine version
+  generatedAt    DateTime @default(now())
+  expiresAt      DateTime?
+
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([entityId, entityType])
+  @@index([organizationId, reportType])
+  @@index([generatedAt])
+  @@map("narrative_reports")
+}
+
+// 9. ActionApproval — User approval flow for AI-suggested actions
+model ActionApproval {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  requestedBy    String   // userId or "system"
+  reviewedBy     String?  // userId
+
+  actionType     String   // create_task|send_email|update_stage|update_score|log_activity|create_debrief_tasks
+  actionPayload  Json     // the full action to execute if approved
+  context        Json?    // why this action is suggested
+
+  status         String   @default("pending") // pending|approved|rejected|executed|expired
+
+  reviewNote     String?
+  reviewedAt     DateTime?
+  executedAt     DateTime?
+  expiresAt      DateTime?
+
+  opportunityId  String?
+  leadId         String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([opportunityId])
+  @@index([leadId])
+  @@index([requestedBy])
+  @@index([organizationId, status])
+  @@map("action_approvals")
+}
+
+// 10. SignalEvent — Extracted signals from all sources
+model SignalEvent {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  signalCategory String   // buying|risk|churn|expansion|sentiment|urgency|authority|budget|timeline
+  signalName     String
+  signalStrength Float    // 0-1
+  direction      String   // positive|negative|neutral
+
+  entityType     String
+  entityId       String
+
+  extractedFrom  String   // transcript|email|activity|debrief|manual
+  sourceId       String
+  evidence       String?  // the text/excerpt that triggered this signal
+
+  extractedAt    DateTime @default(now())
+  validUntil     DateTime?
+  metadata       Json?
+
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([entityId, entityType])
+  @@index([organizationId, signalCategory])
+  @@index([sourceId])
+  @@index([extractedAt])
+  @@map("signal_events")
+}
+
+// ============================================================================
+// Engine Models — Notifications
+// ============================================================================
+
+model Notification {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type     String // DEAL_AT_RISK, SIGNAL_DETECTED, TASK_DUE, DEBRIEF_READY, ICP_MATCH, SCORE_CHANGE
+  title    String
+  body     String
+  priority String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+
+  isRead  Boolean   @default(false)
+  readAt  DateTime?
+
+  actionUrl String?
+  metadata  String? // JSON: contextual data
+
+  expiresAt DateTime?
+
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  leadId        String?
+  lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([type])
+  @@map("notifications")
+}
+
+// ============================================================================
+// Phase-2 Engine Models — Debrief / Behavioral / Money / Action Proposal
+// ============================================================================
+
+// 11. Debrief — Debrief de negociação submetido pelo corretor (texto, arquivo ou áudio)
+//     Substitui/complementa DealDebrief/DebriefSession com ciclo de vida mais rico
+model Debrief {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  opportunityId  String
+  opportunity    Opportunity  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+
+  inputType      String   // 'text' | 'file' | 'audio'
+  rawInput       String   @db.Text  // conteúdo bruto submetido pelo usuário
+  fileUrl        String?            // URL do arquivo/áudio (se aplicável)
+
+  // Saída estruturada do AI
+  interpretation  Json?  // o que o AI entendeu da situação
+  proposedActions Json?  // array de ações sugeridas pelo AI
+  approvedActions Json?  // subconjunto aprovado pelo usuário
+
+  status     String   @default("pending") // 'pending' | 'reviewed' | 'applied'
+  confidence Float?   // confiança geral da interpretação (0-1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Phase-2 — ações geradas a partir deste debrief
+  actionProposals ActionProposal[]
+
+  @@index([opportunityId])
+  @@index([userId])
+  @@index([organizationId, status])
+  @@map("debriefs")
+}
+
+// 12. BehavioralSnapshot — Snapshot periódico do comportamento de execução do corretor
+model BehavioralSnapshot {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+
+  executionScore  Int     // 0-100 — score de execução no período
+  intentAvg       Float   // média de intentScore das oportunidades ativas
+  momentumAvg     Float   // média de momentumScore das oportunidades ativas
+  responseGapAvg  Float   // média de gap de resposta (horas)
+  flags           Json    // string[] — flags comportamentais detectadas
+
+  period       String   // 'daily' | 'weekly'
+  snapshotDate DateTime // data de referência do snapshot
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, snapshotDate])
+  @@index([organizationId, period])
+  @@map("behavioral_snapshots")
+}
+
+// 13. MoneySnapshot — Snapshot do dinheiro em risco por oportunidade (histórico)
+model MoneySnapshot {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  opportunityId  String
+  opportunity    Opportunity  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  moneyAtRisk      Float  // R$ total em risco
+  commissionAtRisk Float  // R$ comissão em risco
+  delayCost        Float  // R$ custo estimado de atraso
+  riskFactor       Float  // 0-1 — fator de risco composto
+  riskReasons      Json   // string[] — razões do risco neste momento
+
+  calculatedAt DateTime @default(now())
+
+  @@index([opportunityId, calculatedAt])
+  @@index([organizationId, calculatedAt])
+  @@map("money_snapshots")
+}
+
+// 14. ActionProposal — Ação proposta pelo AI (de debrief, recommendation ou alert)
+//     Ciclo de vida: proposed → approved/rejected → executed
+model ActionProposal {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  opportunityId  String
+  opportunity    Opportunity  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+
+  // Origem da proposta
+  debriefId String?
+  debrief   Debrief? @relation(fields: [debriefId], references: [id], onDelete: SetNull)
+  source    String   // 'debrief' | 'recommendation' | 'alert'
+
+  // Conteúdo da ação
+  actionType   String  // 'create_task' | 'move_stage' | 'update_probability' | 'mark_risk' | 'schedule_follow_up' | 'create_reminder'
+  description  String  // descrição legível em português
+  urgency      String  // 'immediate' | 'today' | 'this_week'
+  params       Json    // parâmetros específicos da ação (taskTitle, targetStage, newProbability, etc.)
+
+  financialImpact String?  // descrição do impacto financeiro em R$ (ex.: "R$ 45.000 em risco")
+
+  // Ciclo de vida
+  status     String    @default("proposed") // 'proposed' | 'approved' | 'rejected' | 'executed'
+  executedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([opportunityId, status])
+  @@index([userId, status])
+  @@index([organizationId, status])
+  @@map("action_proposals")
+}
+
+// ============================================================================
+// Customer Psychographic Profiling
+// ============================================================================
+
+model CustomerProfile {
+  id             String   @id @default(cuid())
+  contactId      String
+  contact        Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Big Five Personality Traits (each 0-100)
+  bigFive        Json?    // {openness, conscientiousness, extraversion, agreeableness, neuroticism}
+
+  // Jungian Archetype
+  jungArchetype  String?  // hero|explorer|sage|rebel|magician|lover|caregiver|ruler
+
+  // Lifestyle dimensions
+  lifestyle      Json?    // {interests: string[], values: string[], priorities: string[]}
+
+  // Perceived Value Sensitivity per Zeithaml & Bitner (each 0-100)
+  valueSensitivity Json?  // {functional, emotional, social, epistemic, conditional}
+
+  // Self-Determination Theory — Deci & Ryan (each 0-100)
+  motivationProfile Json? // {autonomy, competence, relatedness}
+
+  // Conditioning Profile (each 0-100)
+  conditioningProfile Json? // {rewardSensitivity, lossAversion, habituationRate}
+
+  // BJ Fogg BMAP-inspired composite (0-100)
+  fomapScore     Int?
+
+  // Profile reliability (0-1)
+  confidence     Float?   @default(0)
+
+  lastUpdatedAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([contactId])
+  @@index([organizationId])
+  @@unique([contactId, organizationId])
+  @@map("customer_profiles")
 }

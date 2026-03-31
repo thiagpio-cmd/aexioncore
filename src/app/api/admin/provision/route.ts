@@ -240,7 +240,7 @@ export async function POST(request: NextRequest) {
     return sendSuccess(result, 201);
   } catch (error: any) {
     console.error("POST /api/admin/provision error:", error);
-    return sendError(badRequest(error.message || "Provisioning failed"));
+    return sendError(badRequest("Provisioning failed"));
   }
 }
 

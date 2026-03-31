@@ -2,9 +2,10 @@ import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
-import { unauthorized, notFound } from "@/lib/errors";
+import { unauthorized, notFound, validationError } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { requireRole } from "@/server/auth";
+import { UserUpdateSchema } from "@/lib/validations/user";
 
 export async function PATCH(
   request: NextRequest,
@@ -26,12 +27,13 @@ export async function PATCH(
     if (!existing) return sendError(notFound("User"));
 
     const body = await request.json();
+    const data = UserUpdateSchema.parse(body);
 
-    const updateData: any = {};
-    if (body.role !== undefined) updateData.role = body.role;
-    if (body.workspace !== undefined) updateData.workspace = body.workspace;
-    if (body.isActive !== undefined) updateData.isActive = body.isActive;
-    if (body.teamId !== undefined) updateData.teamId = body.teamId || null;
+    const updateData: Record<string, unknown> = {};
+    if (data.role !== undefined) updateData.role = data.role;
+    if (data.workspace !== undefined) updateData.workspace = data.workspace;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.teamId !== undefined) updateData.teamId = data.teamId || null;
 
     const user = await prisma.user.update({
       where: { id },
@@ -51,6 +53,7 @@ export async function PATCH(
 
     return sendSuccess(user);
   } catch (error: any) {
+    if (error.name === "ZodError") return sendError(validationError("Invalid user data", error.errors));
     console.error("PATCH /api/users/[id] error:", error);
     return sendUnhandledError();
   }

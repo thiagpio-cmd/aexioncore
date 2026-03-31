@@ -18,6 +18,9 @@ import { ExplainableScore } from "@/components/scoring/explainable-score";
 import { AICoachPanel } from "@/components/ai/ai-coach-panel";
 import { EmailComposer } from "@/components/ai/email-composer";
 import { DealRiskCard } from "@/components/ai/deal-risk-card";
+import { DealRiskPanel } from "@/components/DealRiskPanel";
+import { MoneyAtRiskWidget } from "@/components/MoneyAtRiskWidget";
+import { DebriefModal } from "@/components/DebriefModal";
 import type { ScoreResult } from "@/lib/scoring/engine";
 
 interface Opportunity {
@@ -79,9 +82,11 @@ export default function OpportunityDetailPage() {
   const [showLossModal, setShowLossModal] = useState(false);
   const [lossReason, setLossReason] = useState("");
   const [lossNotes, setLossNotes] = useState("");
+  const [showDebrief, setShowDebrief] = useState(false);
 
   const { data: deal, loading: dealLoading, refetch } = useApi<Opportunity>(`/api/opportunities/${oppId}`);
   const { data: activities, loading: activitiesLoading, refetch: refetchActivities } = useApi<Activity[]>(`/api/activities?opportunityId=${oppId}`);
+  const { data: debriefs, refetch: refetchDebriefs } = useApi<any[]>(`/api/debriefs?opportunityId=${oppId}&limit=10`);
 
   if (dealLoading) {
     return <DetailSkeleton />;
@@ -144,6 +149,16 @@ export default function OpportunityDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowDebrief(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary-light px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+            Debrief
+          </button>
           <button
             onClick={() => setShowEdit(true)}
             className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-background"
@@ -502,6 +517,48 @@ export default function OpportunityDetailPage() {
             </div>
           )}
 
+          {/* Historico de Debriefs */}
+          {debriefs && debriefs.length > 0 && (
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold text-foreground">Historico de Debriefs ({debriefs.length})</h3>
+                <button
+                  onClick={() => setShowDebrief(true)}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  + Novo Debrief
+                </button>
+              </div>
+              <div className="space-y-3">
+                {debriefs.map((d: any) => (
+                  <div key={d.id} className="rounded-lg border border-border px-4 py-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-foreground">{d.user?.name || "Usuario"}</span>
+                      <span className="text-xs text-muted">
+                        {new Date(d.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                      </span>
+                    </div>
+                    {d.aiSummary && (
+                      <p className="text-sm text-muted line-clamp-2">{d.aiSummary}</p>
+                    )}
+                    {d.actionProposals && d.actionProposals.length > 0 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-[10px] font-medium text-primary bg-primary-light rounded-full px-2 py-0.5">
+                          {d.actionProposals.length} {d.actionProposals.length === 1 ? "proposta" : "propostas"}
+                        </span>
+                        {d.actionProposals.some((p: any) => p.status === "APPROVED") && (
+                          <span className="text-[10px] font-medium text-success bg-emerald-50 rounded-full px-2 py-0.5">
+                            {d.actionProposals.filter((p: any) => p.status === "APPROVED").length} aprovada(s)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Timeline */}
           <div className="rounded-xl border border-border bg-surface p-5">
             <h3 className="mb-4 text-base font-semibold text-foreground">Timeline</h3>
@@ -519,6 +576,16 @@ export default function OpportunityDetailPage() {
               onScheduleCall={() => setActivityType("CALL")}
               onDraftEmail={() => setShowEmailComposer(true)}
             />
+          )}
+
+          {/* Deal Risk Panel — Scores & Financial Impact */}
+          {!["CLOSED_WON", "CLOSED_LOST"].includes(deal.stage) && (
+            <DealRiskPanel opportunityId={oppId} />
+          )}
+
+          {/* Dinheiro em Risco */}
+          {!["CLOSED_WON", "CLOSED_LOST"].includes(deal.stage) && (
+            <MoneyAtRiskWidget opportunityId={oppId} />
           )}
 
           {/* Deal Information */}
@@ -670,6 +737,13 @@ export default function OpportunityDetailPage() {
         opportunityId={oppId}
         contactName={deal.primaryContact?.name || deal.account?.name || ""}
         contactEmail={deal.primaryContact?.email || ""}
+      />
+
+      <DebriefModal
+        open={showDebrief}
+        onClose={() => setShowDebrief(false)}
+        opportunityId={oppId}
+        onComplete={() => { refetch(); refetchDebriefs(); }}
       />
     </div>
   );

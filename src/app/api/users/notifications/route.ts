@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { sendSuccess, sendError } from "@/lib/api-response";
-import { unauthorized, badRequest } from "@/lib/errors";
+import { unauthorized, badRequest, validationError } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
+import { NotificationPrefsSchema } from "@/lib/validations/user";
 
 /**
  * GET /api/users/notifications
@@ -22,7 +23,7 @@ export async function GET() {
     return sendSuccess({ notificationPrefs: user?.notificationPrefs ?? null });
   } catch (error: any) {
     console.error("GET /api/users/notifications error:", error);
-    return sendError({ name: "InternalServerError", statusCode: 500, code: "INTERNAL_ERROR", message: error.message });
+    return sendError({ name: "InternalServerError", statusCode: 500, code: "INTERNAL_ERROR", message: "An unexpected error occurred" });
   }
 }
 
@@ -37,14 +38,12 @@ export async function PATCH(request: NextRequest) {
     if (!session?.user) return sendError(unauthorized());
 
     const body = await request.json();
-
-    if (body.notificationPrefs === undefined) {
-      return sendError(badRequest("notificationPrefs is required"));
+    const parsed = NotificationPrefsSchema.safeParse(body);
+    if (!parsed.success) {
+      return sendError(validationError("Invalid notification preferences", parsed.error.issues));
     }
 
-    const prefsString = typeof body.notificationPrefs === "string"
-      ? body.notificationPrefs
-      : JSON.stringify(body.notificationPrefs);
+    const prefsString = JSON.stringify(parsed.data.notificationPrefs);
 
     await prisma.user.update({
       where: { id: session.user.id },
@@ -54,6 +53,6 @@ export async function PATCH(request: NextRequest) {
     return sendSuccess({ notificationPrefs: prefsString });
   } catch (error: any) {
     console.error("PATCH /api/users/notifications error:", error);
-    return sendError({ name: "InternalServerError", statusCode: 500, code: "INTERNAL_ERROR", message: error.message });
+    return sendError({ name: "InternalServerError", statusCode: 500, code: "INTERNAL_ERROR", message: "An unexpected error occurred" });
   }
 }

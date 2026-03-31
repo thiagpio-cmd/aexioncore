@@ -3,24 +3,27 @@ import { getServerSession } from "next-auth";
 import * as bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
-import { unauthorized, badRequest } from "@/lib/errors";
+import { unauthorized, badRequest, validationError } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
+import { PasswordChangeSchema } from "@/lib/validations/user";
+import { checkRateLimit, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limiter";
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return sendError(unauthorized());
 
+    // Rate limit: prevent brute-force guessing of current password
+    const rateKey = `password-change:${session.user.id}`;
+    const rateCheck = checkRateLimit(rateKey, RATE_LIMITS.login);
+    if (!rateCheck.allowed) return rateLimitResponse(rateCheck);
+
     const body = await request.json();
-    const { currentPassword, newPassword } = body;
-
-    if (!currentPassword || !newPassword) {
-      return sendError(badRequest("Current password and new password are required"));
+    const parsed = PasswordChangeSchema.safeParse(body);
+    if (!parsed.success) {
+      return sendError(validationError("Invalid password data", parsed.error.issues));
     }
-
-    if (newPassword.length < 8) {
-      return sendError(badRequest("New password must be at least 8 characters"));
-    }
+    const { currentPassword, newPassword } = parsed.data;
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },

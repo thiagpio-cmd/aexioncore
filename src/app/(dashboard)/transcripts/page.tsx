@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useApi } from "@/lib/hooks/use-api";
 import { PageHeader } from "@/components/shared/page-header";
-import { ListSkeleton } from "@/components/shared/skeleton";
+import { TableSkeleton as ListSkeleton } from "@/components/shared/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 
 interface Transcript {

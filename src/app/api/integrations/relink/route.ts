@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       name: "InternalServerError",
       statusCode: 500,
       code: "INTERNAL_ERROR",
-      message: error.message,
+      message: "An unexpected error occurred while relinking messages",
     });
   }
 }

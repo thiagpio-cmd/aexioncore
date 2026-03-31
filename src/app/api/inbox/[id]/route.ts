@@ -56,10 +56,11 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     }
 
     const body = await request.json();
-    const updateData: any = {};
+    const updateData: Record<string, boolean> = {};
 
-    if (body.isRead !== undefined) updateData.isRead = body.isRead;
-    if (body.starred !== undefined) updateData.starred = body.starred;
+    // Only accept known boolean fields — prevent arbitrary field injection
+    if (typeof body.isRead === "boolean") updateData.isRead = body.isRead;
+    if (typeof body.starred === "boolean") updateData.starred = body.starred;
 
     const updated = await prisma.inboxMessage.update({
       where: { id },
