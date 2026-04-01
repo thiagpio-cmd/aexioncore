@@ -11,7 +11,6 @@ import { actorFromSession, canPerform } from "@/lib/authorization";
 import { processDebrief } from "@/lib/intelligence/debrief-service";
 import { prisma } from "@/lib/db";
 import { auditCreate } from "@/server/audit";
-import OpenAI from "openai";
 
 const MAX_AUDIO_SIZE = 25 * 1024 * 1024; // 25MB (Whisper limit)
 
@@ -81,20 +80,28 @@ export async function POST(request: NextRequest) {
       return sendError(forbidden("Sem permissao para esta oportunidade"));
     }
 
-    // Transcribe audio via OpenAI Whisper
-    const openai = new OpenAI();
+    // Transcribe audio via OpenAI Whisper (using fetch, no SDK needed)
+    const whisperForm = new FormData();
+    whisperForm.append("file", audioFile, audioFile.name || "audio.webm");
+    whisperForm.append("model", "whisper-1");
+    whisperForm.append("language", "pt");
+    whisperForm.append("response_format", "text");
 
-    const transcription = await openai.audio.transcriptions.create({
-      file: audioFile,
-      model: "whisper-1",
-      language: "pt",
-      response_format: "text",
+    const whisperRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+      body: whisperForm,
     });
 
-    const transcribedText =
-      typeof transcription === "string"
-        ? transcription
-        : (transcription as any).text ?? String(transcription);
+    if (!whisperRes.ok) {
+      const errBody = await whisperRes.text().catch(() => "unknown");
+      console.error("[Whisper] transcription failed:", whisperRes.status, errBody);
+      return sendError(
+        badRequest("Erro na transcricao do audio. Tente novamente.")
+      );
+    }
+
+    const transcribedText = await whisperRes.text();
 
     if (!transcribedText || transcribedText.trim().length < 5) {
       return sendError(

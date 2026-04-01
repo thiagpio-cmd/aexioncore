@@ -70,7 +70,7 @@ export default function ICPPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-16">
           <div className="w-full max-w-xl">
-            <GlassCard variant="elevated" className="p-6">
+            <GlassCard elevated className="p-6">
               <h2 className="text-lg font-semibold text-[var(--text-primary,#fff)] mb-4">
                 Novo Perfil ICP
               </h2>
@@ -126,7 +126,6 @@ export default function ICPPage() {
               return (
                 <GlassCard
                   key={icp.id}
-                  variant="interactive"
                   onClick={() => setSelectedId(isSelected ? null : icp.id)}
                   className={`text-left ${
                     isSelected
