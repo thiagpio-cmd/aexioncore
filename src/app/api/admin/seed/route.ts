@@ -34,6 +34,80 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // ─── Ensure missing columns exist (schema drift fix) ─────────────
+    // The initial migration only created minimal tables. Many columns were
+    // added to the Prisma schema later without migrations. We add them here
+    // via raw SQL with IF NOT EXISTS to avoid errors on re-runs.
+    const addCol = (table: string, col: string, type: string, def?: string) =>
+      prisma.$executeRawUnsafe(
+        `ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "${col}" ${type}${def ? ` DEFAULT ${def}` : ""}`
+      );
+
+    // Organizations — missing columns
+    await addCol("organizations", "displayName", "TEXT");
+    await addCol("organizations", "logoUrl", "TEXT");
+    await addCol("organizations", "primaryColor", "TEXT", "'#2457FF'");
+    await addCol("organizations", "secondaryColor", "TEXT", "'#1a1a2e'");
+    await addCol("organizations", "favicon", "TEXT");
+    await addCol("organizations", "brandAccentColor", "TEXT");
+    await addCol("organizations", "brandThemeDefault", "TEXT", "'dark'");
+    await addCol("organizations", "brandLogoMarkUrl", "TEXT");
+    await addCol("organizations", "enabledModules", "TEXT");
+    await addCol("organizations", "rolePermissions", "TEXT");
+    await addCol("organizations", "setupCompleted", "BOOLEAN", "false");
+    await addCol("organizations", "setupStep", "INTEGER", "0");
+    await addCol("organizations", "industry", "TEXT");
+    await addCol("organizations", "defaultCurrency", "TEXT", "'USD'");
+    await addCol("organizations", "fiscalYearStart", "INTEGER", "1");
+    await addCol("organizations", "timezone", "TEXT", "'UTC'");
+    await addCol("organizations", "defaultCurrencyCode", "TEXT", "'BRL'");
+    await addCol("organizations", "icpProfileId", "TEXT");
+    await addCol("organizations", "defaultCommissionRate", "DOUBLE PRECISION");
+    await addCol("organizations", "moneyEngineEnabled", "BOOLEAN", "true");
+    await addCol("organizations", "pressureThresholds", "JSONB");
+
+    // Users — missing columns
+    await addCol("users", "notificationPrefs", "TEXT");
+    await addCol("users", "executionScore", "INTEGER");
+    await addCol("users", "behavioralFlags", "JSONB");
+    await addCol("users", "performanceTrend", "TEXT");
+    await addCol("users", "lastScoredAt", "TIMESTAMPTZ");
+
+    // Accounts — missing post-sale columns
+    await addCol("accounts", "isCustomer", "BOOLEAN", "false");
+    await addCol("accounts", "becameCustomerAt", "TIMESTAMPTZ");
+    await addCol("accounts", "deliveryDate", "TIMESTAMPTZ");
+    await addCol("accounts", "activationDate", "TIMESTAMPTZ");
+    await addCol("accounts", "onboardingStatus", "TEXT", "'PENDING'");
+    await addCol("accounts", "implementationDelayDays", "INTEGER");
+    await addCol("accounts", "churnDate", "TIMESTAMPTZ");
+    await addCol("accounts", "churnReason", "TEXT");
+    await addCol("accounts", "churnRepId", "TEXT");
+
+    // Leads — missing column
+    await addCol("leads", "icpScoreId", "TEXT");
+
+    // Opportunities — missing scoring/loss columns
+    await addCol("opportunities", "closedAt", "TIMESTAMPTZ");
+    await addCol("opportunities", "lossReason", "TEXT");
+    await addCol("opportunities", "lossNotes", "TEXT");
+    await addCol("opportunities", "valueBRL", "INTEGER", "0");
+    await addCol("opportunities", "icpScoreId", "TEXT");
+    await addCol("opportunities", "moneyAtRisk", "DOUBLE PRECISION");
+    await addCol("opportunities", "commissionAtRisk", "DOUBLE PRECISION");
+    await addCol("opportunities", "delayCost", "DOUBLE PRECISION");
+    await addCol("opportunities", "riskScore", "INTEGER");
+    await addCol("opportunities", "intentScore", "INTEGER");
+    await addCol("opportunities", "momentumScore", "INTEGER");
+    await addCol("opportunities", "readinessScore", "INTEGER");
+    await addCol("opportunities", "priceSensitivity", "INTEGER");
+    await addCol("opportunities", "competitivePressure", "INTEGER");
+    await addCol("opportunities", "riskReasons", "JSONB");
+    await addCol("opportunities", "lastScoredAt", "TIMESTAMPTZ");
+
+    // Contacts — add ownerId if missing (migration exists but may not have run)
+    await addCol("contacts", "ownerId", "TEXT");
+
     // ─── Clear all tables ─────────────────────────────────────────────
     await prisma.auditLog.deleteMany();
     await prisma.webhookEvent.deleteMany();
