@@ -49,7 +49,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Initialize theme from localStorage or org default
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const defaultTheme = (org as Record<string, unknown>).brandThemeDefault as string | undefined;
+    const defaultTheme = (org as unknown as Record<string, unknown>).brandThemeDefault as string | undefined;
     const resolved = stored || (defaultTheme === "light" ? "light" : "dark");
     setThemeState(resolved);
     setMounted(true);
@@ -64,7 +64,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Apply tenant accent color
   useEffect(() => {
     if (!mounted) return;
-    const accent = (org as Record<string, unknown>).brandAccentColor as string | undefined
+    const accent = (org as unknown as Record<string, unknown>).brandAccentColor as string | undefined
       || org.primaryColor
       || "#B0ACA5";
 

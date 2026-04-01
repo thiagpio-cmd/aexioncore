@@ -27,7 +27,7 @@ export function BrandLogo({ variant = "full", size = "md", className }: BrandLog
   const { org } = useOrg();
   const maxHeight = sizeMap[size];
   const logoUrl = variant === "mark"
-    ? ((org as Record<string, unknown>).brandLogoMarkUrl as string | undefined) || org.logoUrl
+    ? ((org as unknown as Record<string, unknown>).brandLogoMarkUrl as string | undefined) || org.logoUrl
     : org.logoUrl;
 
   if (logoUrl) {
