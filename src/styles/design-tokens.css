@@ -81,27 +81,51 @@
 }
 
 [data-theme="light"] {
+  /* Background layers */
   --bg-root: #FAF9F6;
-  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-card: rgba(255, 255, 255, 0.85);
   --bg-card-hover: rgba(255, 255, 255, 0.95);
   --bg-card-elevated: #FFFFFF;
-  --border-subtle: rgba(28, 26, 23, 0.05);
-  --border-default: rgba(28, 26, 23, 0.06);
-  --border-hover: rgba(28, 26, 23, 0.12);
-  --border-hairline: rgba(28, 26, 23, 0.06);
+
+  /* Borders — visible on light backgrounds */
+  --border-subtle: rgba(28, 26, 23, 0.08);
+  --border-default: rgba(28, 26, 23, 0.10);
+  --border-hover: rgba(28, 26, 23, 0.18);
+  --border-hairline: rgba(28, 26, 23, 0.08);
+
+  /* Text hierarchy */
   --text-primary: #1C1A17;
-  --text-secondary: #6B6560;
-  --text-tertiary: #9B9389;
-  --text-muted: #B5AFA6;
+  --text-secondary: #4A4540;
+  --text-tertiary: #7A7570;
+  --text-muted: #9B9690;
   --text-ghost: #D5D0C8;
   --text-invisible: #E8E5DF;
+
+  /* Functional colors */
   --color-danger: #DC2626;
+  --color-danger-muted: rgba(220, 38, 38, 0.06);
+  --color-danger-border: rgba(220, 38, 38, 0.15);
   --color-success: #16A34A;
+  --color-success-muted: rgba(22, 163, 74, 0.06);
+  --color-success-border: rgba(22, 163, 74, 0.15);
   --color-warning: #D97706;
-  --glass-hairline: linear-gradient(90deg, transparent, rgba(28, 26, 23, 0.06), transparent);
-  --glass-hairline-subtle: linear-gradient(90deg, transparent, rgba(28, 26, 23, 0.04), transparent);
+  --color-warning-muted: rgba(217, 119, 6, 0.06);
+  --color-warning-border: rgba(217, 119, 6, 0.15);
+
+  /* Glass effect */
+  --glass-hairline: linear-gradient(90deg, transparent, rgba(28, 26, 23, 0.08), transparent);
+  --glass-hairline-subtle: linear-gradient(90deg, transparent, rgba(28, 26, 23, 0.05), transparent);
+
+  /* Ambient light */
   --ambient-warm: radial-gradient(circle, rgba(150, 140, 120, 0.04) 0%, transparent 70%);
   --ambient-cool: radial-gradient(circle, rgba(100, 100, 120, 0.03) 0%, transparent 70%);
+
+  /* Accent defaults for light (tenant can override) */
+  --accent: #6B6560;
+  --accent-text: #4A4540;
+  --accent-muted: rgba(74, 69, 64, 0.08);
+  --accent-border: rgba(74, 69, 64, 0.15);
+  --accent-glow: rgba(74, 69, 64, 0.04);
 }
 
 /* Legacy compatibility aliases */
