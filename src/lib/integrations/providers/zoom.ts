@@ -53,11 +53,19 @@ export class ZoomProvider extends BaseProvider {
   metadata: ProviderMetadata = {
     key: "zoom",
     name: "Zoom",
-    domain: "meetings",
+    domain: "collaboration",
     authType: "oauth2",
     syncMode: "push",
     description: "Receive meeting transcriptions automatically from Zoom",
     icon: "video",
+    capabilities: {
+      pullSync: true,
+      webhookSync: true,
+      outbound: false,
+      healthcheck: true,
+      incrementalSync: false,
+      entityMappings: [],
+    },
   };
 
   isConfigured(): boolean {
@@ -159,13 +167,17 @@ export class ZoomProvider extends BaseProvider {
   validateWebhook(
     headers: Record<string, string>,
     rawBody: string,
-    signingSecret: string
+    signingSecret?: string
   ): WebhookValidationResult {
+    if (!signingSecret) {
+      return { valid: false, error: "Missing signing secret" };
+    }
+
     const timestamp = headers["x-zm-request-timestamp"];
     const signature = headers["x-zm-signature"];
 
     if (!timestamp || !signature) {
-      return { valid: false, reason: "Missing signature headers" };
+      return { valid: false, error: "Missing signature headers" };
     }
 
     const message = `v0:${timestamp}:${rawBody}`;
@@ -174,7 +186,7 @@ export class ZoomProvider extends BaseProvider {
       .digest("hex")}`;
 
     if (signature !== expected) {
-      return { valid: false, reason: "Signature mismatch" };
+      return { valid: false, error: "Signature mismatch" };
     }
 
     return { valid: true };
@@ -184,7 +196,6 @@ export class ZoomProvider extends BaseProvider {
     credentials: StoredCredentials,
     _options?: { lookbackDays?: number }
   ): Promise<SyncResult> {
-    // Fetch recent recordings with transcripts
     const events: CanonicalEvent[] = [];
     try {
       const res = await fetch(
@@ -195,7 +206,13 @@ export class ZoomProvider extends BaseProvider {
       );
 
       if (!res.ok) {
-        return { events, cursor: null, hasMore: false, errors: [] };
+        return {
+          itemsProcessed: 0,
+          itemsFailed: 0,
+          hasMore: false,
+          errors: [{ message: `Zoom API error: ${res.status}`, retryable: res.status >= 500 }],
+          events,
+        };
       }
 
       const data = await res.json();
@@ -207,13 +224,14 @@ export class ZoomProvider extends BaseProvider {
           if (transcriptFile?.download_url) {
             events.push({
               provider: "zoom",
-              domain: "meetings",
+              domain: "collaboration",
               eventType: "MEETING_TRANSCRIPT",
               direction: "internal",
-              channel: "VIDEO",
+              channel: "CALENDAR",
               occurredAt: new Date(meeting.start_time),
               sourceExternalId: meeting.uuid,
-              normalizedPayload: JSON.stringify({
+              dedupeKey: `zoom:transcript:${meeting.uuid}`,
+              normalizedPayload: {
                 title: meeting.topic,
                 downloadUrl: transcriptFile.download_url,
                 duration: meeting.duration * 60,
@@ -221,7 +239,7 @@ export class ZoomProvider extends BaseProvider {
                   name: p.name,
                   email: p.user_email,
                 })),
-              }),
+              },
             });
           }
         }
@@ -230,12 +248,18 @@ export class ZoomProvider extends BaseProvider {
       console.error("[Zoom] fetchInitialData error:", (e as Error).message);
     }
 
-    return { events, cursor: null, hasMore: false, errors: [] };
+    return {
+      itemsProcessed: events.length,
+      itemsFailed: 0,
+      hasMore: false,
+      errors: [],
+      events,
+    };
   }
 
   async fetchIncrementalData(
     credentials: StoredCredentials,
-    cursor: SyncCursor
+    _cursor?: SyncCursor
   ): Promise<SyncResult> {
     return this.fetchInitialData(credentials);
   }
@@ -246,12 +270,35 @@ export class ZoomProvider extends BaseProvider {
         headers: { Authorization: `Bearer ${credentials.accessToken}` },
       });
 
-      if (res.ok) return { healthy: true };
-      if (res.status === 401)
-        return { healthy: false, status: "reconnect_required" };
-      return { healthy: false, status: "degraded" };
+      if (res.ok) {
+        return {
+          status: "healthy",
+          healthPercent: 100,
+          message: "Zoom connection active",
+          consecutiveFailures: 0,
+        };
+      }
+      if (res.status === 401) {
+        return {
+          status: "reconnect_required",
+          healthPercent: 0,
+          message: "Zoom token expired, re-authentication required",
+          consecutiveFailures: 1,
+        };
+      }
+      return {
+        status: "degraded",
+        healthPercent: 50,
+        message: `Zoom API returned ${res.status}`,
+        consecutiveFailures: 1,
+      };
     } catch {
-      return { healthy: false, status: "failed" };
+      return {
+        status: "failed",
+        healthPercent: 0,
+        message: "Cannot reach Zoom API",
+        consecutiveFailures: 1,
+      };
     }
   }
 }
