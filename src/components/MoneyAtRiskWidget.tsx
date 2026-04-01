@@ -16,10 +16,10 @@ interface MoneyAtRiskWidgetProps {
   data?: MoneyData;
 }
 
-function formatBRL(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
+function formatUSD(value: number): string {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "BRL",
+    currency: "USD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
@@ -75,7 +75,7 @@ export function MoneyAtRiskWidget({ opportunityId, data: propData }: MoneyAtRisk
       )}
     >
       <div className="flex items-center justify-between">
-        <SectionLabel>Dinheiro em Risco</SectionLabel>
+        <SectionLabel>Money at Risk</SectionLabel>
         {isHighRisk && (
           <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-red)]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--accent-red)]">
             High risk
@@ -84,7 +84,7 @@ export function MoneyAtRiskWidget({ opportunityId, data: propData }: MoneyAtRisk
       </div>
 
       <MetricValue
-        value={formatBRL(totalRisk)}
+        value={formatUSD(totalRisk)}
         label="Total at risk"
         size="large"
       />
@@ -96,7 +96,7 @@ export function MoneyAtRiskWidget({ opportunityId, data: propData }: MoneyAtRisk
             "text-sm font-semibold tabular-nums",
             money.moneyAtRisk > 0 ? "text-[var(--accent-red)]" : "text-[var(--text-muted)]"
           )}>
-            {formatBRL(money.moneyAtRisk)}
+            {formatUSD(money.moneyAtRisk)}
           </span>
         </div>
 
@@ -106,17 +106,17 @@ export function MoneyAtRiskWidget({ opportunityId, data: propData }: MoneyAtRisk
             "text-sm font-semibold tabular-nums",
             money.commissionAtRisk > 0 ? "text-[var(--accent-gold)]" : "text-[var(--text-muted)]"
           )}>
-            {formatBRL(money.commissionAtRisk)}
+            {formatUSD(money.commissionAtRisk)}
           </span>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--text-secondary)]">Custo de atraso</span>
+          <span className="text-xs text-[var(--text-secondary)]">Delay cost</span>
           <span className={cn(
             "text-sm font-semibold tabular-nums",
             money.delayCost > 0 ? "text-[var(--accent-red)]" : "text-[var(--text-muted)]"
           )}>
-            {formatBRL(money.delayCost)}
+            {formatUSD(money.delayCost)}
           </span>
         </div>
       </div>

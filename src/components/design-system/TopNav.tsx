@@ -21,8 +21,8 @@ interface TopNavProps {
 const defaultItems: NavItem[] = [
   { label: "Dashboard", href: "/" },
   { label: "Pipeline", href: "/pipeline" },
-  { label: "Contatos", href: "/contacts" },
-  { label: "Relatorios", href: "/reports" },
+  { label: "Contacts", href: "/contacts" },
+  { label: "Reports", href: "/reports" },
 ];
 
 export function TopNav({ items = defaultItems, className, onSearch }: TopNavProps) {

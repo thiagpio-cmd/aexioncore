@@ -13,12 +13,13 @@ import { TableSkeleton } from "@/components/shared/skeleton";
 type ViewMode = "kanban" | "table" | "list";
 
 const STAGES = [
-  { id: "DISCOVERY", name: "Discovery", color: "bg-blue-500", order: 1 },
-  { id: "QUALIFICATION", name: "Qualification", color: "bg-indigo-500", order: 2 },
-  { id: "PROPOSAL", name: "Proposal", color: "bg-purple-500", order: 3 },
-  { id: "NEGOTIATION", name: "Negotiation", color: "bg-amber-500", order: 4 },
-  { id: "CLOSED_WON", name: "Closed Won", color: "bg-emerald-500", order: 5 },
-  { id: "CLOSED_LOST", name: "Closed Lost", color: "bg-red-500", order: 6 },
+  { id: "LEAD_INQUIRY", name: "Lead Inquiry", color: "bg-blue-500", order: 1 },
+  { id: "PROPERTY_TOUR", name: "Property Tour", color: "bg-indigo-500", order: 2 },
+  { id: "OFFER_SUBMITTED", name: "Offer Submitted", color: "bg-purple-500", order: 3 },
+  { id: "UNDER_CONTRACT", name: "Under Contract", color: "bg-amber-500", order: 4 },
+  { id: "DUE_DILIGENCE", name: "Due Diligence", color: "bg-cyan-500", order: 5 },
+  { id: "CLOSED_WON", name: "Closed Won", color: "bg-emerald-500", order: 6 },
+  { id: "CLOSED_LOST", name: "Closed Lost", color: "bg-red-500", order: 7 },
 ];
 
 interface Deal {

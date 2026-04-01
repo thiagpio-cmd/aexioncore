@@ -97,7 +97,12 @@ export default function MeetingsPage() {
           {displayed.map((m: any) => {
             const cfg = typeConfig[m.type] || typeConfig.internal;
             const d = new Date(m.startTime);
-            const attendees = m.attendees || (m.contact ? [m.contact.name] : []);
+            const rawAttendees = m.attendees;
+            const attendees: string[] = Array.isArray(rawAttendees)
+              ? rawAttendees.map((a: any) => (typeof a === "object" && a?.name ? a.name : String(a)))
+              : typeof rawAttendees === "string"
+                ? (() => { try { const parsed = JSON.parse(rawAttendees); return Array.isArray(parsed) ? parsed.map((a: any) => (typeof a === "object" && a?.name ? a.name : String(a))) : [rawAttendees]; } catch { return [rawAttendees]; } })()
+                : m.contact ? [m.contact.name] : [];
             return (
               <div key={m.id} className="rounded-xl border border-border bg-surface p-5 hover:shadow-sm transition-shadow">
                 <div className="flex items-start justify-between">
@@ -105,13 +110,13 @@ export default function MeetingsPage() {
                     <div className="text-center">
                       <p className="text-2xl font-bold text-primary">{d.getDate()}</p>
                       <p className="text-xs text-muted uppercase">
-                        {d.toLocaleDateString([], { month: "short" })}
+                        {d.toLocaleDateString("en-US", { month: "short" }).toUpperCase()}
                       </p>
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-foreground">{m.title}</h3>
                       <p className="text-xs text-muted mt-0.5">
-                        {d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {m.duration || 30}min · {m.location || "Online"}
+                        {d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} · {m.duration || 30}min · {m.location || "Online"}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${cfg.color}`}>{cfg.label}</span>
@@ -152,7 +157,7 @@ export default function MeetingsPage() {
                   <div><span className="text-muted">Location:</span> <span className="text-foreground">{m.location || "Not specified"}</span></div>
                   <div><span className="text-muted">Duration:</span> <span className="text-foreground">{m.duration || 30} minutes</span></div>
                   <div><span className="text-muted">Attendees:</span> <span className="text-foreground">{attendees.length > 0 ? (Array.isArray(attendees) ? attendees.join(", ") : attendees) : "None"}</span></div>
-                  <div><span className="text-muted">Created:</span> <span className="text-foreground">{new Date(m.createdAt).toLocaleDateString()}</span></div>
+                  <div><span className="text-muted">Created:</span> <span className="text-foreground">{new Date(m.createdAt).toLocaleDateString("en-US")}</span></div>
                 </div>
               </div>
             );

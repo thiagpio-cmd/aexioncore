@@ -35,15 +35,15 @@ function riskToStatus(score: number): RiskStatus {
 }
 
 const toneLabels: Record<string, { label: string; color: string }> = {
-  pressure: { label: "Pressao", color: "text-[var(--accent-red)]" },
-  control: { label: "Controle", color: "text-[var(--accent-emerald)]" },
+  pressure: { label: "Pressure", color: "text-[var(--accent-red)]" },
+  control: { label: "Control", color: "text-[var(--accent-emerald)]" },
   champion: { label: "Champion", color: "text-[var(--accent-gold)]" },
 };
 
-function formatBRL(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
+function formatUSD(value: number): string {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "BRL",
+    currency: "USD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
@@ -108,29 +108,29 @@ export function DealRiskPanel({ opportunityId, data: propData }: DealRiskPanelPr
       <GlassCard className="flex flex-col gap-[var(--space-md)]">
         <SectionLabel>Scores do Deal</SectionLabel>
         <div className="flex flex-col gap-[var(--space-sm)]">
-          <ScoreRow label="Risco" score={scores.riskScore} statusFn={riskToStatus} />
-          <ScoreRow label="Intencao" score={scores.intentScore} statusFn={scoreToStatus} />
+          <ScoreRow label="Risk" score={scores.riskScore} statusFn={riskToStatus} />
+          <ScoreRow label="Intent" score={scores.intentScore} statusFn={scoreToStatus} />
           <ScoreRow label="Momentum" score={scores.momentumScore} statusFn={scoreToStatus} />
         </div>
       </GlassCard>
 
       {/* Money metrics */}
       <GlassCard className="flex flex-col gap-[var(--space-md)]">
-        <SectionLabel>Impacto Financeiro</SectionLabel>
+        <SectionLabel>Financial Impact</SectionLabel>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-[var(--space-md)]">
           <MetricValue
-            value={formatBRL(scores.moneyAtRisk)}
+            value={formatUSD(scores.moneyAtRisk)}
             label="At risk"
             size="small"
           />
           <MetricValue
-            value={formatBRL(scores.commissionAtRisk)}
-            label="Comissao"
+            value={formatUSD(scores.commissionAtRisk)}
+            label="Commission"
             size="small"
           />
           <MetricValue
-            value={formatBRL(scores.delayCost)}
-            label="Custo atraso"
+            value={formatUSD(scores.delayCost)}
+            label="Delay cost"
             size="small"
           />
         </div>
@@ -147,7 +147,7 @@ export function DealRiskPanel({ opportunityId, data: propData }: DealRiskPanelPr
       {/* Next action */}
       {scores.nextAction && (
         <GlassCard className="flex flex-col gap-[var(--space-xs)] border-l-2 border-l-[var(--accent-gold)]">
-          <SectionLabel>Proxima Acao Recomendada</SectionLabel>
+          <SectionLabel>Next Recommended Action</SectionLabel>
           <p className="text-sm leading-relaxed text-[var(--text-primary)]">
             {scores.nextAction}
           </p>

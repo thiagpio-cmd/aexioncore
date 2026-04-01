@@ -45,15 +45,15 @@ const priorityColors: Record<string, string> = {
 };
 
 const priorityLabels: Record<string, string> = {
-  high: "Alta",
-  medium: "Media",
-  low: "Baixa",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
 };
 
-function formatBRL(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
+function formatUSD(value: number): string {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "BRL",
+    currency: "USD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
@@ -141,9 +141,9 @@ export function ActionApprovalCard({
       {/* Financial impact */}
       {proposal.financialImpact != null && proposal.financialImpact !== 0 && (
         <p className="text-xs text-[var(--text-secondary)]">
-          Impacto financeiro:{" "}
+          Financial impact:{" "}
           <span className="font-semibold text-[var(--accent-gold)]">
-            {formatBRL(proposal.financialImpact)}
+            {formatUSD(proposal.financialImpact)}
           </span>
         </p>
       )}
@@ -174,7 +174,7 @@ export function ActionApprovalCard({
               "min-h-[44px]"
             )}
           >
-            {status === "approving" ? "Aprovando..." : "Aprovar"}
+            {status === "approving" ? "Approving..." : "Approve"}
           </button>
           <button
             onClick={handleReject}
@@ -187,7 +187,7 @@ export function ActionApprovalCard({
               "min-h-[44px]"
             )}
           >
-            {status === "rejecting" ? "Rejeitando..." : "Rejeitar"}
+            {status === "rejecting" ? "Rejecting..." : "Reject"}
           </button>
         </div>
       )}

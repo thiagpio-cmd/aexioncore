@@ -59,16 +59,17 @@ interface Activity {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  DISCOVERY: "bg-blue-50 text-blue-700",
-  QUALIFICATION: "bg-indigo-50 text-indigo-700",
-  PROPOSAL: "bg-violet-50 text-violet-700",
-  NEGOTIATION: "bg-amber-50 text-amber-700",
+  LEAD_INQUIRY: "bg-blue-50 text-blue-700",
+  PROPERTY_TOUR: "bg-indigo-50 text-indigo-700",
+  OFFER_SUBMITTED: "bg-violet-50 text-violet-700",
+  UNDER_CONTRACT: "bg-amber-50 text-amber-700",
+  DUE_DILIGENCE: "bg-cyan-50 text-cyan-700",
   CLOSED_WON: "bg-emerald-50 text-emerald-700",
   CLOSED_LOST: "bg-red-50 text-red-700",
 };
 
-const OPP_STAGES = ["DISCOVERY", "QUALIFICATION", "PROPOSAL", "NEGOTIATION", "CLOSED_WON", "CLOSED_LOST"];
-const PIPELINE_STAGES = ["DISCOVERY", "QUALIFICATION", "PROPOSAL", "NEGOTIATION"];
+const OPP_STAGES = ["LEAD_INQUIRY", "PROPERTY_TOUR", "OFFER_SUBMITTED", "UNDER_CONTRACT", "DUE_DILIGENCE", "CLOSED_WON", "CLOSED_LOST"];
+const PIPELINE_STAGES = ["LEAD_INQUIRY", "PROPERTY_TOUR", "OFFER_SUBMITTED", "UNDER_CONTRACT", "DUE_DILIGENCE"];
 
 export default function OpportunityDetailPage() {
   const params = useParams();
@@ -517,25 +518,25 @@ export default function OpportunityDetailPage() {
             </div>
           )}
 
-          {/* Historico de Debriefs */}
+          {/* Debrief History */}
           {debriefs && debriefs.length > 0 && (
             <div className="rounded-xl border border-border bg-surface p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-semibold text-foreground">Historico de Debriefs ({debriefs.length})</h3>
+                <h3 className="text-base font-semibold text-foreground">Debrief History ({debriefs.length})</h3>
                 <button
                   onClick={() => setShowDebrief(true)}
                   className="text-xs font-medium text-primary hover:underline"
                 >
-                  + Novo Debrief
+                  + New Debrief
                 </button>
               </div>
               <div className="space-y-3">
                 {debriefs.map((d: any) => (
                   <div key={d.id} className="rounded-lg border border-border px-4 py-3">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-foreground">{d.user?.name || "Usuario"}</span>
+                      <span className="text-sm font-medium text-foreground">{d.user?.name || "User"}</span>
                       <span className="text-xs text-muted">
-                        {new Date(d.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                        {new Date(d.createdAt).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" })}
                       </span>
                     </div>
                     {d.aiSummary && (
@@ -544,11 +545,11 @@ export default function OpportunityDetailPage() {
                     {d.actionProposals && d.actionProposals.length > 0 && (
                       <div className="mt-2 flex items-center gap-2">
                         <span className="text-[10px] font-medium text-primary bg-primary-light rounded-full px-2 py-0.5">
-                          {d.actionProposals.length} {d.actionProposals.length === 1 ? "proposta" : "propostas"}
+                          {d.actionProposals.length} {d.actionProposals.length === 1 ? "proposal" : "proposals"}
                         </span>
                         {d.actionProposals.some((p: any) => p.status === "APPROVED") && (
                           <span className="text-[10px] font-medium text-success bg-emerald-50 rounded-full px-2 py-0.5">
-                            {d.actionProposals.filter((p: any) => p.status === "APPROVED").length} aprovada(s)
+                            {d.actionProposals.filter((p: any) => p.status === "APPROVED").length} approved
                           </span>
                         )}
                       </div>
@@ -583,7 +584,7 @@ export default function OpportunityDetailPage() {
             <DealRiskPanel opportunityId={oppId} />
           )}
 
-          {/* Dinheiro em Risco */}
+          {/* Money at Risk */}
           {!["CLOSED_WON", "CLOSED_LOST"].includes(deal.stage) && (
             <MoneyAtRiskWidget opportunityId={oppId} />
           )}

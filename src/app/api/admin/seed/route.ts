@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     await addCol("organizations", "defaultCurrency", "TEXT", "'USD'");
     await addCol("organizations", "fiscalYearStart", "INTEGER", "1");
     await addCol("organizations", "timezone", "TEXT", "'UTC'");
-    await addCol("organizations", "defaultCurrencyCode", "TEXT", "'BRL'");
+    await addCol("organizations", "defaultCurrencyCode", "TEXT", "'USD'");
     await addCol("organizations", "icpProfileId", "TEXT");
     await addCol("organizations", "defaultCommissionRate", "DOUBLE PRECISION");
     await addCol("organizations", "moneyEngineEnabled", "BOOLEAN", "true");

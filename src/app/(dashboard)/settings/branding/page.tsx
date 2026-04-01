@@ -10,7 +10,7 @@ import { MetricValue } from "@/components/design-system/MetricValue";
 import { StatusDot } from "@/components/design-system/StatusDot";
 
 const PRESET_COLORS = [
-  { label: "Neutro", hex: "#B0ACA5" },
+  { label: "Neutral", hex: "#B0ACA5" },
   { label: "Slate", hex: "#94A3B8" },
   { label: "Blue", hex: "#3B82F6" },
   { label: "Emerald", hex: "#10B981" },
@@ -80,9 +80,9 @@ export default function BrandingSettingsPage() {
     }
     const lum = getRelativeLuminance(form.brandAccentColor);
     if (form.brandThemeDefault === "dark" && lum < 0.05) {
-      setContrastWarning("Cor muito escura para o modo dark. Visibilidade pode ser prejudicada.");
+      setContrastWarning("Color too dark for dark mode. Visibility may be impaired.");
     } else if (form.brandThemeDefault === "light" && lum > 0.9) {
-      setContrastWarning("Cor muito clara para o modo light. Visibilidade pode ser prejudicada.");
+      setContrastWarning("Color too light for light mode. Visibility may be impaired.");
     } else {
       setContrastWarning("");
     }
@@ -90,7 +90,7 @@ export default function BrandingSettingsPage() {
 
   const handleSave = async () => {
     if (!isValidHex(form.brandAccentColor)) {
-      toastError("Cor hexadecimal invalida");
+      toastError("Invalid hex color");
       return;
     }
     setSaving(true);
@@ -109,13 +109,13 @@ export default function BrandingSettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        toastSuccess("Branding atualizado");
+        toastSuccess("Branding updated");
         refresh();
       } else {
-        toastError(data.error?.message || "Falha ao salvar");
+        toastError(data.error?.message || "Failed to save");
       }
     } catch {
-      toastError("Erro de rede");
+      toastError("Network error");
     } finally {
       setSaving(false);
     }
@@ -168,7 +168,7 @@ export default function BrandingSettingsPage() {
           Branding
         </h1>
         <p style={{ fontSize: "13px", color: "var(--text-tertiary)", marginTop: "var(--space-xs)" }}>
-          Personalize a aparencia do seu workspace.
+          Customize the look and feel of your workspace.
         </p>
       </div>
 
@@ -221,18 +221,18 @@ export default function BrandingSettingsPage() {
           {/* Mini cards preview */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
             <GlassCard accent>
-              <MetricValue value="R$ 2.4M" label="Pipeline" size="small" />
+              <MetricValue value="$2.4M" label="Pipeline" size="small" />
             </GlassCard>
             <GlassCard success>
-              <StatusDot status="success" size="sm" label="Saudavel" />
+              <StatusDot status="success" size="sm" label="Healthy" />
               <div style={{ marginTop: "var(--space-sm)" }}>
                 <MetricValue value="85" label="Health Score" size="small" />
               </div>
             </GlassCard>
             <GlassCard danger>
-              <StatusDot status="danger" size="sm" label="Risco" />
+              <StatusDot status="danger" size="sm" label="Risk" />
               <div style={{ marginTop: "var(--space-sm)" }}>
-                <MetricValue value="3" label="Alertas" size="small" />
+                <MetricValue value="3" label="Alerts" size="small" />
               </div>
             </GlassCard>
           </div>
@@ -241,13 +241,13 @@ export default function BrandingSettingsPage() {
 
       {/* Display Name */}
       <GlassCard>
-        <SectionLabel>Nome de Exibicao</SectionLabel>
+        <SectionLabel>Display Name</SectionLabel>
         <div style={{ marginTop: "var(--space-md)" }}>
           <input
             type="text"
             value={form.displayName}
             onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
-            placeholder="Nome da empresa"
+            placeholder="Company name"
             style={{
               width: "100%",
               padding: "var(--space-sm) var(--space-md)",
@@ -264,7 +264,7 @@ export default function BrandingSettingsPage() {
 
       {/* Accent Color */}
       <GlassCard>
-        <SectionLabel>Cor Accent</SectionLabel>
+        <SectionLabel>Accent Color</SectionLabel>
         <div style={{ marginTop: "var(--space-md)" }}>
           {/* Presets */}
           <div style={{ display: "flex", gap: "var(--space-sm)", flexWrap: "wrap", marginBottom: "var(--space-md)" }}>
@@ -345,7 +345,7 @@ export default function BrandingSettingsPage() {
           {/* Full logo */}
           <div>
             <p style={{ fontSize: "12px", color: "var(--text-tertiary)", marginBottom: "var(--space-sm)" }}>
-              Logo completa
+              Full logo
             </p>
             <div
               onDragOver={(e) => e.preventDefault()}
@@ -368,7 +368,7 @@ export default function BrandingSettingsPage() {
                 <img src={form.logoUrl} alt="Logo" style={{ maxHeight: "36px", width: "auto" }} />
               ) : (
                 <span style={{ fontSize: "12px", color: "var(--text-ghost)" }}>
-                  Arraste ou clique
+                  Drag or click
                 </span>
               )}
               <input
@@ -384,7 +384,7 @@ export default function BrandingSettingsPage() {
                 type="url"
                 value={form.logoUrl.startsWith("data:") ? "" : form.logoUrl}
                 onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
-                placeholder="ou insira URL"
+                placeholder="or enter URL"
                 style={{
                   width: "100%",
                   padding: "var(--space-xs) var(--space-sm)",
@@ -402,7 +402,7 @@ export default function BrandingSettingsPage() {
           {/* Logomark */}
           <div>
             <p style={{ fontSize: "12px", color: "var(--text-tertiary)", marginBottom: "var(--space-sm)" }}>
-              Logomark (icone)
+              Logomark (icon)
             </p>
             <div
               onDragOver={(e) => e.preventDefault()}
@@ -425,7 +425,7 @@ export default function BrandingSettingsPage() {
                 <img src={form.brandLogoMarkUrl} alt="Mark" style={{ maxHeight: "36px", width: "auto" }} />
               ) : (
                 <span style={{ fontSize: "12px", color: "var(--text-ghost)" }}>
-                  Arraste ou clique
+                  Drag or click
                 </span>
               )}
               <input
@@ -442,7 +442,7 @@ export default function BrandingSettingsPage() {
 
       {/* Theme Default */}
       <GlassCard>
-        <SectionLabel>Tema Padrao</SectionLabel>
+        <SectionLabel>Default Theme</SectionLabel>
         <div style={{ display: "flex", gap: "var(--space-md)", marginTop: "var(--space-md)" }}>
           <button
             onClick={() => {
@@ -513,7 +513,7 @@ export default function BrandingSettingsPage() {
             transition: "border-color var(--transition-default)",
           }}
         >
-          Restaurar Padrao
+          Reset to Default
         </button>
         <button
           onClick={handleSave}

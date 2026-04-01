@@ -64,19 +64,19 @@ interface DashboardData {
   priorityLeads: Array<{ id: string; name: string; company: string; status: string; temperature: string }>;
 }
 
-function formatBRL(value: number): string {
+function formatUSD(value: number): string {
   if (value >= 1_000_000) {
-    return `R$ ${(value / 1_000_000).toFixed(1)}M`;
+    return `$${(value / 1_000_000).toFixed(1)}M`;
   }
   if (value >= 1_000) {
-    return `R$ ${(value / 1_000).toFixed(0)}K`;
+    return `$${(value / 1_000).toFixed(0)}K`;
   }
-  return `R$ ${value.toFixed(0)}`;
+  return `$${value.toFixed(0)}`;
 }
 
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
 function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType; data: DashboardData }) {
@@ -88,14 +88,14 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
     <BentoGrid columns={4} gap="10px">
       {/* Row 1: Pipeline Value (span 2) */}
       <GlassCard accent span={2}>
-        <SectionLabel>Valor do Pipeline</SectionLabel>
+        <SectionLabel>Pipeline Value</SectionLabel>
         <div style={{ marginTop: "var(--space-md)" }}>
           <MetricValue
-            value={formatBRL(stats.totalPipeline)}
-            label="Total ativo"
+            value={formatUSD(stats.totalPipeline)}
+            label="Total active"
             size="hero"
             prefix=""
-            subtitle={stats.activeDeals > 0 ? `${stats.activeDeals} deals ativos` : undefined}
+            subtitle={stats.activeDeals > 0 ? `${stats.activeDeals} active deals` : undefined}
             subtitleColor="muted"
           />
         </div>
@@ -106,8 +106,8 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
         <SectionLabel>Forecast</SectionLabel>
         <div style={{ marginTop: "var(--space-md)" }}>
           <MetricValue
-            value={formatBRL(stats.forecastCommit)}
-            label="Commit do mes"
+            value={formatUSD(stats.forecastCommit)}
+            label="Monthly commit"
             size="large"
             prefix=""
           />
@@ -115,14 +115,14 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
         <div style={{ marginTop: "var(--space-md)", display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
           <StatusDot status={stats.coverageRatio >= 3 ? "success" : stats.coverageRatio >= 2 ? "warning" : "danger"} size="sm" />
           <span style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>
-            {stats.coverageRatio}x cobertura
+            {stats.coverageRatio}x coverage
           </span>
         </div>
       </GlassCard>
 
       {/* Row 1-2: Today/Agenda (span 1, rowspan 2) */}
       <GlassCard span={1} rowSpan={2}>
-        <SectionLabel>Agenda</SectionLabel>
+        <SectionLabel>Schedule</SectionLabel>
         <div style={{ marginTop: "var(--space-md)", display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
           {data.upcomingMeetings.length > 0 ? (
             data.upcomingMeetings.slice(0, 4).map((meeting) => (
@@ -148,9 +148,9 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
               <StatusDot status="danger" size="sm" />
               <div>
                 <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-primary)", margin: 0 }}>
-                  {stats.overdueTasks} tarefa{stats.overdueTasks > 1 ? "s" : ""} atrasada{stats.overdueTasks > 1 ? "s" : ""}
+                  {stats.overdueTasks} overdue task{stats.overdueTasks > 1 ? "s" : ""}
                 </p>
-                <p style={{ fontSize: "11px", color: "var(--text-tertiary)", margin: 0 }}>Acao necessaria</p>
+                <p style={{ fontSize: "11px", color: "var(--text-tertiary)", margin: 0 }}>Action required</p>
               </div>
             </div>
           )}
@@ -161,7 +161,7 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
       <GlassCard danger={stats.atRiskDeals > 0} span={1}>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: "var(--space-md)" }}>
           <StatusDot status={stats.atRiskDeals > 0 ? "danger" : "success"} size="md" pulse={stats.atRiskDeals > 0} />
-          <SectionLabel>{stats.atRiskDeals > 0 ? "Alerta de Risco" : "Pipeline Saudavel"}</SectionLabel>
+          <SectionLabel>{stats.atRiskDeals > 0 ? "Risk Alert" : "Healthy Pipeline"}</SectionLabel>
         </div>
         <MetricValue
           value={String(stats.atRiskDeals)}
@@ -174,7 +174,7 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
 
       {/* Row 2: Priority Deal (span 2) */}
       <GlassCard accent={data.dealsNeedingAttention.length > 0} span={2}>
-        <SectionLabel>Deal Prioritario</SectionLabel>
+        <SectionLabel>Priority Deal</SectionLabel>
         {data.dealsNeedingAttention.length > 0 ? (
           <>
             <div style={{ marginTop: "var(--space-md)", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
@@ -186,13 +186,13 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
                   {data.dealsNeedingAttention[0].account} — {data.dealsNeedingAttention[0].stage}
                 </p>
               </div>
-              <MetricValue value={formatBRL(data.dealsNeedingAttention[0].value)} label="Valor" size="small" />
+              <MetricValue value={formatUSD(data.dealsNeedingAttention[0].value)} label="Value" size="small" />
             </div>
             <div style={{ marginTop: "var(--space-md)", display: "flex", gap: "var(--space-lg)" }}>
               <StatusDot
                 status={data.dealsNeedingAttention[0].probability >= 50 ? "warning" : "danger"}
                 size="sm"
-                label={`${data.dealsNeedingAttention[0].probability}% probabilidade`}
+                label={`${data.dealsNeedingAttention[0].probability}% probability`}
               />
             </div>
           </>
@@ -205,7 +205,7 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
 
       {/* Row 3: Top Deals (span 2) */}
       <GlassCard span={2}>
-        <SectionLabel>Deals que Precisam de Atencao</SectionLabel>
+        <SectionLabel>Deals Needing Attention</SectionLabel>
         <div style={{ marginTop: "var(--space-md)", display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
           {data.dealsNeedingAttention.length > 0 ? (
             data.dealsNeedingAttention.slice(0, 3).map((deal) => (
@@ -227,13 +227,13 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
                   <span style={{ fontSize: "13px", color: "var(--text-primary)" }}>{deal.title}</span>
                 </div>
                 <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--text-secondary)", fontVariantNumeric: "tabular-nums" }}>
-                  {formatBRL(deal.value)}
+                  {formatUSD(deal.value)}
                 </span>
               </div>
             ))
           ) : (
             <p style={{ fontSize: "13px", color: "var(--text-muted)", padding: "var(--space-sm) 0" }}>
-              Todos os deals estao saudaveis
+              All deals are healthy
             </p>
           )}
         </div>
@@ -246,7 +246,7 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
           <div>
             <MetricValue
               value={`${stats.conversionRate}%`}
-              label="Taxa de conversao"
+              label="Conversion rate"
               size="small"
               subtitle={`${stats.totalLeads} leads total`}
               subtitleColor="muted"
@@ -258,7 +258,7 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
                 value={`${stats.winRate}%`}
                 label="Win Rate"
                 size="small"
-                subtitle={stats.winRate >= 50 ? "Acima da meta" : "Abaixo da meta"}
+                subtitle={stats.winRate >= 50 ? "Above target" : "Below target"}
                 subtitleColor={stats.winRate >= 50 ? "success" : "danger"}
               />
             </div>
@@ -268,13 +268,13 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
 
       {/* Row 3: Closing This Month (span 1) */}
       <GlassCard success={stats.closingThisMonth > 0} span={1}>
-        <SectionLabel>Fechando Este Mes</SectionLabel>
+        <SectionLabel>Closing This Month</SectionLabel>
         <div style={{ marginTop: "var(--space-md)" }}>
           <MetricValue
             value={String(stats.closingThisMonth)}
-            label="Deals previstos"
+            label="Expected deals"
             size="large"
-            subtitle={formatBRL(stats.closingValue) + " total"}
+            subtitle={formatUSD(stats.closingValue) + " total"}
             subtitleColor={stats.closingThisMonth > 0 ? "success" : "muted"}
           />
         </div>
@@ -315,7 +315,7 @@ function DashboardError({ onRetry }: { onRetry: () => void }) {
             cursor: "pointer",
           }}
         >
-          Tentar novamente
+          Try again
         </button>
       </div>
     </GlassCard>
@@ -380,7 +380,7 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Dinheiro em Risco + Debrief */}
+      {/* Money at Risk + Debrief */}
       <div style={{ marginBottom: "var(--space-xl)", display: "grid", gridTemplateColumns: "1fr auto", gap: "var(--space-lg)", alignItems: "start" }}>
         <MoneyAtRiskWidget />
         <button
@@ -407,7 +407,7 @@ export default function HomePage() {
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
           </svg>
-          Novo Debrief
+          New Debrief
         </button>
       </div>
 

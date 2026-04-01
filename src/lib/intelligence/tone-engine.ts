@@ -99,7 +99,7 @@ export function selectTone(
   if (daysOverdue > 14 && moneyAtRisk > 50000) {
     return {
       mode: "pressure",
-      reason: `Overdue by ${daysOverdue} days with R$ ${moneyAtRisk.toLocaleString("pt-BR")} at risk`,
+      reason: `Overdue by ${daysOverdue} days with $${moneyAtRisk.toLocaleString("en-US")} at risk`,
       confidence: 75,
     };
   }
@@ -142,7 +142,7 @@ export function generateNarrativeContext(
 
   // Build key facts based on data
   keyFacts.push(
-    `Deal value: R$ ${opportunity.value.toLocaleString("pt-BR")}`,
+    `Deal value: $${opportunity.value.toLocaleString("en-US")}`,
   );
   keyFacts.push(
     `Current stage: ${opportunity.stage} (probability ${opportunity.probability}%)`,
@@ -156,13 +156,13 @@ export function generateNarrativeContext(
 
   if (moneyMetrics.moneyAtRisk > 0) {
     keyFacts.push(
-      `R$ ${moneyMetrics.moneyAtRisk.toLocaleString("pt-BR")} at risk`,
+      `$${moneyMetrics.moneyAtRisk.toLocaleString("en-US")} at risk`,
     );
   }
 
   if (moneyMetrics.delayCost > 0) {
     keyFacts.push(
-      `Delay cost: R$ ${moneyMetrics.delayCost.toLocaleString("pt-BR")}`,
+      `Delay cost: $${moneyMetrics.delayCost.toLocaleString("en-US")}`,
     );
   }
 

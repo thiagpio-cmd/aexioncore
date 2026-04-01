@@ -90,7 +90,7 @@ export function Topbar() {
 
           {/* Execution Score */}
           {execScoreData?.score != null && (
-            <div className="flex items-center gap-1" title="Score de Execucao">
+            <div className="flex items-center gap-1" title="Execution Score">
               <ExecutionScoreBadge score={execScoreData.score} size="sm" />
             </div>
           )}
