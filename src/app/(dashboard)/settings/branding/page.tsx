@@ -61,7 +61,7 @@ export default function BrandingSettingsPage() {
 
   useEffect(() => {
     if (org.id) {
-      const extended = org as Record<string, unknown>;
+      const extended = org as unknown as Record<string, unknown>;
       setForm({
         displayName: org.displayName || org.name || "",
         logoUrl: org.logoUrl || "",
