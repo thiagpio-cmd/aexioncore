@@ -50,23 +50,10 @@ interface OpportunityItem {
   owner: { id: string; name: string } | null;
 }
 
-interface IntegrationItem {
-  id: string;
-  name: string;
-  status: string;
-  lastSync: string;
-  health: number;
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function stageLabel(stage: string): string {
   return stage.replace(/_/g, " ");
-}
-
-function daysSince(dateStr: string | null | undefined): number {
-  if (!dateStr) return 999;
-  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
 }
 
 // ─── Skeletons ────────────────────────────────────────────────────────────────
@@ -109,10 +96,6 @@ export function ExecutiveWorkspace() {
     "/api/opportunities?limit=5&sortBy=value&sortOrder=desc"
   );
 
-  // Integrations health
-  const { data: integrations, loading: integrationsLoading } = useApi<IntegrationItem[]>(
-    "/api/integrations?limit=10"
-  );
 
   // Engine-driven alerts for key risks and deal health
   const { data: alertsData, loading: alertsLoading } = useApi<{
@@ -382,58 +365,6 @@ export function ExecutiveWorkspace() {
           </div>
         </div>
 
-        {/* Integration Health */}
-        {integrationsLoading ? (
-          <SkeletonCard />
-        ) : (
-          <div className="rounded-xl border border-border bg-surface p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-foreground">Integration Health</h2>
-              <Link href="/settings/integrations" className="text-xs font-medium text-primary hover:text-primary-hover transition-colors">
-                Manage
-              </Link>
-            </div>
-            {(integrations || []).length === 0 ? (
-              <p className="text-sm text-muted py-4 text-center">No integrations configured</p>
-            ) : (
-              <div className="space-y-2">
-                {(integrations || []).slice(0, 5).map((intg) => (
-                  <div
-                    key={intg.id}
-                    className="flex items-center justify-between rounded-lg border border-border px-4 py-2.5"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`h-2 w-2 rounded-full ${
-                          intg.status === "active" || intg.status === "ACTIVE"
-                            ? "bg-success"
-                            : intg.status === "error" || intg.status === "ERROR"
-                            ? "bg-danger"
-                            : "bg-warning"
-                        }`}
-                      />
-                      <span className="text-sm font-medium text-foreground">{intg.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {intg.lastSync && (
-                        <span className="text-xs text-muted">
-                          Synced {daysSince(intg.lastSync) === 0 ? "today" : `${daysSince(intg.lastSync)}d ago`}
-                        </span>
-                      )}
-                      <span
-                        className={`text-xs font-medium ${
-                          intg.health >= 90 ? "text-success" : intg.health >= 70 ? "text-warning" : "text-danger"
-                        }`}
-                      >
-                        {intg.health}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Quick Metrics */}

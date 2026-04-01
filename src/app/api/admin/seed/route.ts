@@ -160,7 +160,83 @@ export async function POST(request: NextRequest) {
     await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "icp_scores_leadId" ON "icp_scores"("leadId")`);
     await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "icp_scores_oppId" ON "icp_scores"("opportunityId")`);
 
+    // ─── Create Debrief tables if missing ──────────────────────────────
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "debriefs" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "organizationId" TEXT NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+        "opportunityId" TEXT NOT NULL REFERENCES "opportunities"("id") ON DELETE CASCADE,
+        "userId" TEXT NOT NULL REFERENCES "users"("id"),
+        "inputType" TEXT NOT NULL,
+        "rawInput" TEXT NOT NULL,
+        "fileUrl" TEXT,
+        "interpretation" JSONB,
+        "proposedActions" JSONB,
+        "approvedActions" JSONB,
+        "status" TEXT NOT NULL DEFAULT 'pending',
+        "confidence" DOUBLE PRECISION,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "debriefs_oppId" ON "debriefs"("opportunityId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "debriefs_userId" ON "debriefs"("userId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "debriefs_orgStatus" ON "debriefs"("organizationId", "status")`);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "action_proposals" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "organizationId" TEXT NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+        "opportunityId" TEXT NOT NULL REFERENCES "opportunities"("id") ON DELETE CASCADE,
+        "userId" TEXT NOT NULL REFERENCES "users"("id"),
+        "debriefId" TEXT REFERENCES "debriefs"("id") ON DELETE SET NULL,
+        "source" TEXT NOT NULL,
+        "actionType" TEXT NOT NULL,
+        "description" TEXT NOT NULL,
+        "urgency" TEXT NOT NULL,
+        "params" JSONB NOT NULL DEFAULT '{}',
+        "financialImpact" TEXT,
+        "status" TEXT NOT NULL DEFAULT 'proposed',
+        "executedAt" TIMESTAMPTZ,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "action_proposals_oppStatus" ON "action_proposals"("opportunityId", "status")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "action_proposals_userStatus" ON "action_proposals"("userId", "status")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "action_proposals_orgStatus" ON "action_proposals"("organizationId", "status")`);
+
+    // ─── Create DebriefSession table if missing ─────────────────────
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "debrief_sessions" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "organizationId" TEXT NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+        "createdById" TEXT NOT NULL REFERENCES "users"("id"),
+        "opportunityId" TEXT REFERENCES "opportunities"("id") ON DELETE SET NULL,
+        "leadId" TEXT REFERENCES "leads"("id") ON DELETE SET NULL,
+        "title" TEXT NOT NULL,
+        "inputType" TEXT NOT NULL,
+        "rawInput" TEXT NOT NULL,
+        "aiInterpretation" TEXT,
+        "suggestedTasks" TEXT,
+        "suggestedUpdates" TEXT,
+        "userApproved" BOOLEAN NOT NULL DEFAULT false,
+        "approvedAt" TIMESTAMPTZ,
+        "appliedAt" TIMESTAMPTZ,
+        "status" TEXT NOT NULL DEFAULT 'PENDING',
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "debrief_sessions_orgId" ON "debrief_sessions"("organizationId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "debrief_sessions_oppId" ON "debrief_sessions"("opportunityId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "debrief_sessions_leadId" ON "debrief_sessions"("leadId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "debrief_sessions_createdById" ON "debrief_sessions"("createdById")`);
+
     // ─── Clear all tables ─────────────────────────────────────────────
+    await prisma.$executeRawUnsafe(`DELETE FROM "action_proposals"`).catch(() => {});
+    await prisma.$executeRawUnsafe(`DELETE FROM "debriefs"`).catch(() => {});
+    await prisma.$executeRawUnsafe(`DELETE FROM "debrief_sessions"`).catch(() => {});
     await prisma.$executeRawUnsafe(`DELETE FROM "icp_scores"`).catch(() => {});
     await prisma.$executeRawUnsafe(`DELETE FROM "icp_profiles"`).catch(() => {});
     await prisma.auditLog.deleteMany();

@@ -180,7 +180,6 @@ export const NAV_SECTIONS = [
       { label: "Branding", href: "/settings/branding", icon: "settings", roles: [UserRole.ADMIN, UserRole.REVOPS] },
       { label: "Users & Teams", href: "/team", icon: "users", roles: [UserRole.MANAGER, UserRole.DIRECTOR, UserRole.ADMIN] },
       { label: "Roles & Permissions", href: "/settings/roles", icon: "key", roles: [UserRole.ADMIN] },
-      { label: "Integrations", href: "/integrations", icon: "plug", roles: [UserRole.ADMIN, UserRole.REVOPS] },
       { label: "Pipelines & Stages", href: "/settings/pipelines", icon: "git-merge", roles: [UserRole.ADMIN, UserRole.REVOPS] },
       { label: "Audit", href: "/settings/audit", icon: "check-circle", roles: [UserRole.ADMIN] },
       { label: "Billing", href: "/settings/billing", icon: "file-text", roles: [UserRole.ADMIN] },

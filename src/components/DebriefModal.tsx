@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/design-system";
 import { ActionApprovalCard, ActionProposal } from "@/components/ActionApprovalCard";
 import { DebriefInput } from "@/components/debrief/DebriefInput";
@@ -20,6 +20,13 @@ interface DebriefResult {
   }>;
 }
 
+interface OpportunityOption {
+  id: string;
+  title: string;
+  account: string;
+  stage: string;
+}
+
 interface DebriefModalProps {
   open: boolean;
   onClose: () => void;
@@ -27,8 +34,100 @@ interface DebriefModalProps {
   onComplete?: () => void;
 }
 
+function OpportunityPicker({ onSelect }: { onSelect: (id: string) => void }) {
+  const [opportunities, setOpportunities] = useState<OpportunityOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    fetch("/api/opportunities?limit=50&sortBy=updatedAt&sortOrder=desc")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data?.records) {
+          setOpportunities(
+            json.data.records.map((o: any) => ({
+              id: o.id,
+              title: o.title,
+              account: o.account?.name || "—",
+              stage: o.stage,
+            }))
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = search.trim()
+    ? opportunities.filter(
+        (o) =>
+          o.title.toLowerCase().includes(search.toLowerCase()) ||
+          o.account.toLowerCase().includes(search.toLowerCase())
+      )
+    : opportunities;
+
+  return (
+    <div className="flex flex-col gap-[var(--space-sm)]">
+      <p className="text-sm text-[var(--text-secondary)]">
+        Select an opportunity to debrief:
+      </p>
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search deals..."
+        className={cn(
+          "w-full rounded-[var(--radius-sm)] border border-[var(--glass-border)]",
+          "bg-[var(--glass-bg)] px-[var(--space-md)] py-[var(--space-sm)]",
+          "text-sm text-[var(--text-primary)] placeholder:text-[var(--text-dim)]",
+          "focus:outline-none focus:border-[var(--accent-gold)]/50"
+        )}
+      />
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <p className="text-xs text-[var(--text-muted)] text-center py-4">
+          No opportunities found.
+        </p>
+      ) : (
+        <div className="max-h-[300px] overflow-y-auto flex flex-col gap-1">
+          {filtered.map((opp) => (
+            <button
+              key={opp.id}
+              type="button"
+              onClick={() => onSelect(opp.id)}
+              className={cn(
+                "w-full text-left rounded-[var(--radius-sm)] px-3 py-2.5 transition-colors",
+                "border border-transparent hover:border-[var(--accent)]/30",
+                "hover:bg-[var(--accent)]/5"
+              )}
+            >
+              <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+                {opp.title}
+              </p>
+              <p className="text-xs text-[var(--text-muted)]">
+                {opp.account} · {opp.stage.replace(/_/g, " ")}
+              </p>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DebriefModal({ open, onClose, opportunityId, onComplete }: DebriefModalProps) {
   const [result, setResult] = useState<DebriefResult | null>(null);
+  const [selectedOppId, setSelectedOppId] = useState(opportunityId);
+
+  // Sync when prop changes (e.g. opening from opportunity detail)
+  useEffect(() => {
+    setSelectedOppId(opportunityId);
+  }, [opportunityId]);
+
+  const activeOppId = selectedOppId || opportunityId;
 
   function handleResult(r: DebriefResult) {
     setResult(r);
@@ -37,6 +136,7 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
   function handleClose() {
     const hadResult = !!result;
     setResult(null);
+    setSelectedOppId("");
     onClose();
     if (hadResult) {
       onComplete?.();
@@ -77,10 +177,15 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
         </div>
 
         <div className="px-[var(--space-lg)] py-[var(--space-md)]">
-          {/* Input phase — now uses DebriefInput with text/audio/file tabs */}
-          {!result && (
+          {/* Opportunity picker — shown when no opportunityId provided */}
+          {!activeOppId && !result && (
+            <OpportunityPicker onSelect={(id) => setSelectedOppId(id)} />
+          )}
+
+          {/* Input phase — shown once opportunity is selected */}
+          {activeOppId && !result && (
             <DebriefInput
-              opportunityId={opportunityId}
+              opportunityId={activeOppId}
               onResult={handleResult}
             />
           )}
