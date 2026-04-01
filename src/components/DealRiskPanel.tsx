@@ -62,7 +62,7 @@ function SkeletonBlock() {
   );
 }
 
-function ScoreRow({ label, score, statusFn }: { label: string; score: number; statusFn: (s: number) => StatusType }) {
+function ScoreRow({ label, score, statusFn }: { label: string; score: number; statusFn: (s: number) => RiskStatus }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-[var(--space-sm)]">
