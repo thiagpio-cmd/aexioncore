@@ -144,15 +144,15 @@ export class ZoomProvider extends BaseProvider {
     };
   }
 
-  async revokeAccess(accessToken: string): Promise<void> {
+  async revokeAccess(credentials: StoredCredentials): Promise<void> {
     const config = getOAuthConfig();
-    const credentials = Buffer.from(
+    const basicAuth = Buffer.from(
       `${config.clientId}:${config.clientSecret}`
     ).toString("base64");
 
-    await fetch(`https://zoom.us/oauth/revoke?token=${accessToken}`, {
+    await fetch(`https://zoom.us/oauth/revoke?token=${credentials.accessToken}`, {
       method: "POST",
-      headers: { Authorization: `Basic ${credentials}` },
+      headers: { Authorization: `Basic ${basicAuth}` },
     }).catch(() => {});
   }
 
