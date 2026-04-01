@@ -157,7 +157,7 @@ export function calculateOpportunityProbability(
     
     if (daysUntilClose < 0) {
       score -= 20;
-      risks.push(`Close date is in the past (${Math.abs(daysUntilClose)} days overdue).`);
+      risks.push(`Close date is in the past (${Math.abs(daysUntilClose)} day${Math.abs(daysUntilClose) !== 1 ? "s" : ""} overdue).`);
     } else if (daysUntilClose <= 30) {
       score += 5;
       positive.push(`Close date is rapidly approaching (Within 30 days).`);

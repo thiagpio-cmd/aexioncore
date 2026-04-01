@@ -209,7 +209,7 @@ export class AlertEngine {
         description: `This task is ${daysOver} day${daysOver !== 1 ? "s" : ""} past due.${
           task.opportunity ? ` Related to deal: ${task.opportunity.title}` : ""
         }`,
-        reasoning: `Due date was ${task.dueDate?.toISOString() ?? "unknown"}. Currently ${daysOver} days overdue.`,
+        reasoning: `Due date was ${task.dueDate?.toISOString() ?? "unknown"}. Currently ${daysOver} day${daysOver !== 1 ? "s" : ""} overdue.`,
         entityType: "task",
         entityId: task.id,
         entityName: task.title,

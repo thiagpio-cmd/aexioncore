@@ -19,10 +19,11 @@ interface ConvertLeadModalProps {
 }
 
 const OPP_STAGES = [
-  { value: "DISCOVERY", label: "Discovery" },
-  { value: "QUALIFICATION", label: "Qualification" },
-  { value: "PROPOSAL", label: "Proposal" },
-  { value: "NEGOTIATION", label: "Negotiation" },
+  { value: "LEAD_INQUIRY", label: "Lead Inquiry" },
+  { value: "PROPERTY_TOUR", label: "Property Tour" },
+  { value: "OFFER_SUBMITTED", label: "Offer Submitted" },
+  { value: "UNDER_CONTRACT", label: "Under Contract" },
+  { value: "DUE_DILIGENCE", label: "Due Diligence" },
 ];
 
 export function ConvertLeadModal({ open, onClose, onConverted, lead }: ConvertLeadModalProps) {
@@ -34,7 +35,7 @@ export function ConvertLeadModal({ open, onClose, onConverted, lead }: ConvertLe
   const [form, setForm] = useState({
     opportunityTitle: "",
     opportunityValue: 0,
-    stage: "DISCOVERY",
+    stage: "LEAD_INQUIRY",
     probability: 20,
     expectedCloseDate: "",
     description: "",

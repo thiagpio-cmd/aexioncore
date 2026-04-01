@@ -13,7 +13,7 @@ type Ctx = { params: Promise<{ id: string }> };
 const ConvertSchema = z.object({
   opportunityTitle: z.string().min(1),
   opportunityValue: z.number().min(0).default(0),
-  stage: z.string().default("DISCOVERY"),
+  stage: z.string().default("LEAD_INQUIRY"),
   probability: z.number().min(0).max(100).default(20),
   expectedCloseDate: z.string().optional(),
   description: z.string().optional(),

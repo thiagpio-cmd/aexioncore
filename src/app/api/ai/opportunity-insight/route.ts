@@ -123,10 +123,11 @@ export async function GET(request: NextRequest) {
 
     // Estimated days to close
     const stageDaysMap: Record<string, number> = {
-      DISCOVERY: 30,
-      QUALIFICATION: 20,
-      PROPOSAL: 14,
-      NEGOTIATION: 10,
+      LEAD_INQUIRY: 30,
+      PROPERTY_TOUR: 20,
+      OFFER_SUBMITTED: 14,
+      UNDER_CONTRACT: 10,
+      DUE_DILIGENCE: 6,
       CLOSED_WON: 0,
       CLOSED_LOST: 0,
     };
@@ -134,14 +135,14 @@ export async function GET(request: NextRequest) {
 
     // --- Next best action ---
     let nextAction = "Review deal strategy and determine next steps";
-    if (opp.stage === "DISCOVERY" && activityCount < 3) {
-      nextAction = "Increase discovery engagement — schedule qualification call to uncover needs";
-    } else if (opp.stage === "QUALIFICATION" && !opp.primaryContact) {
-      nextAction = "Identify and link a primary contact / champion for this deal";
-    } else if (opp.stage === "PROPOSAL" && lastActivityDays !== null && lastActivityDays > 5) {
+    if (opp.stage === "LEAD_INQUIRY" && activityCount < 3) {
+      nextAction = "Schedule property tour and qualification meeting to advance the deal";
+    } else if (opp.stage === "PROPERTY_TOUR" && !opp.primaryContact) {
+      nextAction = "Identify and link a primary contact / decision-maker for this deal";
+    } else if (opp.stage === "OFFER_SUBMITTED" && lastActivityDays !== null && lastActivityDays > 5) {
       nextAction = "Follow up on proposal — re-engage before momentum is lost";
-    } else if (opp.stage === "NEGOTIATION") {
-      nextAction = "Push for close — address remaining objections and finalize terms";
+    } else if (opp.stage === "UNDER_CONTRACT" || opp.stage === "DUE_DILIGENCE") {
+      nextAction = "Push for close — address remaining due diligence items and finalize terms";
     } else if (overdueTasks > 0) {
       nextAction = "Complete overdue tasks to maintain deal momentum";
     } else if (lastActivityDays !== null && lastActivityDays > 7) {

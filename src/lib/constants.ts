@@ -64,12 +64,13 @@ export const OPPORTUNITY_STAGES: Record<
   string,
   { label: string; color: string; order: number }
 > = {
-  DISCOVERY: { label: "Discovery", color: "bg-blue-500", order: 1 },
-  QUALIFICATION: { label: "Qualification", color: "bg-indigo-500", order: 2 },
-  PROPOSAL: { label: "Proposal", color: "bg-purple-500", order: 3 },
-  NEGOTIATION: { label: "Negotiation", color: "bg-amber-500", order: 4 },
-  CLOSED_WON: { label: "Closed Won", color: "bg-emerald-500", order: 5 },
-  CLOSED_LOST: { label: "Closed Lost", color: "bg-red-500", order: 6 },
+  LEAD_INQUIRY: { label: "Lead Inquiry", color: "bg-blue-500", order: 1 },
+  PROPERTY_TOUR: { label: "Property Tour", color: "bg-indigo-500", order: 2 },
+  OFFER_SUBMITTED: { label: "Offer Submitted", color: "bg-purple-500", order: 3 },
+  UNDER_CONTRACT: { label: "Under Contract", color: "bg-amber-500", order: 4 },
+  DUE_DILIGENCE: { label: "Due Diligence", color: "bg-cyan-500", order: 5 },
+  CLOSED_WON: { label: "Closed Won", color: "bg-emerald-500", order: 6 },
+  CLOSED_LOST: { label: "Closed Lost", color: "bg-red-500", order: 7 },
 };
 
 // ─── Task Types ──────────────────────────────────────────────────────────────

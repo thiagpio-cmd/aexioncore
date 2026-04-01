@@ -9,10 +9,11 @@ import { formatCurrency, cn } from "@/lib/utils";
 type Tab = "overview" | "pipeline" | "leads" | "team";
 
 const STAGE_COLORS: Record<string, string> = {
-  DISCOVERY: "bg-blue-500",
-  QUALIFICATION: "bg-indigo-500",
-  PROPOSAL: "bg-purple-500",
-  NEGOTIATION: "bg-amber-500",
+  LEAD_INQUIRY: "bg-blue-500",
+  PROPERTY_TOUR: "bg-indigo-500",
+  OFFER_SUBMITTED: "bg-purple-500",
+  UNDER_CONTRACT: "bg-amber-500",
+  DUE_DILIGENCE: "bg-cyan-500",
 };
 
 const TEMP_COLORS: Record<string, string> = {

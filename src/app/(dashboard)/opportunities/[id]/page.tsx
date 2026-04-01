@@ -346,7 +346,7 @@ export default function OpportunityDetailPage() {
             </div>
           )}
           {/* Upcoming Deadline */}
-          {deal.expectedCloseDate && new Date(deal.expectedCloseDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) && new Date(deal.expectedCloseDate) > new Date() && ["DISCOVERY", "QUALIFICATION"].includes(deal.stage) && (
+          {deal.expectedCloseDate && new Date(deal.expectedCloseDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) && new Date(deal.expectedCloseDate) > new Date() && ["LEAD_INQUIRY", "PROPERTY_TOUR"].includes(deal.stage) && (
             <div className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger-light px-4 py-3">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-danger shrink-0">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

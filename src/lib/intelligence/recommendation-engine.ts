@@ -261,8 +261,8 @@ export class RecommendationEngine {
     const stageLower = opp.stage.toLowerCase();
     const pendingTasks = opp.tasks?.filter((t) => t.status !== "COMPLETED") ?? [];
 
-    // Opportunity in DISCOVERY > 7 days — move to PROPOSAL or schedule meeting
-    if (stageLower === "discovery" && lastActivity > 7) {
+    // Opportunity in LEAD_INQUIRY > 7 days — move to PROPERTY_TOUR or schedule meeting
+    if (stageLower === "lead_inquiry" && lastActivity > 7) {
       recs.push({
         id: `rec-move-stage-${opp.id}`,
         type: "MOVE_STAGE",
@@ -423,7 +423,7 @@ export class RecommendationEngine {
       where: {
         organizationId: orgId,
         ...(ownerId ? { ownerId } : {}),
-        stage: { in: ["DISCOVERY", "discovery", "QUALIFICATION", "qualification"] },
+        stage: { in: ["LEAD_INQUIRY", "lead_inquiry", "PROPERTY_TOUR", "property_tour"] },
         updatedAt: { lt: sevenDaysAgo },
       },
       include: {

@@ -11,15 +11,16 @@ import { useSession } from "next-auth/react";
 import { TableSkeleton } from "@/components/shared/skeleton";
 
 const STAGE_COLORS: Record<string, string> = {
-  DISCOVERY: "bg-blue-50 text-blue-700",
-  QUALIFICATION: "bg-indigo-50 text-indigo-700",
-  PROPOSAL: "bg-violet-50 text-violet-700",
-  NEGOTIATION: "bg-amber-50 text-amber-700",
+  LEAD_INQUIRY: "bg-blue-50 text-blue-700",
+  PROPERTY_TOUR: "bg-indigo-50 text-indigo-700",
+  OFFER_SUBMITTED: "bg-violet-50 text-violet-700",
+  UNDER_CONTRACT: "bg-amber-50 text-amber-700",
+  DUE_DILIGENCE: "bg-cyan-50 text-cyan-700",
   CLOSED_WON: "bg-emerald-50 text-emerald-700",
   CLOSED_LOST: "bg-red-50 text-red-700",
 };
 
-type FilterTab = "ALL" | "DISCOVERY" | "QUALIFICATION" | "PROPOSAL" | "NEGOTIATION" | "CLOSED_WON" | "CLOSED_LOST";
+type FilterTab = "ALL" | "LEAD_INQUIRY" | "PROPERTY_TOUR" | "OFFER_SUBMITTED" | "UNDER_CONTRACT" | "DUE_DILIGENCE" | "CLOSED_WON" | "CLOSED_LOST";
 
 export default function OpportunitiesPage() {
   const router = useRouter();
@@ -48,10 +49,11 @@ export default function OpportunitiesPage() {
 
   const tabs: { key: FilterTab; label: string; count: number }[] = useMemo(() => [
     { key: "ALL", label: "All", count: allOpps?.length ?? 0 },
-    { key: "DISCOVERY", label: "Discovery", count: allOpps?.filter((o: any) => o.stage === "DISCOVERY").length ?? 0 },
-    { key: "QUALIFICATION", label: "Qualification", count: allOpps?.filter((o: any) => o.stage === "QUALIFICATION").length ?? 0 },
-    { key: "PROPOSAL", label: "Proposal", count: allOpps?.filter((o: any) => o.stage === "PROPOSAL").length ?? 0 },
-    { key: "NEGOTIATION", label: "Negotiation", count: allOpps?.filter((o: any) => o.stage === "NEGOTIATION").length ?? 0 },
+    { key: "LEAD_INQUIRY", label: "Lead Inquiry", count: allOpps?.filter((o: any) => o.stage === "LEAD_INQUIRY").length ?? 0 },
+    { key: "PROPERTY_TOUR", label: "Property Tour", count: allOpps?.filter((o: any) => o.stage === "PROPERTY_TOUR").length ?? 0 },
+    { key: "OFFER_SUBMITTED", label: "Offer Submitted", count: allOpps?.filter((o: any) => o.stage === "OFFER_SUBMITTED").length ?? 0 },
+    { key: "UNDER_CONTRACT", label: "Under Contract", count: allOpps?.filter((o: any) => o.stage === "UNDER_CONTRACT").length ?? 0 },
+    { key: "DUE_DILIGENCE", label: "Due Diligence", count: allOpps?.filter((o: any) => o.stage === "DUE_DILIGENCE").length ?? 0 },
     { key: "CLOSED_WON", label: "Closed Won", count: allOpps?.filter((o: any) => o.stage === "CLOSED_WON").length ?? 0 },
     { key: "CLOSED_LOST", label: "Closed Lost", count: allOpps?.filter((o: any) => o.stage === "CLOSED_LOST").length ?? 0 },
   ], [allOpps]);

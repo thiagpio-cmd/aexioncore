@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const STALLED_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
     // We'll use our constants equivalent
-    const stages = ["DISCOVERY", "QUALIFICATION", "PROPOSAL", "NEGOTIATION", "CLOSED_WON", "CLOSED_LOST"];
+    const stages = ["LEAD_INQUIRY", "PROPERTY_TOUR", "OFFER_SUBMITTED", "UNDER_CONTRACT", "DUE_DILIGENCE", "CLOSED_WON", "CLOSED_LOST"];
 
     const stageAnalysis = stages.map(stageName => {
       const dealsInStage = opportunities.filter(o => o.stage === stageName);

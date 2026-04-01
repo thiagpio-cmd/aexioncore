@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
         where: {
           organizationId: orgId,
           ...oppScope,
-          stage: { in: ["DISCOVERY", "QUALIFICATION", "discovery", "qualification"] },
+          stage: { in: ["LEAD_INQUIRY", "PROPERTY_TOUR", "lead_inquiry", "property_tour"] },
           expectedCloseDate: {
             gte: now,
             lte: sevenDaysFromNow,

@@ -78,7 +78,7 @@ function daysSince(dateStr: string | null | undefined): number {
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
 }
 
-const PIPELINE_STAGES = ["DISCOVERY", "QUALIFICATION", "PROPOSAL", "NEGOTIATION"] as const;
+const PIPELINE_STAGES = ["LEAD_INQUIRY", "PROPERTY_TOUR", "OFFER_SUBMITTED", "UNDER_CONTRACT", "DUE_DILIGENCE"] as const;
 
 function stageLabel(stage: string): string {
   return stage.replace(/_/g, " ");

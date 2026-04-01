@@ -28,19 +28,21 @@ interface Forecast {
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const STAGE_AVG_DAYS: Record<string, number> = {
-  DISCOVERY: 14,
-  QUALIFICATION: 12,
-  PROPOSAL: 10,
-  NEGOTIATION: 8,
+  LEAD_INQUIRY: 14,
+  PROPERTY_TOUR: 12,
+  OFFER_SUBMITTED: 10,
+  UNDER_CONTRACT: 8,
+  DUE_DILIGENCE: 6,
   CLOSED_WON: 0,
   CLOSED_LOST: 0,
 };
 
 const STAGE_REMAINING_DAYS: Record<string, number> = {
-  DISCOVERY: 44,
-  QUALIFICATION: 30,
-  PROPOSAL: 18,
-  NEGOTIATION: 8,
+  LEAD_INQUIRY: 50,
+  PROPERTY_TOUR: 36,
+  OFFER_SUBMITTED: 24,
+  UNDER_CONTRACT: 14,
+  DUE_DILIGENCE: 6,
   CLOSED_WON: 0,
   CLOSED_LOST: 0,
 };

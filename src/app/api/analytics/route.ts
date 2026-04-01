@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // --- Pipeline by stage ---
-    const pipelineByStage = ["DISCOVERY", "QUALIFICATION", "PROPOSAL", "NEGOTIATION"].map((stage) => {
+    const pipelineByStage = ["LEAD_INQUIRY", "PROPERTY_TOUR", "OFFER_SUBMITTED", "UNDER_CONTRACT", "DUE_DILIGENCE"].map((stage) => {
       const stageOpps = activeOpps.filter((o) => o.stage === stage);
       return {
         stage,
