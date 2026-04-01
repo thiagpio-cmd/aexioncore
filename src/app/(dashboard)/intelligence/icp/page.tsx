@@ -49,10 +49,10 @@ export default function ICPPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-[var(--text-primary)]">
-            Perfil de Cliente Ideal
+            Ideal Customer Profile
           </h1>
           <p className="text-sm text-[var(--text-muted)]">
-            Defina perfis ICP e encontre contatos com maior aderencia
+            Define ICP profiles and find your best-fit contacts
           </p>
         </div>
         <button
@@ -62,7 +62,7 @@ export default function ICPPage() {
           }}
           className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90"
         >
-          Novo ICP
+          New ICP
         </button>
       </div>
 
@@ -72,7 +72,7 @@ export default function ICPPage() {
           <div className="w-full max-w-xl">
             <GlassCard elevated className="p-6">
               <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
-                Novo Perfil ICP
+                New ICP Profile
               </h2>
               <ICPTemplateForm
                 onSuccess={handleFormSuccess}
@@ -88,14 +88,14 @@ export default function ICPPage() {
         {/* ICP List */}
         <div className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-            Perfis ICP
+            ICP Profiles
           </h2>
 
           {loading && <SkeletonCards />}
 
           {error && (
             <GlassCard className="p-4">
-              <p className="text-sm text-red-400">Erro ao carregar: {error}</p>
+              <p className="text-sm text-red-400">Error loading: {error}</p>
             </GlassCard>
           )}
 
@@ -112,10 +112,10 @@ export default function ICPPage() {
                 <path d="M9 21h6" />
               </svg>
               <p className="text-sm text-[var(--text-muted)]">
-                Nenhum perfil ICP criado ainda.
+                No ICP profiles created yet.
               </p>
               <p className="text-xs text-[var(--text-muted)] mt-1">
-                Crie seu primeiro ICP para comecar a encontrar matches.
+                Create your first ICP to start finding matches.
               </p>
             </GlassCard>
           )}
@@ -148,22 +148,22 @@ export default function ICPPage() {
                         {icp.decisionStyle && (
                           <span>
                             {icp.decisionStyle === "ANALYTICAL"
-                              ? "Analitico"
+                              ? "Analytical"
                               : icp.decisionStyle === "INTUITIVE"
-                                ? "Intuitivo"
+                                ? "Intuitive"
                                 : icp.decisionStyle === "CONSENSUS"
-                                  ? "Consenso"
-                                  : "Autoritario"}
+                                  ? "Consensus"
+                                  : "Authoritative"}
                           </span>
                         )}
                         {icp.riskTolerance && (
                           <span>
-                            Risco:{" "}
+                            Risk:{" "}
                             {icp.riskTolerance === "LOW"
-                              ? "Baixo"
+                              ? "Low"
                               : icp.riskTolerance === "MEDIUM"
-                                ? "Medio"
-                                : "Alto"}
+                                ? "Medium"
+                                : "High"}
                           </span>
                         )}
                       </div>
@@ -191,7 +191,7 @@ export default function ICPPage() {
                 <path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122M5.98 11.95l-2.121 2.122" />
               </svg>
               <p className="text-sm text-[var(--text-muted)]">
-                Selecione um perfil ICP para ver os matches
+                Select an ICP profile to view matches
               </p>
             </GlassCard>
           )}

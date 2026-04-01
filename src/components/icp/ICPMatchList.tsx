@@ -42,10 +42,10 @@ function getFitTier(score: number): FitTier {
 
 const FIT_STYLES: Record<FitTier, { label: string; color: string; bg: string }> = {
   CHAMPION: { label: "Champion", color: "text-emerald-400", bg: "bg-emerald-400/10" },
-  HIGH_FIT: { label: "Alto Fit", color: "text-[var(--accent)]", bg: "bg-[var(--accent)]/10" },
-  MEDIUM_FIT: { label: "Medio", color: "text-amber-400", bg: "bg-amber-400/10" },
-  LOW_FIT: { label: "Baixo", color: "text-[var(--text-muted)]", bg: "bg-[var(--text-muted)]/10" },
-  DISQUALIFIED: { label: "Desqualificado", color: "text-red-400", bg: "bg-red-400/10" },
+  HIGH_FIT: { label: "High Fit", color: "text-[var(--accent)]", bg: "bg-[var(--accent)]/10" },
+  MEDIUM_FIT: { label: "Medium", color: "text-amber-400", bg: "bg-amber-400/10" },
+  LOW_FIT: { label: "Low", color: "text-[var(--text-muted)]", bg: "bg-[var(--text-muted)]/10" },
+  DISQUALIFIED: { label: "Disqualified", color: "text-red-400", bg: "bg-red-400/10" },
 };
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
@@ -107,7 +107,7 @@ export function ICPMatchList({ icpId }: ICPMatchListProps) {
   if (error) {
     return (
       <GlassCard className="p-4">
-        <p className="text-sm text-red-400">Erro ao carregar matches: {error}</p>
+        <p className="text-sm text-red-400">Error loading matches: {error}</p>
       </GlassCard>
     );
   }
@@ -119,10 +119,10 @@ export function ICPMatchList({ icpId }: ICPMatchListProps) {
           <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
         <p className="text-sm text-[var(--text-muted)]">
-          Nenhum contato corresponde a este ICP.
+          No contacts match this ICP.
         </p>
         <p className="text-xs text-[var(--text-muted)] mt-1">
-          {data?.totalEvaluated ?? 0} contatos avaliados
+          {data?.totalEvaluated ?? 0} contacts evaluated
         </p>
       </GlassCard>
     );
@@ -139,7 +139,7 @@ export function ICPMatchList({ icpId }: ICPMatchListProps) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
-          Voltar para lista
+          Back to list
         </button>
         <CustomerProfileCard
           contactId={selectedContactId}
@@ -154,8 +154,8 @@ export function ICPMatchList({ icpId }: ICPMatchListProps) {
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-[var(--text-muted)]">
-          {data.matches.length} match{data.matches.length !== 1 ? "es" : ""} de{" "}
-          {data.totalEvaluated} avaliados
+          {data.matches.length} match{data.matches.length !== 1 ? "es" : ""} of{" "}
+          {data.totalEvaluated} evaluated
         </p>
       </div>
 

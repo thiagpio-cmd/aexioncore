@@ -78,20 +78,20 @@ export function MoneyAtRiskWidget({ opportunityId, data: propData }: MoneyAtRisk
         <SectionLabel>Dinheiro em Risco</SectionLabel>
         {isHighRisk && (
           <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-red)]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--accent-red)]">
-            Alto risco
+            High risk
           </span>
         )}
       </div>
 
       <MetricValue
         value={formatBRL(totalRisk)}
-        label="Total em risco"
+        label="Total at risk"
         size="large"
       />
 
       <div className="flex flex-col gap-[var(--space-sm)] border-t border-[var(--glass-border)] pt-[var(--space-md)]">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--text-secondary)]">Receita em risco</span>
+          <span className="text-xs text-[var(--text-secondary)]">Revenue at risk</span>
           <span className={cn(
             "text-sm font-semibold tabular-nums",
             money.moneyAtRisk > 0 ? "text-[var(--accent-red)]" : "text-[var(--text-muted)]"
@@ -101,7 +101,7 @@ export function MoneyAtRiskWidget({ opportunityId, data: propData }: MoneyAtRisk
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--text-secondary)]">Comissao em risco</span>
+          <span className="text-xs text-[var(--text-secondary)]">Commission at risk</span>
           <span className={cn(
             "text-sm font-semibold tabular-nums",
             money.commissionAtRisk > 0 ? "text-[var(--accent-gold)]" : "text-[var(--text-muted)]"

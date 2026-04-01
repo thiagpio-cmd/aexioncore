@@ -24,17 +24,17 @@ export async function POST(request: NextRequest) {
     if (!actor) return sendError(unauthorized());
 
     if (!canPerform(actor, "opportunity", "edit")) {
-      return sendError(forbidden("Sem permissão para criar debriefs"));
+      return sendError(forbidden("No permission to create debriefs"));
     }
 
     const body = await request.json();
 
     if (!body.text || typeof body.text !== "string" || body.text.trim().length < 10) {
-      return sendError(badRequest("O campo 'text' deve ter ao menos 10 caracteres"));
+      return sendError(badRequest("Field 'text' must have at least 10 characters"));
     }
 
     if (!body.opportunityId || typeof body.opportunityId !== "string") {
-      return sendError(badRequest("O campo 'opportunityId' é obrigatório"));
+      return sendError(badRequest("Field 'opportunityId' is required"));
     }
 
     // Verify opportunity exists and belongs to this org
@@ -44,11 +44,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!opportunity) {
-      return sendError(badRequest("Oportunidade não encontrada"));
+      return sendError(badRequest("Opportunity not found"));
     }
 
     if (opportunity.organizationId !== session.user.organizationId) {
-      return sendError(forbidden("Acesso negado a esta oportunidade"));
+      return sendError(forbidden("Access denied to this opportunity"));
     }
 
     // Check user can access this opportunity
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       ownerId: opportunity.ownerId,
       organizationId: opportunity.organizationId,
     })) {
-      return sendError(forbidden("Sem permissão para esta oportunidade"));
+      return sendError(forbidden("No permission for this opportunity"));
     }
 
     const result = await processDebrief({
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     return sendSuccess(result, 201);
   } catch (error: any) {
     console.error("POST /api/debriefs error:", error);
-    if (error.message?.includes("não encontrada") || error.message?.includes("negado")) {
+    if (error.message?.includes("not found") || error.message?.includes("denied")) {
       return sendError(badRequest(error.message));
     }
     return sendUnhandledError();

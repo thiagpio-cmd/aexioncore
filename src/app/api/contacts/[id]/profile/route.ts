@@ -31,9 +31,9 @@ export async function GET(request: NextRequest, ctx: Ctx) {
       select: { id: true, organizationId: true, name: true },
     });
 
-    if (!contact) return sendError(notFound("Contato"));
+    if (!contact) return sendError(notFound("Contact"));
     if (!canPerform(actor, "contact", "view", { organizationId: contact.organizationId ?? undefined })) {
-      return sendError(forbidden("Sem permissao para visualizar este contato"));
+      return sendError(forbidden("No permission to view this contact"));
     }
 
     const organizationId = contact.organizationId ?? actor.organizationId;

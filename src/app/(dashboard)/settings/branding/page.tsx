@@ -531,7 +531,7 @@ export default function BrandingSettingsPage() {
             transition: "opacity var(--transition-default)",
           }}
         >
-          {saving ? "Salvando..." : "Salvar Branding"}
+          {saving ? "Saving..." : "Save Branding"}
         </button>
       </div>
     </div>

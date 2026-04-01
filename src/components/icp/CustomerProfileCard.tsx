@@ -126,7 +126,7 @@ function FomapGauge({ score }: { score: number }) {
           FOMAP Score
         </p>
         <p className="text-xs text-[var(--text-muted)]">
-          Motivacao x Habilidade x Prompt
+          Motivation x Ability x Prompt
         </p>
       </div>
     </div>
@@ -194,7 +194,7 @@ export function CustomerProfileCard({
   if (error) {
     return (
       <GlassCard className="p-4">
-        <p className="text-sm text-red-400">Erro ao carregar perfil: {error}</p>
+        <p className="text-sm text-red-400">Error loading profile: {error}</p>
       </GlassCard>
     );
   }
@@ -203,7 +203,7 @@ export function CustomerProfileCard({
     return (
       <GlassCard className="p-4">
         <p className="text-sm text-[var(--text-muted)]">
-          Nenhum perfil encontrado para este contato.
+          No profile found for this contact.
         </p>
       </GlassCard>
     );
@@ -221,10 +221,10 @@ export function CustomerProfileCard({
             {contactName ?? contact.name}
           </h3>
           <p className="text-xs text-[var(--text-muted)]">
-            Perfil Psicografico
+            Psychographic Profile
             {profile.confidence != null && (
               <span className="ml-2">
-                &middot; Confianca:{" "}
+                &middot; Confidence:{" "}
                 <span className="font-semibold text-[var(--text-primary)]">
                   {Math.round(profile.confidence * 100)}%
                 </span>
@@ -238,7 +238,7 @@ export function CustomerProfileCard({
             disabled={refreshing}
             className="rounded-lg border border-[var(--border-subtle)] bg-[var(--glass-bg)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-card-hover)] disabled:opacity-50"
           >
-            {refreshing ? "Atualizando..." : "Atualizar Perfil"}
+            {refreshing ? "Refreshing..." : "Refresh Profile"}
           </button>
           {onClose && (
             <button
@@ -263,7 +263,7 @@ export function CustomerProfileCard({
           )}
           {profile.jungArchetype && (
             <div className="flex flex-col items-center gap-2">
-              <SectionTitle>Arquetipo Dominante</SectionTitle>
+              <SectionTitle>Dominant Archetype</SectionTitle>
               <ArchetypeBadge archetype={profile.jungArchetype} size="lg" />
             </div>
           )}
@@ -280,13 +280,13 @@ export function CustomerProfileCard({
       {/* Value Sensitivity */}
       {profile.valueSensitivity && (
         <GlassCard className="p-4">
-          <SectionTitle>Sensibilidade de Valor</SectionTitle>
+          <SectionTitle>Value Sensitivity</SectionTitle>
           <div className="space-y-2">
-            <DimensionBar label="Funcional" value={profile.valueSensitivity.functional} variant="accent" />
-            <DimensionBar label="Emocional" value={profile.valueSensitivity.emotional} variant="info" />
+            <DimensionBar label="Functional" value={profile.valueSensitivity.functional} variant="accent" />
+            <DimensionBar label="Emotional" value={profile.valueSensitivity.emotional} variant="info" />
             <DimensionBar label="Social" value={profile.valueSensitivity.social} variant="success" />
-            <DimensionBar label="Epistemico" value={profile.valueSensitivity.epistemic} variant="warning" />
-            <DimensionBar label="Condicional" value={profile.valueSensitivity.conditional} variant="muted" />
+            <DimensionBar label="Epistemic" value={profile.valueSensitivity.epistemic} variant="warning" />
+            <DimensionBar label="Conditional" value={profile.valueSensitivity.conditional} variant="muted" />
           </div>
         </GlassCard>
       )}
@@ -294,11 +294,11 @@ export function CustomerProfileCard({
       {/* Motivation Profile */}
       {profile.motivationProfile && (
         <GlassCard className="p-4">
-          <SectionTitle>Perfil de Motivacao (SDT)</SectionTitle>
+          <SectionTitle>Motivation Profile (SDT)</SectionTitle>
           <div className="space-y-2">
-            <DimensionBar label="Autonomia" value={profile.motivationProfile.autonomy} variant="accent" />
-            <DimensionBar label="Competencia" value={profile.motivationProfile.competence} variant="success" />
-            <DimensionBar label="Relacionamento" value={profile.motivationProfile.relatedness} variant="info" />
+            <DimensionBar label="Autonomy" value={profile.motivationProfile.autonomy} variant="accent" />
+            <DimensionBar label="Competence" value={profile.motivationProfile.competence} variant="success" />
+            <DimensionBar label="Relatedness" value={profile.motivationProfile.relatedness} variant="info" />
           </div>
         </GlassCard>
       )}
@@ -306,20 +306,20 @@ export function CustomerProfileCard({
       {/* Conditioning Profile */}
       {profile.conditioningProfile && (
         <GlassCard className="p-4">
-          <SectionTitle>Perfil de Condicionamento</SectionTitle>
+          <SectionTitle>Conditioning Profile</SectionTitle>
           <div className="space-y-2">
             <DimensionBar
-              label="Sensib. Recompensa"
+              label="Reward Sensitivity"
               value={profile.conditioningProfile.rewardSensitivity}
               variant="success"
             />
             <DimensionBar
-              label="Aversao a Perda"
+              label="Loss Aversion"
               value={profile.conditioningProfile.lossAversion}
               variant="warning"
             />
             <DimensionBar
-              label="Habituacao"
+              label="Habituation"
               value={profile.conditioningProfile.habituationRate}
               variant="muted"
             />
@@ -330,10 +330,10 @@ export function CustomerProfileCard({
       {/* Lifestyle */}
       {profile.lifestyle && (
         <GlassCard className="p-4 space-y-3">
-          <SectionTitle>Estilo de Vida</SectionTitle>
-          <TagChips title="Interesses" items={profile.lifestyle.interests ?? []} />
-          <TagChips title="Valores" items={profile.lifestyle.values ?? []} />
-          <TagChips title="Prioridades" items={profile.lifestyle.priorities ?? []} />
+          <SectionTitle>Lifestyle</SectionTitle>
+          <TagChips title="Interests" items={profile.lifestyle.interests ?? []} />
+          <TagChips title="Values" items={profile.lifestyle.values ?? []} />
+          <TagChips title="Priorities" items={profile.lifestyle.priorities ?? []} />
         </GlassCard>
       )}
     </div>

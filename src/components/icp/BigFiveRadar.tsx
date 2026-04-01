@@ -17,11 +17,11 @@ interface BigFiveRadarProps {
 }
 
 const LABELS = [
-  { key: "openness" as const, label: "Abertura" },
-  { key: "conscientiousness" as const, label: "Conscienciosidade" },
-  { key: "extraversion" as const, label: "Extroversao" },
-  { key: "agreeableness" as const, label: "Amabilidade" },
-  { key: "neuroticism" as const, label: "Neuroticismo" },
+  { key: "openness" as const, label: "Openness" },
+  { key: "conscientiousness" as const, label: "Conscientiousness" },
+  { key: "extraversion" as const, label: "Extraversion" },
+  { key: "agreeableness" as const, label: "Agreeableness" },
+  { key: "neuroticism" as const, label: "Neuroticism" },
 ];
 
 const ANGLE_OFFSET = -Math.PI / 2; // Start from top

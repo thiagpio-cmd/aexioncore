@@ -49,27 +49,27 @@ interface ICPTemplateFormProps {
 
 const VALUE_DRIVER_OPTIONS = [
   { value: "ROI", label: "ROI" },
-  { value: "PRICE", label: "Preco" },
-  { value: "RELATIONSHIP", label: "Relacionamento" },
-  { value: "BRAND", label: "Marca" },
-  { value: "INNOVATION", label: "Inovacao" },
+  { value: "PRICE", label: "Price" },
+  { value: "RELATIONSHIP", label: "Relationship" },
+  { value: "BRAND", label: "Brand" },
+  { value: "INNOVATION", label: "Innovation" },
   { value: "TIME_TO_VALUE", label: "Time to Value" },
-  { value: "INTEGRATION", label: "Integracao" },
+  { value: "INTEGRATION", label: "Integration" },
 ];
 
 const DECISION_STYLES = [
-  { value: "", label: "Selecionar..." },
-  { value: "ANALYTICAL", label: "Analitico" },
-  { value: "INTUITIVE", label: "Intuitivo" },
-  { value: "CONSENSUS", label: "Consenso" },
-  { value: "AUTHORITATIVE", label: "Autoritario" },
+  { value: "", label: "Select..." },
+  { value: "ANALYTICAL", label: "Analytical" },
+  { value: "INTUITIVE", label: "Intuitive" },
+  { value: "CONSENSUS", label: "Consensus" },
+  { value: "AUTHORITATIVE", label: "Authoritative" },
 ];
 
 const RISK_TOLERANCES = [
-  { value: "", label: "Selecionar..." },
-  { value: "LOW", label: "Baixa" },
-  { value: "MEDIUM", label: "Media" },
-  { value: "HIGH", label: "Alta" },
+  { value: "", label: "Select..." },
+  { value: "LOW", label: "Low" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "HIGH", label: "High" },
 ];
 
 function parseSafe<T>(val: string | null | undefined, fallback: T): T {
@@ -197,7 +197,7 @@ export function ICPTemplateForm({
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!form.name.trim()) {
-        setError("Nome e obrigatorio");
+        setError("Name is required");
         return;
       }
 
@@ -232,7 +232,7 @@ export function ICPTemplateForm({
           onSuccess?.();
         }
       } catch {
-        setError("Erro ao salvar ICP");
+        setError("Error saving ICP");
       } finally {
         setSubmitting(false);
       }
@@ -244,10 +244,10 @@ export function ICPTemplateForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Nome */}
       <GlassCard className="p-4">
-        <SectionTitle>Nome e Descricao</SectionTitle>
+        <SectionTitle>Name & Description</SectionTitle>
         <input
           type="text"
-          placeholder="Nome do perfil ICP"
+          placeholder="ICP profile name"
           value={form.name}
           onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
           className={INPUT_CLASS}
@@ -256,33 +256,33 @@ export function ICPTemplateForm({
 
       {/* Big Five */}
       <GlassCard className="p-4">
-        <SectionTitle>Big Five — Alvo (0-10)</SectionTitle>
+        <SectionTitle>Big Five — Target (0-10)</SectionTitle>
         <div className="space-y-2">
-          <SliderField label="Abertura" value={form.bigFiveProfile.openness} onChange={(v) => updateBigFive("openness", v)} />
-          <SliderField label="Conscienciosidade" value={form.bigFiveProfile.conscientiousness} onChange={(v) => updateBigFive("conscientiousness", v)} />
-          <SliderField label="Extroversao" value={form.bigFiveProfile.extraversion} onChange={(v) => updateBigFive("extraversion", v)} />
-          <SliderField label="Amabilidade" value={form.bigFiveProfile.agreeableness} onChange={(v) => updateBigFive("agreeableness", v)} />
-          <SliderField label="Neuroticismo" value={form.bigFiveProfile.neuroticism} onChange={(v) => updateBigFive("neuroticism", v)} />
+          <SliderField label="Openness" value={form.bigFiveProfile.openness} onChange={(v) => updateBigFive("openness", v)} />
+          <SliderField label="Conscientiousness" value={form.bigFiveProfile.conscientiousness} onChange={(v) => updateBigFive("conscientiousness", v)} />
+          <SliderField label="Extraversion" value={form.bigFiveProfile.extraversion} onChange={(v) => updateBigFive("extraversion", v)} />
+          <SliderField label="Agreeableness" value={form.bigFiveProfile.agreeableness} onChange={(v) => updateBigFive("agreeableness", v)} />
+          <SliderField label="Neuroticism" value={form.bigFiveProfile.neuroticism} onChange={(v) => updateBigFive("neuroticism", v)} />
         </div>
       </GlassCard>
 
       {/* Motivation */}
       <GlassCard className="p-4">
-        <SectionTitle>Perfil de Motivacao (0-100)</SectionTitle>
+        <SectionTitle>Motivation Profile (0-100)</SectionTitle>
         <div className="space-y-2">
-          <SliderField label="Autonomia" value={form.motivationProfile.autonomy} onChange={(v) => updateMotivation("autonomy", v)} min={0} max={100} />
-          <SliderField label="Competencia" value={form.motivationProfile.competence} onChange={(v) => updateMotivation("competence", v)} min={0} max={100} />
-          <SliderField label="Relacionamento" value={form.motivationProfile.relatedness} onChange={(v) => updateMotivation("relatedness", v)} min={0} max={100} />
+          <SliderField label="Autonomy" value={form.motivationProfile.autonomy} onChange={(v) => updateMotivation("autonomy", v)} min={0} max={100} />
+          <SliderField label="Competence" value={form.motivationProfile.competence} onChange={(v) => updateMotivation("competence", v)} min={0} max={100} />
+          <SliderField label="Relatedness" value={form.motivationProfile.relatedness} onChange={(v) => updateMotivation("relatedness", v)} min={0} max={100} />
         </div>
       </GlassCard>
 
       {/* Decision Style & Risk */}
       <GlassCard className="p-4">
-        <SectionTitle>Estilo de Decisao</SectionTitle>
+        <SectionTitle>Decision Style</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs text-[var(--text-muted)] mb-1">
-              Estilo de decisao
+              Decision style
             </label>
             <select
               value={form.decisionStyle}
@@ -298,7 +298,7 @@ export function ICPTemplateForm({
           </div>
           <div>
             <label className="block text-xs text-[var(--text-muted)] mb-1">
-              Tolerancia a risco
+              Risk tolerance
             </label>
             <select
               value={form.riskTolerance}
@@ -341,15 +341,15 @@ export function ICPTemplateForm({
 
       {/* Firmographic */}
       <GlassCard className="p-4">
-        <SectionTitle>Firmografia</SectionTitle>
+        <SectionTitle>Firmographics</SectionTitle>
         <div className="space-y-3">
           <div>
             <label className="block text-xs text-[var(--text-muted)] mb-1">
-              Industrias (separadas por virgula)
+              Industries (comma-separated)
             </label>
             <input
               type="text"
-              placeholder="Tecnologia, Financeiro, Saude"
+              placeholder="Technology, Finance, Healthcare"
               value={form.idealIndustries}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, idealIndustries: e.target.value }))
@@ -360,7 +360,7 @@ export function ICPTemplateForm({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[var(--text-muted)] mb-1">
-                Tamanho min. (funcionarios)
+                Min. size (employees)
               </label>
               <input
                 type="number"
@@ -377,7 +377,7 @@ export function ICPTemplateForm({
             </div>
             <div>
               <label className="block text-xs text-[var(--text-muted)] mb-1">
-                Tamanho max.
+                Max. size
               </label>
               <input
                 type="number"
@@ -396,7 +396,7 @@ export function ICPTemplateForm({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[var(--text-muted)] mb-1">
-                Receita anual min. (BRL)
+                Min. annual revenue (USD)
               </label>
               <input
                 type="number"
@@ -415,7 +415,7 @@ export function ICPTemplateForm({
             </div>
             <div>
               <label className="block text-xs text-[var(--text-muted)] mb-1">
-                Receita anual max.
+                Max. annual revenue
               </label>
               <input
                 type="number"
@@ -449,7 +449,7 @@ export function ICPTemplateForm({
             onClick={onCancel}
             className="rounded-lg border border-[var(--border-subtle)] px-4 py-2 text-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-card-hover)]"
           >
-            Cancelar
+            Cancel
           </button>
         )}
         <button
@@ -458,10 +458,10 @@ export function ICPTemplateForm({
           className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
         >
           {submitting
-            ? "Salvando..."
+            ? "Saving..."
             : isEdit
-              ? "Atualizar ICP"
-              : "Criar ICP"}
+              ? "Update ICP"
+              : "Create ICP"}
         </button>
       </div>
     </form>

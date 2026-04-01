@@ -61,33 +61,33 @@ export interface DebriefResult {
 
 // ─── AI Prompt ──────────────────────────────────────────────────────────────
 
-const DEBRIEF_SYSTEM_PROMPT = `Você é um assistente comercial especializado em vendas B2B no Brasil.
+const DEBRIEF_SYSTEM_PROMPT = `You are a commercial assistant specialized in B2B sales.
 
-Sua função é interpretar relatos informais de reuniões/interações comerciais e extrair informações estruturadas.
+Your role is to interpret informal meeting/interaction reports and extract structured information.
 
-Ao receber um relato, você DEVE retornar um JSON com a seguinte estrutura:
+When receiving a report, you MUST return a JSON with the following structure:
 
 {
   "interpretation": {
-    "keyFacts": ["lista de fatos-chave identificados"],
+    "keyFacts": ["list of identified key facts"],
     "sentiment": "positive" | "neutral" | "negative" | "mixed",
     "urgency": "high" | "medium" | "low",
     "dealSignals": {
-      "interest": ["sinais de interesse identificados"],
-      "objections": ["objeções mencionadas"],
-      "delays": ["fatores de atraso"],
-      "commitments": ["compromissos assumidos"]
+      "interest": ["identified interest signals"],
+      "objections": ["mentioned objections"],
+      "delays": ["delay factors"],
+      "commitments": ["commitments made"]
     },
-    "entitiesMentioned": ["nomes de pessoas, empresas, produtos mencionados"],
-    "summary": "resumo comercial em 2-3 frases"
+    "entitiesMentioned": ["names of people, companies, products mentioned"],
+    "summary": "commercial summary in 2-3 sentences"
   },
   "actions": [
     {
       "actionType": "create_task" | "update_stage" | "schedule_meeting" | "send_followup" | "flag_risk" | "update_forecast" | "escalate",
-      "description": "descrição clara da ação sugerida em português",
+      "description": "clear description of the suggested action",
       "urgency": "immediate" | "today" | "this_week",
       "params": {
-        // Parâmetros específicos da ação:
+        // Action-specific parameters:
         // create_task: { "taskTitle": "...", "dueDate": "..." }
         // update_stage: { "targetStage": "...", "reason": "..." }
         // schedule_meeting: { "subject": "...", "suggestedDate": "...", "participants": [...] }
@@ -96,20 +96,20 @@ Ao receber um relato, você DEVE retornar um JSON com a seguinte estrutura:
         // update_forecast: { "newProbability": 0-100, "reason": "..." }
         // escalate: { "reason": "...", "suggestedEscalateTo": "..." }
       },
-      "financialImpact": "impacto financeiro estimado em R$ (ex: 'R$ 150.000 em risco de perda' ou 'R$ 80.000 possível upsell')"
+      "financialImpact": "estimated financial impact in USD (e.g., '$150,000 at risk of loss' or '$80,000 possible upsell')"
     }
   ]
 }
 
-Regras:
-1. Sempre extraia fatos comerciais mesmo de texto informal/coloquial
-2. Identifique sinais de negócio: interesse, objeção, atraso, compromisso
-3. Quantifique impacto financeiro em R$ sempre que possível
-4. Sugira ações específicas com prioridade clara
-5. Use português (BR) em todas as saídas
-6. Cada ação DEVE ter um impacto financeiro estimado
-7. Seja conservador nas estimativas — melhor subestimar do que superestimar
-8. Responda APENAS com o JSON, sem texto adicional`;
+Rules:
+1. Always extract commercial facts even from informal/colloquial text
+2. Identify deal signals: interest, objection, delay, commitment
+3. Quantify financial impact in USD whenever possible
+4. Suggest specific actions with clear priority
+5. Use English in all outputs
+6. Each action MUST have an estimated financial impact
+7. Be conservative in estimates — better to underestimate than overestimate
+8. Respond ONLY with the JSON, no additional text`;
 
 // ─── Service ────────────────────────────────────────────────────────────────
 
@@ -136,11 +136,11 @@ export async function processDebrief(input: DebriefInput): Promise<DebriefResult
   });
 
   if (!opportunity) {
-    throw new Error("Oportunidade não encontrada");
+    throw new Error("Opportunity not found");
   }
 
   if (opportunity.organizationId !== orgId) {
-    throw new Error("Acesso negado a esta oportunidade");
+    throw new Error("Access denied to this opportunity");
   }
 
   // 2. Build context for AI
@@ -247,7 +247,7 @@ export async function approveActions(
   });
 
   if (!debrief || debrief.organizationId !== orgId) {
-    throw new Error("Debrief não encontrado");
+    throw new Error("Debrief not found");
   }
 
   const proposals = await prisma.actionProposal.findMany({
@@ -260,7 +260,7 @@ export async function approveActions(
   });
 
   if (proposals.length === 0) {
-    throw new Error("Nenhuma proposta válida encontrada para aprovação");
+    throw new Error("No valid proposals found for approval");
   }
 
   let executed = 0;
@@ -278,7 +278,7 @@ export async function approveActions(
       executed++;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      errors.push(`Proposta ${proposal.id}: ${msg}`);
+      errors.push(`Proposal ${proposal.id}: ${msg}`);
 
       // Mark as approved even if execution failed — user approved it
       await prisma.actionProposal.update({
@@ -329,7 +329,7 @@ export async function rejectActions(
   });
 
   if (!debrief || debrief.organizationId !== orgId) {
-    throw new Error("Debrief não encontrado");
+    throw new Error("Debrief not found");
   }
 
   const result = await prisma.actionProposal.updateMany({
@@ -359,24 +359,24 @@ function buildPrompt(
 
 ---
 
-CONTEXTO DA OPORTUNIDADE:
-- Nome: ${opp.title}
-- Valor: R$ ${Number(opp.value ?? 0).toLocaleString("pt-BR")}
-- Estágio: ${opp.stageName}
-- Probabilidade atual: ${opp.probability ?? "N/A"}%
-- Conta: ${opp.accountName ?? "N/A"}
-- Responsável: ${opp.ownerName ?? "N/A"}
-- Previsão de fechamento: ${opp.expectedCloseDate ?? "N/A"}
-- Tarefas abertas: ${JSON.stringify(opp.openTasks ?? [])}
+OPPORTUNITY CONTEXT:
+- Name: ${opp.title}
+- Value: $${Number(opp.value ?? 0).toLocaleString("en-US")}
+- Stage: ${opp.stageName}
+- Current probability: ${opp.probability ?? "N/A"}%
+- Account: ${opp.accountName ?? "N/A"}
+- Owner: ${opp.ownerName ?? "N/A"}
+- Expected close date: ${opp.expectedCloseDate ?? "N/A"}
+- Open tasks: ${JSON.stringify(opp.openTasks ?? [])}
 
 ---
 
-RELATO DO VENDEDOR:
+SALES REP REPORT:
 ${text}
 
 ---
 
-Analise o relato acima e retorne o JSON estruturado conforme instruído.`;
+Analyze the report above and return the structured JSON as instructed.`;
 }
 
 function parseAIResponse(content: string): {
@@ -429,7 +429,7 @@ function sanitizeAction(raw: Record<string, unknown>): ActionProposalData {
 
   return {
     actionType,
-    description: String(raw.description ?? "Ação sugerida pelo AI"),
+    description: String(raw.description ?? "AI-suggested action"),
     urgency,
     params: (raw.params as Record<string, unknown>) ?? {},
     financialImpact: raw.financialImpact ? String(raw.financialImpact) : null,
@@ -493,8 +493,8 @@ async function executeAction(
     case "flag_risk": {
       await prisma.task.create({
         data: {
-          title: `⚠️ RISCO: ${String(params.riskType ?? "Risco identificado")}`,
-          description: `[Smart Debrief — Flag de Risco]\n${proposal.description}\nSeveridade: ${String(params.severity ?? "medium")}`,
+          title: `⚠️ RISK: ${String(params.riskType ?? "Risk identified")}`,
+          description: `[Smart Debrief — Risk Flag]\n${proposal.description}\nSeverity: ${String(params.severity ?? "medium")}`,
           status: "TODO",
           priority: "URGENT",
           organizationId: orgId,
@@ -508,8 +508,8 @@ async function executeAction(
     case "schedule_meeting": {
       await prisma.task.create({
         data: {
-          title: `📅 Agendar: ${String(params.subject ?? "Reunião")}`,
-          description: `[Smart Debrief — Reunião]\n${proposal.description}\nParticipantes: ${JSON.stringify(params.participants ?? [])}`,
+          title: `📅 Schedule: ${String(params.subject ?? "Meeting")}`,
+          description: `[Smart Debrief — Meeting]\n${proposal.description}\nParticipants: ${JSON.stringify(params.participants ?? [])}`,
           status: "TODO",
           priority: "HIGH",
           organizationId: orgId,
@@ -524,8 +524,8 @@ async function executeAction(
     case "send_followup": {
       await prisma.task.create({
         data: {
-          title: `📩 Follow-up: ${String(params.subject ?? "Acompanhamento")}`,
-          description: `[Smart Debrief — Follow-up]\nCanal: ${String(params.channel ?? "email")}\nPontos-chave: ${JSON.stringify(params.keyPoints ?? [])}\n\n${proposal.description}`,
+          title: `📩 Follow-up: ${String(params.subject ?? "Follow-up")}`,
+          description: `[Smart Debrief — Follow-up]\nChannel: ${String(params.channel ?? "email")}\nKey points: ${JSON.stringify(params.keyPoints ?? [])}\n\n${proposal.description}`,
           status: "TODO",
           priority: "HIGH",
           organizationId: orgId,
@@ -539,8 +539,8 @@ async function executeAction(
     case "escalate": {
       await prisma.task.create({
         data: {
-          title: `🚨 Escalação: ${String(params.reason ?? "Requer atenção")}`,
-          description: `[Smart Debrief — Escalação]\n${proposal.description}\nEscalar para: ${String(params.suggestedEscalateTo ?? "gestão")}`,
+          title: `🚨 Escalation: ${String(params.reason ?? "Requires attention")}`,
+          description: `[Smart Debrief — Escalation]\n${proposal.description}\nEscalate to: ${String(params.suggestedEscalateTo ?? "management")}`,
           status: "TODO",
           priority: "URGENT",
           organizationId: orgId,

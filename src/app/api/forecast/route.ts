@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const parsed = ForecastCreateSchema.safeParse(body);
     if (!parsed.success) {
-      return sendError(validationError("Dados de previsão inválidos", parsed.error.issues));
+      return sendError(validationError("Invalid forecast data", parsed.error.issues));
     }
 
     const { quarter, year, commit, bestCase, pipeline, target } = parsed.data;
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
 
     return sendSuccess(forecast, 201);
   } catch (error: any) {
-    if (error.name === "ZodError") return sendError(validationError("Dados inválidos", error.errors));
+    if (error.name === "ZodError") return sendError(validationError("Invalid data", error.errors));
     console.error("POST /api/forecast error:", error);
     return sendUnhandledError();
   }

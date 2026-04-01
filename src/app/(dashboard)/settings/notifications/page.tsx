@@ -129,9 +129,9 @@ export default function SettingsNotificationsPage() {
       });
       if (!res.ok) throw new Error("Failed to save");
       setDirty(false);
-      toastSuccess("Preferencias salvas com sucesso");
+      toastSuccess("Preferences saved successfully");
     } catch {
-      toastError("Erro ao salvar preferencias");
+      toastError("Error saving preferences");
     } finally {
       setSaving(false);
     }
@@ -168,26 +168,26 @@ export default function SettingsNotificationsPage() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="m15 18-6-6 6-6" />
         </svg>
-        Voltar para Configuracoes
+        Back to Settings
       </Link>
 
       <div className="flex items-center justify-between mb-6">
         <PageHeader
-          title="Notificacoes"
-          description="Configure quais eventos geram notificacoes e por qual canal"
+          title="Notifications"
+          description="Configure which events trigger notifications and through which channel"
         />
         <div className="flex items-center gap-2">
           <button
             onClick={enableAll}
             className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted border border-border transition-colors hover:text-foreground hover:bg-surface"
           >
-            Ativar Tudo
+            Enable All
           </button>
           <button
             onClick={disableAll}
             className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted border border-border transition-colors hover:text-foreground hover:bg-surface"
           >
-            Desativar Tudo
+            Disable All
           </button>
         </div>
       </div>
@@ -221,7 +221,7 @@ export default function SettingsNotificationsPage() {
               {/* Header */}
               <div className="px-5 py-2 flex items-center border-b border-border/50">
                 <span className="flex-1 text-[10px] font-semibold uppercase tracking-wider text-muted">
-                  Evento
+                  Event
                 </span>
                 <span className="w-16 text-center text-[10px] font-semibold uppercase tracking-wider text-muted">
                   Email
@@ -273,14 +273,14 @@ export default function SettingsNotificationsPage() {
           {dirty && (
             <div className="sticky bottom-4 flex items-center justify-between rounded-xl border border-primary/20 bg-surface px-5 py-3 shadow-lg">
               <p className="text-sm text-muted">
-                Voce tem alteracoes nao salvas
+                You have unsaved changes
               </p>
               <button
                 onClick={handleSave}
                 disabled={saving}
                 className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
               >
-                {saving ? "Salvando..." : "Salvar Preferencias"}
+                {saving ? "Saving..." : "Save Preferences"}
               </button>
             </div>
           )}

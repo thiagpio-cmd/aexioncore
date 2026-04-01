@@ -55,7 +55,7 @@ export function ICPQuickView({
     <div className="relative inline-block" ref={containerRef}>
       <button
         onClick={toggle}
-        title="Ver perfil psicografico"
+        title="View psychographic profile"
         className={`${btnClass} inline-flex items-center justify-center border border-[var(--border-subtle)] bg-[var(--glass-bg)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-card-hover)] hover:text-[var(--accent)]`}
       >
         <svg

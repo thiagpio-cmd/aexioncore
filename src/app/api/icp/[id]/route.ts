@@ -11,7 +11,7 @@ type Ctx = { params: Promise<{ id: string }> };
 /**
  * GET /api/icp/[id]
  *
- * Retorna um perfil ICP especifico.
+ * Returns a specific ICP profile.
  */
 export async function GET(request: NextRequest, ctx: Ctx) {
   try {
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
     if (!actor) return sendError(unauthorized());
 
     if (!canPerform(actor, "analytics", "view", { organizationId: actor.organizationId })) {
-      return sendError(forbidden("Sem permissao para visualizar ICPs"));
+      return sendError(forbidden("No permission to view ICPs"));
     }
 
     const { id } = await ctx.params;
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
     });
 
     if (!icp || icp.organizationId !== actor.organizationId) {
-      return sendError(notFound("Perfil ICP"));
+      return sendError(notFound("ICP Profile"));
     }
 
     return sendSuccess(icp);
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
 /**
  * PUT /api/icp/[id]
  *
- * Atualiza um perfil ICP existente.
+ * Updates an existing ICP profile.
  */
 export async function PUT(request: NextRequest, ctx: Ctx) {
   try {
@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     if (!actor) return sendError(unauthorized());
 
     if (!canPerform(actor, "analytics", "edit", { organizationId: actor.organizationId })) {
-      return sendError(forbidden("Sem permissao para editar ICPs"));
+      return sendError(forbidden("No permission to edit ICPs"));
     }
 
     const { id } = await ctx.params;
@@ -73,7 +73,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     });
 
     if (!existing || existing.organizationId !== actor.organizationId) {
-      return sendError(notFound("Perfil ICP"));
+      return sendError(notFound("ICP Profile"));
     }
 
     const body = await request.json();
@@ -81,7 +81,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     // Validate name if provided
     if (body.name !== undefined) {
       if (typeof body.name !== "string" || body.name.trim().length === 0) {
-        return sendError(badRequest("Campo 'name' nao pode ser vazio"));
+        return sendError(badRequest("Field 'name' cannot be empty"));
       }
     }
 
@@ -94,17 +94,17 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
         const validKeys = ["openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism"];
         for (const key of Object.keys(parsed)) {
           if (!validKeys.includes(key)) {
-            return sendError(validationError(`Dimensao Big Five invalida: ${key}`));
+            return sendError(validationError(`Invalid Big Five dimension: ${key}`));
           }
           if (typeof parsed[key] !== "number" || parsed[key] < 0 || parsed[key] > 10) {
-            return sendError(validationError(`Big Five '${key}' deve ser entre 0-10`));
+            return sendError(validationError(`Big Five '${key}' must be between 0-10`));
           }
         }
         body.bigFiveProfile = typeof body.bigFiveProfile === "string"
           ? body.bigFiveProfile
           : JSON.stringify(body.bigFiveProfile);
       } catch {
-        return sendError(validationError("bigFiveProfile deve ser um JSON valido"));
+        return sendError(validationError("bigFiveProfile must be valid JSON"));
       }
     }
 
@@ -116,31 +116,31 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
         const validKeys = ["autonomy", "competence", "relatedness"];
         for (const key of Object.keys(parsed)) {
           if (!validKeys.includes(key)) {
-            return sendError(validationError(`Dimensao SDT invalida: ${key}`));
+            return sendError(validationError(`Invalid SDT dimension: ${key}`));
           }
           if (typeof parsed[key] !== "number" || parsed[key] < 0 || parsed[key] > 100) {
-            return sendError(validationError(`SDT '${key}' deve ser entre 0-100`));
+            return sendError(validationError(`SDT '${key}' must be between 0-100`));
           }
         }
         body.motivationProfile = typeof body.motivationProfile === "string"
           ? body.motivationProfile
           : JSON.stringify(body.motivationProfile);
       } catch {
-        return sendError(validationError("motivationProfile deve ser um JSON valido"));
+        return sendError(validationError("motivationProfile must be valid JSON"));
       }
     }
 
     if (body.decisionStyle) {
       const valid = ["ANALYTICAL", "INTUITIVE", "CONSENSUS", "AUTHORITATIVE"];
       if (!valid.includes(body.decisionStyle)) {
-        return sendError(validationError(`decisionStyle deve ser: ${valid.join(", ")}`));
+        return sendError(validationError(`decisionStyle must be one of: ${valid.join(", ")}`));
       }
     }
 
     if (body.riskTolerance) {
       const valid = ["LOW", "MEDIUM", "HIGH"];
       if (!valid.includes(body.riskTolerance)) {
-        return sendError(validationError(`riskTolerance deve ser: ${valid.join(", ")}`));
+        return sendError(validationError(`riskTolerance must be one of: ${valid.join(", ")}`));
       }
     }
 
@@ -150,13 +150,13 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
           ? JSON.parse(body.valueDrivers)
           : body.valueDrivers;
         if (!Array.isArray(parsed)) {
-          return sendError(validationError("valueDrivers deve ser um array"));
+          return sendError(validationError("valueDrivers must be an array"));
         }
         body.valueDrivers = typeof body.valueDrivers === "string"
           ? body.valueDrivers
           : JSON.stringify(body.valueDrivers);
       } catch {
-        return sendError(validationError("valueDrivers deve ser um JSON valido"));
+        return sendError(validationError("valueDrivers must be valid JSON"));
       }
     }
 
@@ -183,7 +183,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     }
 
     if (Object.keys(updateData).length === 0) {
-      return sendError(badRequest("Nenhum campo para atualizar"));
+      return sendError(badRequest("No fields to update"));
     }
 
     const updated = await prisma.iCPProfile.update({
@@ -206,7 +206,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
 /**
  * DELETE /api/icp/[id]
  *
- * Desativa (soft-delete) um perfil ICP.
+ * Deactivates (soft-delete) an ICP profile.
  */
 export async function DELETE(request: NextRequest, ctx: Ctx) {
   try {
@@ -217,7 +217,7 @@ export async function DELETE(request: NextRequest, ctx: Ctx) {
     if (!actor) return sendError(unauthorized());
 
     if (!canPerform(actor, "analytics", "delete", { organizationId: actor.organizationId })) {
-      return sendError(forbidden("Sem permissao para excluir ICPs"));
+      return sendError(forbidden("No permission to delete ICPs"));
     }
 
     const { id } = await ctx.params;
@@ -228,7 +228,7 @@ export async function DELETE(request: NextRequest, ctx: Ctx) {
     });
 
     if (!existing || existing.organizationId !== actor.organizationId) {
-      return sendError(notFound("Perfil ICP"));
+      return sendError(notFound("ICP Profile"));
     }
 
     // Soft delete — mark as inactive
@@ -237,7 +237,7 @@ export async function DELETE(request: NextRequest, ctx: Ctx) {
       data: { isActive: false },
     });
 
-    return sendSuccess({ message: "Perfil ICP desativado" });
+    return sendSuccess({ message: "ICP Profile deactivated" });
   } catch (error: any) {
     console.error("DELETE /api/icp/[id] error:", error);
     return sendUnhandledError();

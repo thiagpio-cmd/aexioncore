@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
     if (!actor) return sendError(unauthorized());
 
     if (!canPerform(actor, "analytics", "view", { organizationId: actor.organizationId })) {
-      return sendError(forbidden("Sem permissao para visualizar matches ICP"));
+      return sendError(forbidden("No permission to view ICP matches"));
     }
 
     const { id: icpId } = await ctx.params;
@@ -49,9 +49,9 @@ export async function GET(request: NextRequest, ctx: Ctx) {
       select: { id: true, organizationId: true, name: true },
     });
 
-    if (!icp) return sendError(notFound("Perfil ICP"));
+    if (!icp) return sendError(notFound("ICP Profile"));
     if (icp.organizationId !== actor.organizationId) {
-      return sendError(forbidden("ICP pertence a outra organizacao"));
+      return sendError(forbidden("ICP belongs to another organization"));
     }
 
     const url = new URL(request.url);

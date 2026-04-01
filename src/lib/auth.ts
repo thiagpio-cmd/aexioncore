@@ -59,7 +59,7 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           // Generic message — never reveal which field is missing
-          throw new Error("Credenciais inválidas");
+          throw new Error("Invalid credentials");
         }
 
         const email = credentials.email.trim().toLowerCase();
@@ -70,8 +70,8 @@ export const authOptions: NextAuthOptions = {
         const lockoutCheck = checkRateLimit(`email-lockout:${email}`, EMAIL_LOCKOUT);
         if (!lockoutCheck.allowed) {
           throw new Error(
-            "Conta temporariamente bloqueada por excesso de tentativas. " +
-            "Tente novamente mais tarde."
+            "Account temporarily locked due to too many attempts. " +
+            "Please try again later."
           );
         }
 
@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
 
         if (!user) {
           // Generic error — never reveal whether the email exists
-          throw new Error("Email ou senha inválidos");
+          throw new Error("Invalid email or password");
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -92,11 +92,11 @@ export const authOptions: NextAuthOptions = {
 
         if (!isPasswordValid) {
           // Generic error — do not distinguish between wrong email vs password
-          throw new Error("Email ou senha inválidos");
+          throw new Error("Invalid email or password");
         }
 
         if (!user.isActive) {
-          throw new Error("Conta de usuário desativada. Entre em contato com o administrador.");
+          throw new Error("User account deactivated. Please contact your administrator.");
         }
 
         // ── Successful login: clear any pending session invalidation ──────

@@ -24,14 +24,14 @@ export async function POST(request: NextRequest, ctx: Ctx) {
     if (!actor) return sendError(unauthorized());
 
     if (!canPerform(actor, "opportunity", "edit")) {
-      return sendError(forbidden("Sem permissão para rejeitar ações"));
+      return sendError(forbidden("No permission to reject actions"));
     }
 
     const { id: debriefId } = await ctx.params;
     const body = await request.json();
 
     if (!Array.isArray(body.proposalIds) || body.proposalIds.length === 0) {
-      return sendError(badRequest("'proposalIds' deve ser um array com ao menos um ID"));
+      return sendError(badRequest("'proposalIds' must be an array with at least one ID"));
     }
 
     // Validate debrief exists and belongs to this org
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest, ctx: Ctx) {
       ownerId: debrief.opportunity?.ownerId ?? null,
       organizationId: debrief.organizationId,
     })) {
-      return sendError(forbidden("Sem permissão para esta oportunidade"));
+      return sendError(forbidden("No permission for this opportunity"));
     }
 
     const result = await rejectActions(
@@ -67,12 +67,12 @@ export async function POST(request: NextRequest, ctx: Ctx) {
     );
 
     return sendSuccess({
-      message: `${result.rejected} proposta(s) rejeitada(s)`,
+      message: `${result.rejected} proposal(s) rejected`,
       ...result,
     });
   } catch (error: any) {
     console.error("POST /api/debriefs/[id]/reject error:", error);
-    if (error.message?.includes("não encontrad")) {
+    if (error.message?.includes("not found")) {
       return sendError(badRequest(error.message));
     }
     return sendUnhandledError();

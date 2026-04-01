@@ -9,7 +9,7 @@ import { actorFromSession, canPerform } from "@/lib/authorization";
 /**
  * GET /api/icp
  *
- * Lista os perfis ICP ativos da organizacao.
+ * Lists active ICP profiles for the organization.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!actor) return sendError(unauthorized());
 
     if (!canPerform(actor, "analytics", "view", { organizationId: actor.organizationId })) {
-      return sendError(forbidden("Sem permissao para visualizar ICPs"));
+      return sendError(forbidden("No permission to view ICPs"));
     }
 
     const url = new URL(request.url);
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/icp
  *
- * Cria um novo perfil ICP com template psicografico.
+ * Creates a new ICP profile with psychographic template.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -60,14 +60,14 @@ export async function POST(request: NextRequest) {
     if (!actor) return sendError(unauthorized());
 
     if (!canPerform(actor, "analytics", "create", { organizationId: actor.organizationId })) {
-      return sendError(forbidden("Sem permissao para criar ICPs"));
+      return sendError(forbidden("No permission to create ICPs"));
     }
 
     const body = await request.json();
 
     // Validate required fields
     if (!body.name || typeof body.name !== "string" || body.name.trim().length === 0) {
-      return sendError(badRequest("Campo 'name' e obrigatorio"));
+      return sendError(badRequest("Field 'name' is required"));
     }
 
     // Validate psychographic template structure if provided
@@ -79,17 +79,17 @@ export async function POST(request: NextRequest) {
         const validKeys = ["openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism"];
         for (const key of Object.keys(parsed)) {
           if (!validKeys.includes(key)) {
-            return sendError(validationError(`Dimensao Big Five invalida: ${key}`));
+            return sendError(validationError(`Invalid Big Five dimension: ${key}`));
           }
           if (typeof parsed[key] !== "number" || parsed[key] < 0 || parsed[key] > 10) {
-            return sendError(validationError(`Big Five '${key}' deve ser entre 0-10`));
+            return sendError(validationError(`Big Five '${key}' must be between 0-10`));
           }
         }
         body.bigFiveProfile = typeof body.bigFiveProfile === "string"
           ? body.bigFiveProfile
           : JSON.stringify(body.bigFiveProfile);
       } catch {
-        return sendError(validationError("bigFiveProfile deve ser um JSON valido"));
+        return sendError(validationError("bigFiveProfile must be valid JSON"));
       }
     }
 
@@ -101,17 +101,17 @@ export async function POST(request: NextRequest) {
         const validKeys = ["autonomy", "competence", "relatedness"];
         for (const key of Object.keys(parsed)) {
           if (!validKeys.includes(key)) {
-            return sendError(validationError(`Dimensao SDT invalida: ${key}`));
+            return sendError(validationError(`Invalid SDT dimension: ${key}`));
           }
           if (typeof parsed[key] !== "number" || parsed[key] < 0 || parsed[key] > 100) {
-            return sendError(validationError(`SDT '${key}' deve ser entre 0-100`));
+            return sendError(validationError(`SDT '${key}' must be between 0-100`));
           }
         }
         body.motivationProfile = typeof body.motivationProfile === "string"
           ? body.motivationProfile
           : JSON.stringify(body.motivationProfile);
       } catch {
-        return sendError(validationError("motivationProfile deve ser um JSON valido"));
+        return sendError(validationError("motivationProfile must be valid JSON"));
       }
     }
 
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     if (body.decisionStyle) {
       const valid = ["ANALYTICAL", "INTUITIVE", "CONSENSUS", "AUTHORITATIVE"];
       if (!valid.includes(body.decisionStyle)) {
-        return sendError(validationError(`decisionStyle deve ser: ${valid.join(", ")}`));
+        return sendError(validationError(`decisionStyle must be one of: ${valid.join(", ")}`));
       }
     }
 
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     if (body.riskTolerance) {
       const valid = ["LOW", "MEDIUM", "HIGH"];
       if (!valid.includes(body.riskTolerance)) {
-        return sendError(validationError(`riskTolerance deve ser: ${valid.join(", ")}`));
+        return sendError(validationError(`riskTolerance must be one of: ${valid.join(", ")}`));
       }
     }
 
@@ -138,13 +138,13 @@ export async function POST(request: NextRequest) {
           ? JSON.parse(body.valueDrivers)
           : body.valueDrivers;
         if (!Array.isArray(parsed)) {
-          return sendError(validationError("valueDrivers deve ser um array"));
+          return sendError(validationError("valueDrivers must be an array"));
         }
         body.valueDrivers = typeof body.valueDrivers === "string"
           ? body.valueDrivers
           : JSON.stringify(body.valueDrivers);
       } catch {
-        return sendError(validationError("valueDrivers deve ser um JSON valido"));
+        return sendError(validationError("valueDrivers must be valid JSON"));
       }
     }
 
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
 
     return sendSuccess(icp, 201);
   } catch (error: any) {
-    if (error.name === "ZodError") return sendError(validationError("Dados invalidos", error.errors));
+    if (error.name === "ZodError") return sendError(validationError("Invalid data", error.errors));
     console.error("POST /api/icp error:", error);
     return sendUnhandledError();
   }

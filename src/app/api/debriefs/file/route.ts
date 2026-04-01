@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!actor) return sendError(unauthorized());
 
     if (!canPerform(actor, "opportunity", "edit")) {
-      return sendError(forbidden("Sem permissao para criar debriefs"));
+      return sendError(forbidden("No permission to create debriefs"));
     }
 
     // Parse multipart form data
@@ -34,11 +34,11 @@ export async function POST(request: NextRequest) {
     const opportunityId = formData.get("opportunityId") as string | null;
 
     if (!file || !(file instanceof File)) {
-      return sendError(badRequest("Campo 'file' e obrigatorio"));
+      return sendError(badRequest("Field 'file' is required"));
     }
 
     if (!opportunityId || typeof opportunityId !== "string") {
-      return sendError(badRequest("Campo 'opportunityId' e obrigatorio"));
+      return sendError(badRequest("Field 'opportunityId' is required"));
     }
 
     // Validate extension
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
       return sendError(
         badRequest(
-          `Tipo de arquivo nao suportado: ${ext}. Formatos aceitos: ${ALLOWED_EXTENSIONS.join(", ")}`
+          `Unsupported file type: ${ext}. Accepted formats: ${ALLOWED_EXTENSIONS.join(", ")}`
         )
       );
     }
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     // Validate size
     if (file.size > MAX_FILE_SIZE) {
       return sendError(
-        badRequest(`Arquivo muito grande. Maximo: ${MAX_FILE_SIZE / (1024 * 1024)}MB`)
+        badRequest(`File too large. Maximum: ${MAX_FILE_SIZE / (1024 * 1024)}MB`)
       );
     }
 
@@ -66,11 +66,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!opportunity) {
-      return sendError(badRequest("Oportunidade nao encontrada"));
+      return sendError(badRequest("Opportunity not found"));
     }
 
     if (opportunity.organizationId !== session.user.organizationId) {
-      return sendError(forbidden("Acesso negado a esta oportunidade"));
+      return sendError(forbidden("Access denied to this opportunity"));
     }
 
     if (
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         organizationId: opportunity.organizationId,
       })
     ) {
-      return sendError(forbidden("Sem permissao para esta oportunidade"));
+      return sendError(forbidden("No permission for this opportunity"));
     }
 
     // Extract text from file
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       } catch {
         return sendError(
           badRequest(
-            `Nao foi possivel ler o arquivo ${ext}. Por enquanto, use .txt, .vtt ou .srt.`
+            `Could not read file ${ext}. For now, please use .txt, .vtt, or .srt.`
           )
         );
       }
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     if (!extractedText || extractedText.trim().length < 10) {
       return sendError(
-        badRequest("O arquivo nao contem texto suficiente (minimo 10 caracteres)")
+        badRequest("File does not contain enough text (minimum 10 characters)")
       );
     }
 
@@ -145,8 +145,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("POST /api/debriefs/file error:", error);
     if (
-      error.message?.includes("nao encontrada") ||
-      error.message?.includes("negado")
+      error.message?.includes("not found") ||
+      error.message?.includes("denied")
     ) {
       return sendError(badRequest(error.message));
     }

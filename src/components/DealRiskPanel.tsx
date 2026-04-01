@@ -120,7 +120,7 @@ export function DealRiskPanel({ opportunityId, data: propData }: DealRiskPanelPr
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-[var(--space-md)]">
           <MetricValue
             value={formatBRL(scores.moneyAtRisk)}
-            label="Em risco"
+            label="At risk"
             size="small"
           />
           <MetricValue

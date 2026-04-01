@@ -464,7 +464,7 @@ export async function matchToICP(
         conditioning: 0,
         archetype: 0,
       },
-      signals: [!profile ? "Perfil do contato nao encontrado" : "Perfil ICP nao encontrado"],
+      signals: [!profile ? "Contact profile not found" : "ICP profile not found"],
       matchedAt: new Date().toISOString(),
     };
   }
@@ -548,7 +548,7 @@ export async function matchToICP(
     }
     if (counted > 0) {
       motivationScore = clamp(100 - (totalDiff / counted));
-      if (motivationScore >= 70) signals.push("Motivacao alinhada ao ICP");
+      if (motivationScore >= 70) signals.push("Motivation aligned with ICP");
     }
   }
 
@@ -559,7 +559,7 @@ export async function matchToICP(
     const targetLossAversion = 100 - (riskMap[icp.riskTolerance] ?? 50);
     const diff = Math.abs(profileConditioning.lossAversion - targetLossAversion);
     conditioningScore = clamp(100 - diff);
-    if (conditioningScore >= 60) signals.push("Perfil de risco compativel");
+    if (conditioningScore >= 60) signals.push("Compatible risk profile");
   }
 
   // Archetype match

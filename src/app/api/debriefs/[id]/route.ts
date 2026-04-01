@@ -66,7 +66,7 @@ export async function GET(_request: NextRequest, ctx: Ctx) {
       ownerId: debrief.opportunity?.ownerId ?? null,
       organizationId: debrief.organizationId,
     })) {
-      return sendError(forbidden("Sem permissão para visualizar este debrief"));
+      return sendError(forbidden("No permission to view this debrief"));
     }
 
     return sendSuccess(debrief);

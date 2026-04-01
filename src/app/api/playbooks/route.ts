@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     // unvalidated free-text fields.
     const parsed = PlaybookCreateSchema.safeParse(body);
     if (!parsed.success) {
-      return sendError(validationError("Dados do playbook inválidos", parsed.error.issues));
+      return sendError(validationError("Invalid playbook data", parsed.error.issues));
     }
 
     const { name, description, segment, stage, steps } = parsed.data;
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     return sendSuccess(playbook, 201);
   } catch (error: unknown) {
     if ((error as any)?.name === "ZodError") {
-      return sendError(validationError("Dados inválidos", (error as any).errors));
+      return sendError(validationError("Invalid data", (error as any).errors));
     }
     console.error("POST /api/playbooks error:", error);
     return sendUnhandledError();

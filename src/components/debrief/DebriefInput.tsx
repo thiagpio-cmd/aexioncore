@@ -83,7 +83,7 @@ export function DebriefInput({ opportunityId, onResult, disabled = false }: Debr
       }
     } catch (err: any) {
       setPhase("error");
-      setError(err.message || "Erro inesperado. Tente novamente.");
+      setError(err.message || "Unexpected error. Please try again.");
     }
   }
 
@@ -98,7 +98,7 @@ export function DebriefInput({ opportunityId, onResult, disabled = false }: Debr
     const json = await res.json();
 
     if (!json.success) {
-      throw new Error(json.error?.message || "Erro ao processar debrief");
+      throw new Error(json.error?.message || "Error processing debrief");
     }
 
     setPhase("done");
@@ -121,7 +121,7 @@ export function DebriefInput({ opportunityId, onResult, disabled = false }: Debr
     const json = await res.json();
 
     if (!json.success) {
-      throw new Error(json.error?.message || "Erro ao processar audio");
+      throw new Error(json.error?.message || "Error processing audio");
     }
 
     setPhase("done");
@@ -144,7 +144,7 @@ export function DebriefInput({ opportunityId, onResult, disabled = false }: Debr
     const json = await res.json();
 
     if (!json.success) {
-      throw new Error(json.error?.message || "Erro ao processar arquivo");
+      throw new Error(json.error?.message || "Error processing file");
     }
 
     setPhase("done");

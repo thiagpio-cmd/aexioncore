@@ -93,11 +93,11 @@ export function AudioRecorder({
       }, 250);
     } catch (err: any) {
       if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        setPermissionError("Permissao de microfone negada. Habilite nas configuracoes do navegador.");
+        setPermissionError("Microphone permission denied. Enable it in browser settings.");
       } else if (err.name === "NotFoundError") {
-        setPermissionError("Nenhum microfone encontrado neste dispositivo.");
+        setPermissionError("No microphone found on this device.");
       } else {
-        setPermissionError("Erro ao acessar o microfone. Tente novamente.");
+        setPermissionError("Error accessing microphone. Please try again.");
       }
       setState("idle");
     }

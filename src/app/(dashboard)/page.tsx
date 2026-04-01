@@ -140,7 +140,7 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
             ))
           ) : (
             <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>
-              Nenhuma reuniao agendada
+              No meetings scheduled
             </p>
           )}
           {stats.overdueTasks > 0 && (
@@ -165,9 +165,9 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
         </div>
         <MetricValue
           value={String(stats.atRiskDeals)}
-          label="Deals em risco"
+          label="Deals at risk"
           size="large"
-          subtitle={stats.atRiskDeals > 0 ? `Prob. < 40%` : "Nenhum deal critico"}
+          subtitle={stats.atRiskDeals > 0 ? `Prob. < 40%` : "No critical deals"}
           subtitleColor={stats.atRiskDeals > 0 ? "danger" : "success"}
         />
       </GlassCard>
@@ -198,7 +198,7 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
           </>
         ) : (
           <p style={{ marginTop: "var(--space-md)", fontSize: "13px", color: "var(--text-muted)" }}>
-            Nenhum deal necessitando atencao imediata
+            No deals requiring immediate attention
           </p>
         )}
       </GlassCard>
@@ -300,7 +300,7 @@ function DashboardError({ onRetry }: { onRetry: () => void }) {
     <GlassCard>
       <div style={{ textAlign: "center", padding: "var(--space-xl)" }}>
         <p style={{ fontSize: "14px", color: "var(--text-secondary)", margin: "0 0 var(--space-md)" }}>
-          Erro ao carregar dados do dashboard
+          Error loading dashboard data
         </p>
         <button
           onClick={onRetry}

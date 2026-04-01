@@ -213,13 +213,13 @@ export function generateNarrativeContext(
   let headline: string;
   switch (tone) {
     case "pressure":
-      headline = `"${opportunity.title}" precisa de atenção urgente — R$ ${moneyMetrics.moneyAtRisk.toLocaleString("pt-BR")} em risco`;
+      headline = `"${opportunity.title}" needs urgent attention — $${moneyMetrics.moneyAtRisk.toLocaleString("en-US")} at risk`;
       break;
     case "control":
-      headline = `"${opportunity.title}" está estável — mantenha o ritmo de execução`;
+      headline = `"${opportunity.title}" is stable — maintain execution pace`;
       break;
     case "champion":
-      headline = `"${opportunity.title}" em alta — acelere para o fechamento`;
+      headline = `"${opportunity.title}" trending up — accelerate to close`;
       break;
   }
 

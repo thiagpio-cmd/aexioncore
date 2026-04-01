@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         new (await import("@/lib/errors")).ApiError(
           503,
           "SERVICE_UNAVAILABLE",
-          "Servico de transcricao indisponivel. Configure OPENAI_API_KEY no ambiente."
+          "Transcription service unavailable. Configure OPENAI_API_KEY in the environment."
         )
       );
     }
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (!actor) return sendError(unauthorized());
 
     if (!canPerform(actor, "opportunity", "edit")) {
-      return sendError(forbidden("Sem permissao para criar debriefs"));
+      return sendError(forbidden("No permission to create debriefs"));
     }
 
     // Parse multipart form data
@@ -43,17 +43,17 @@ export async function POST(request: NextRequest) {
     const opportunityId = formData.get("opportunityId") as string | null;
 
     if (!audioFile || !(audioFile instanceof File)) {
-      return sendError(badRequest("Campo 'audio' e obrigatorio"));
+      return sendError(badRequest("Field 'audio' is required"));
     }
 
     if (!opportunityId || typeof opportunityId !== "string") {
-      return sendError(badRequest("Campo 'opportunityId' e obrigatorio"));
+      return sendError(badRequest("Field 'opportunityId' is required"));
     }
 
     // Validate file size
     if (audioFile.size > MAX_AUDIO_SIZE) {
       return sendError(
-        badRequest(`Arquivo de audio muito grande. Maximo: ${MAX_AUDIO_SIZE / (1024 * 1024)}MB`)
+        badRequest(`Audio file too large. Maximum: ${MAX_AUDIO_SIZE / (1024 * 1024)}MB`)
       );
     }
 
@@ -64,11 +64,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!opportunity) {
-      return sendError(badRequest("Oportunidade nao encontrada"));
+      return sendError(badRequest("Opportunity not found"));
     }
 
     if (opportunity.organizationId !== session.user.organizationId) {
-      return sendError(forbidden("Acesso negado a esta oportunidade"));
+      return sendError(forbidden("Access denied to this opportunity"));
     }
 
     if (
@@ -77,14 +77,14 @@ export async function POST(request: NextRequest) {
         organizationId: opportunity.organizationId,
       })
     ) {
-      return sendError(forbidden("Sem permissao para esta oportunidade"));
+      return sendError(forbidden("No permission for this opportunity"));
     }
 
     // Transcribe audio via OpenAI Whisper (using fetch, no SDK needed)
     const whisperForm = new FormData();
     whisperForm.append("file", audioFile, audioFile.name || "audio.webm");
     whisperForm.append("model", "whisper-1");
-    whisperForm.append("language", "pt");
+    whisperForm.append("language", "en");
     whisperForm.append("response_format", "text");
 
     const whisperRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       const errBody = await whisperRes.text().catch(() => "unknown");
       console.error("[Whisper] transcription failed:", whisperRes.status, errBody);
       return sendError(
-        badRequest("Erro na transcricao do audio. Tente novamente.")
+        badRequest("Audio transcription failed. Please try again.")
       );
     }
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     if (!transcribedText || transcribedText.trim().length < 5) {
       return sendError(
-        badRequest("Nao foi possivel transcrever o audio. Tente gravar novamente com mais clareza.")
+        badRequest("Could not transcribe audio. Please try recording again more clearly.")
       );
     }
 
@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("POST /api/debriefs/audio error:", error);
     if (
-      error.message?.includes("nao encontrada") ||
-      error.message?.includes("negado")
+      error.message?.includes("not found") ||
+      error.message?.includes("denied")
     ) {
       return sendError(badRequest(error.message));
     }

@@ -64,7 +64,7 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--glass-border)] px-[var(--space-lg)] py-[var(--space-md)]">
           <h2 className="text-lg font-bold text-[var(--text-primary)]">
-            Debrief do Deal
+            Deal Debrief
           </h2>
           <button
             onClick={handleClose}
@@ -91,7 +91,7 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
               {/* AI Summary */}
               <GlassCard className="border-l-2 border-l-[var(--accent-gold)]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)] mb-[var(--space-xs)]">
-                  Resumo da IA
+                  AI Summary
                 </p>
                 <p className="text-sm leading-relaxed text-[var(--text-primary)]">
                   {result.summary}
@@ -102,7 +102,7 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
               {result.proposals.length > 0 && (
                 <div className="flex flex-col gap-[var(--space-sm)]">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    Propostas de Acao ({result.proposals.length})
+                    Action Proposals ({result.proposals.length})
                   </p>
                   {result.proposals.map((proposal) => (
                     <ActionApprovalCard
@@ -122,7 +122,7 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
 
               {result.proposals.length === 0 && (
                 <p className="text-sm text-[var(--text-muted)] text-center py-[var(--space-md)]">
-                  Nenhuma proposta de acao gerada.
+                  No action proposals generated.
                 </p>
               )}
 
@@ -136,7 +136,7 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
                   "min-h-[48px]"
                 )}
               >
-                Concluir
+                Done
               </button>
             </div>
           )}
