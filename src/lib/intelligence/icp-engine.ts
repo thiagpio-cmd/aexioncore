@@ -659,7 +659,7 @@ export async function updateProfileFromDealOutcome(
 
   const blendedBigFive = blendDimensions(
     existing.bigFive as Record<string, number> | null,
-    freshProfile.bigFive as Record<string, number>,
+    freshProfile.bigFive as unknown as Record<string, number>,
     blendWeight,
   );
 
@@ -671,17 +671,17 @@ export async function updateProfileFromDealOutcome(
       lifestyle: freshProfile.lifestyle as any,
       valueSensitivity: blendDimensions(
         existing.valueSensitivity as Record<string, number> | null,
-        freshProfile.valueSensitivity as Record<string, number>,
+        freshProfile.valueSensitivity as unknown as Record<string, number>,
         blendWeight,
       ) as any,
       motivationProfile: blendDimensions(
         existing.motivationProfile as Record<string, number> | null,
-        freshProfile.motivationProfile as Record<string, number>,
+        freshProfile.motivationProfile as unknown as Record<string, number>,
         blendWeight,
       ) as any,
       conditioningProfile: blendDimensions(
         existing.conditioningProfile as Record<string, number> | null,
-        freshProfile.conditioningProfile as Record<string, number>,
+        freshProfile.conditioningProfile as unknown as Record<string, number>,
         blendWeight,
       ) as any,
       fomapScore: freshProfile.fomapScore,
