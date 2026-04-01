@@ -156,7 +156,7 @@ export function ActionApprovalCard({
       {/* Status resolved */}
       {isResolved && (
         <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">
-          {status === "approved" ? "Aprovada" : "Rejeitada"}
+          {status === "approved" ? "Approved" : "Rejected"}
         </p>
       )}
 
