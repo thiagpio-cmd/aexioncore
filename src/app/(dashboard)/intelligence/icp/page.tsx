@@ -140,7 +140,7 @@ export default function ICPPage() {
                           {icp.name}
                         </h3>
                         <StatusDot
-                          status={icp.isActive ? "success" : "idle"}
+                          status={icp.isActive ? "success" : "neutral"}
                           size="sm"
                         />
                       </div>
