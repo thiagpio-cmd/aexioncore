@@ -76,7 +76,7 @@ export function ActionApprovalCard({
     setStatus("approving");
     setError(null);
     const { error: err } = await apiPost(`/api/debriefs/${debriefId}/approve`, {
-      proposalId: proposal.id,
+      proposalIds: [proposal.id],
     });
     if (err) {
       setError(err);
@@ -91,7 +91,7 @@ export function ActionApprovalCard({
     setStatus("rejecting");
     setError(null);
     const { error: err } = await apiPost(`/api/debriefs/${debriefId}/reject`, {
-      proposalId: proposal.id,
+      proposalIds: [proposal.id],
     });
     if (err) {
       setError(err);

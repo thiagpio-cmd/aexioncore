@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useApi } from "@/lib/hooks/use-api";
 import { WorkspaceType } from "@/types";
 import { SDRWorkspace } from "@/components/workspaces/sdr-workspace";
 import { CloserWorkspace } from "@/components/workspaces/closer-workspace";
@@ -17,9 +18,71 @@ import { MetricValue } from "@/components/design-system/MetricValue";
 import { SectionLabel } from "@/components/design-system/SectionLabel";
 import { StatusDot } from "@/components/design-system/StatusDot";
 
-function DashboardBentoOverview({ workspace }: { workspace: WorkspaceType }) {
+interface DashboardStats {
+  totalPipeline: number;
+  wonValue: number;
+  winRate: number;
+  avgDealSize: number;
+  hotLeads: number;
+  todayLeads: number;
+  overdueTasks: number;
+  pendingTasks: number;
+  conversionRate: number;
+  activeDeals: number;
+  atRiskDeals: number;
+  proposalsSent: number;
+  closingThisMonth: number;
+  closingValue: number;
+  forecastCommit: number;
+  bestCase: number;
+  coverageRatio: number;
+  totalLeads: number;
+  totalActivities: number;
+}
+
+interface DealAttention {
+  id: string;
+  title: string;
+  account: string;
+  value: number;
+  probability: number;
+  stage: string;
+}
+
+interface UpcomingMeeting {
+  id: string;
+  title: string;
+  startTime: string;
+  type: string;
+}
+
+interface DashboardData {
+  stats: DashboardStats;
+  stages: Array<{ stage: string; count: number; value: number }>;
+  dealsNeedingAttention: DealAttention[];
+  upcomingMeetings: UpcomingMeeting[];
+  priorityLeads: Array<{ id: string; name: string; company: string; status: string; temperature: string }>;
+}
+
+function formatBRL(value: number): string {
+  if (value >= 1_000_000) {
+    return `R$ ${(value / 1_000_000).toFixed(1)}M`;
+  }
+  if (value >= 1_000) {
+    return `R$ ${(value / 1_000).toFixed(0)}K`;
+  }
+  return `R$ ${value.toFixed(0)}`;
+}
+
+function formatTime(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType; data: DashboardData }) {
   const isExecutive = workspace === WorkspaceType.EXECUTIVE;
   const isManager = workspace === WorkspaceType.MANAGER || isExecutive;
+  const stats = data.stats;
 
   return (
     <BentoGrid columns={4} gap="10px">
@@ -28,12 +91,12 @@ function DashboardBentoOverview({ workspace }: { workspace: WorkspaceType }) {
         <SectionLabel>Valor do Pipeline</SectionLabel>
         <div style={{ marginTop: "var(--space-md)" }}>
           <MetricValue
-            value="R$ 2.4M"
+            value={formatBRL(stats.totalPipeline)}
             label="Total ativo"
             size="hero"
-            prefix="R$ "
-            subtitle="+12% vs. mes anterior"
-            subtitleColor="success"
+            prefix=""
+            subtitle={stats.activeDeals > 0 ? `${stats.activeDeals} deals ativos` : undefined}
+            subtitleColor="muted"
           />
         </div>
       </GlassCard>
@@ -43,126 +106,136 @@ function DashboardBentoOverview({ workspace }: { workspace: WorkspaceType }) {
         <SectionLabel>Forecast</SectionLabel>
         <div style={{ marginTop: "var(--space-md)" }}>
           <MetricValue
-            value="R$ 890K"
-            label="Projecao do mes"
+            value={formatBRL(stats.forecastCommit)}
+            label="Commit do mes"
             size="large"
-            prefix="R$ "
+            prefix=""
           />
         </div>
         <div style={{ marginTop: "var(--space-md)", display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
-          <StatusDot status="success" size="sm" />
-          <span style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>82% confianca</span>
+          <StatusDot status={stats.coverageRatio >= 3 ? "success" : stats.coverageRatio >= 2 ? "warning" : "danger"} size="sm" />
+          <span style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>
+            {stats.coverageRatio}x cobertura
+          </span>
         </div>
       </GlassCard>
 
       {/* Row 1-2: Today/Agenda (span 1, rowspan 2) */}
       <GlassCard span={1} rowSpan={2}>
-        <SectionLabel>Agenda de Hoje</SectionLabel>
+        <SectionLabel>Agenda</SectionLabel>
         <div style={{ marginTop: "var(--space-md)", display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-sm)" }}>
-            <StatusDot status="accent" size="sm" />
-            <div>
-              <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-primary)", margin: 0 }}>
-                Call com TechCorp
-              </p>
-              <p style={{ fontSize: "11px", color: "var(--text-tertiary)", margin: 0 }}>10:00</p>
+          {data.upcomingMeetings.length > 0 ? (
+            data.upcomingMeetings.slice(0, 4).map((meeting) => (
+              <div key={meeting.id} style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-sm)" }}>
+                <StatusDot status="accent" size="sm" />
+                <div>
+                  <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-primary)", margin: 0 }}>
+                    {meeting.title}
+                  </p>
+                  <p style={{ fontSize: "11px", color: "var(--text-tertiary)", margin: 0 }}>
+                    {formatTime(meeting.startTime)}
+                  </p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>
+              Nenhuma reuniao agendada
+            </p>
+          )}
+          {stats.overdueTasks > 0 && (
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-sm)" }}>
+              <StatusDot status="danger" size="sm" />
+              <div>
+                <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-primary)", margin: 0 }}>
+                  {stats.overdueTasks} tarefa{stats.overdueTasks > 1 ? "s" : ""} atrasada{stats.overdueTasks > 1 ? "s" : ""}
+                </p>
+                <p style={{ fontSize: "11px", color: "var(--text-tertiary)", margin: 0 }}>Acao necessaria</p>
+              </div>
             </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-sm)" }}>
-            <StatusDot status="warning" size="sm" />
-            <div>
-              <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-primary)", margin: 0 }}>
-                Follow-up DataSoft
-              </p>
-              <p style={{ fontSize: "11px", color: "var(--text-tertiary)", margin: 0 }}>14:00</p>
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-sm)" }}>
-            <StatusDot status="danger" size="sm" />
-            <div>
-              <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-primary)", margin: 0 }}>
-                Proposta vence hoje
-              </p>
-              <p style={{ fontSize: "11px", color: "var(--text-tertiary)", margin: 0 }}>CloudMax Inc.</p>
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-sm)" }}>
-            <StatusDot status="neutral" size="sm" />
-            <div>
-              <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-primary)", margin: 0 }}>
-                Reuniao de equipe
-              </p>
-              <p style={{ fontSize: "11px", color: "var(--text-tertiary)", margin: 0 }}>16:30</p>
-            </div>
-          </div>
+          )}
         </div>
       </GlassCard>
 
       {/* Row 2: Risk Alert (span 1) */}
-      <GlassCard danger span={1}>
+      <GlassCard danger={stats.atRiskDeals > 0} span={1}>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: "var(--space-md)" }}>
-          <StatusDot status="danger" size="md" pulse />
-          <SectionLabel>Alerta de Risco</SectionLabel>
+          <StatusDot status={stats.atRiskDeals > 0 ? "danger" : "success"} size="md" pulse={stats.atRiskDeals > 0} />
+          <SectionLabel>{stats.atRiskDeals > 0 ? "Alerta de Risco" : "Pipeline Saudavel"}</SectionLabel>
         </div>
         <MetricValue
-          value="3"
+          value={String(stats.atRiskDeals)}
           label="Deals em risco"
           size="large"
-          subtitle="R$ 420K em risco"
-          subtitleColor="danger"
+          subtitle={stats.atRiskDeals > 0 ? `Prob. < 40%` : "Nenhum deal critico"}
+          subtitleColor={stats.atRiskDeals > 0 ? "danger" : "success"}
         />
       </GlassCard>
 
       {/* Row 2: Priority Deal (span 2) */}
-      <GlassCard accent span={2}>
+      <GlassCard accent={data.dealsNeedingAttention.length > 0} span={2}>
         <SectionLabel>Deal Prioritario</SectionLabel>
-        <div style={{ marginTop: "var(--space-md)", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div>
-            <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)", margin: 0 }}>
-              TechCorp — Plano Enterprise
-            </p>
-            <p style={{ fontSize: "12px", color: "var(--text-tertiary)", margin: "var(--space-xs) 0 0" }}>
-              Fase: Negociacao
-            </p>
-          </div>
-          <MetricValue value="R$ 380K" label="Valor" size="small" />
-        </div>
-        <div style={{ marginTop: "var(--space-md)", display: "flex", gap: "var(--space-lg)" }}>
-          <StatusDot status="success" size="sm" label="Decisor engajado" />
-          <StatusDot status="warning" size="sm" label="Prazo curto" />
-        </div>
+        {data.dealsNeedingAttention.length > 0 ? (
+          <>
+            <div style={{ marginTop: "var(--space-md)", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+              <div>
+                <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)", margin: 0 }}>
+                  {data.dealsNeedingAttention[0].title}
+                </p>
+                <p style={{ fontSize: "12px", color: "var(--text-tertiary)", margin: "var(--space-xs) 0 0" }}>
+                  {data.dealsNeedingAttention[0].account} — {data.dealsNeedingAttention[0].stage}
+                </p>
+              </div>
+              <MetricValue value={formatBRL(data.dealsNeedingAttention[0].value)} label="Valor" size="small" />
+            </div>
+            <div style={{ marginTop: "var(--space-md)", display: "flex", gap: "var(--space-lg)" }}>
+              <StatusDot
+                status={data.dealsNeedingAttention[0].probability >= 50 ? "warning" : "danger"}
+                size="sm"
+                label={`${data.dealsNeedingAttention[0].probability}% probabilidade`}
+              />
+            </div>
+          </>
+        ) : (
+          <p style={{ marginTop: "var(--space-md)", fontSize: "13px", color: "var(--text-muted)" }}>
+            Nenhum deal necessitando atencao imediata
+          </p>
+        )}
       </GlassCard>
 
       {/* Row 3: Top Deals (span 2) */}
       <GlassCard span={2}>
-        <SectionLabel action={{ label: "Ver todos", onClick: () => {} }}>
-          Top Deals
-        </SectionLabel>
+        <SectionLabel>Deals que Precisam de Atencao</SectionLabel>
         <div style={{ marginTop: "var(--space-md)", display: "flex", flexDirection: "column", gap: "var(--space-sm)" }}>
-          {[
-            { name: "TechCorp Enterprise", value: "R$ 380K", status: "success" as const },
-            { name: "DataSoft Premium", value: "R$ 250K", status: "warning" as const },
-            { name: "CloudMax Scale", value: "R$ 180K", status: "accent" as const },
-          ].map((deal) => (
-            <div
-              key={deal.name}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "var(--space-sm) 0",
-                borderBottom: "0.5px solid var(--border-subtle)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
-                <StatusDot status={deal.status} size="sm" />
-                <span style={{ fontSize: "13px", color: "var(--text-primary)" }}>{deal.name}</span>
+          {data.dealsNeedingAttention.length > 0 ? (
+            data.dealsNeedingAttention.slice(0, 3).map((deal) => (
+              <div
+                key={deal.id}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "var(--space-sm) 0",
+                  borderBottom: "0.5px solid var(--border-subtle)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
+                  <StatusDot
+                    status={deal.probability >= 50 ? "warning" : "danger"}
+                    size="sm"
+                  />
+                  <span style={{ fontSize: "13px", color: "var(--text-primary)" }}>{deal.title}</span>
+                </div>
+                <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--text-secondary)", fontVariantNumeric: "tabular-nums" }}>
+                  {formatBRL(deal.value)}
+                </span>
               </div>
-              <span style={{ fontSize: "13px", fontWeight: 400, color: "var(--text-secondary)", fontVariantNumeric: "tabular-nums" }}>
-                {deal.value}
-              </span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p style={{ fontSize: "13px", color: "var(--text-muted)", padding: "var(--space-sm) 0" }}>
+              Todos os deals estao saudaveis
+            </p>
+          )}
         </div>
       </GlassCard>
 
@@ -171,30 +244,81 @@ function DashboardBentoOverview({ workspace }: { workspace: WorkspaceType }) {
         <SectionLabel>Insights</SectionLabel>
         <div style={{ marginTop: "var(--space-md)", display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
           <div>
-            <MetricValue value="4.2" label="Dias ate resposta" size="small" subtitle="Media" subtitleColor="muted" />
+            <MetricValue
+              value={`${stats.conversionRate}%`}
+              label="Taxa de conversao"
+              size="small"
+              subtitle={`${stats.totalLeads} leads total`}
+              subtitleColor="muted"
+            />
           </div>
           {isManager && (
             <div>
-              <MetricValue value="67%" label="Win Rate" size="small" subtitle="+5pp vs meta" subtitleColor="success" />
+              <MetricValue
+                value={`${stats.winRate}%`}
+                label="Win Rate"
+                size="small"
+                subtitle={stats.winRate >= 50 ? "Acima da meta" : "Abaixo da meta"}
+                subtitleColor={stats.winRate >= 50 ? "success" : "danger"}
+              />
             </div>
           )}
         </div>
       </GlassCard>
 
-      {/* Row 3: Ready to Close (span 1) */}
-      <GlassCard success span={1}>
-        <SectionLabel>Prontos p/ Fechar</SectionLabel>
+      {/* Row 3: Closing This Month (span 1) */}
+      <GlassCard success={stats.closingThisMonth > 0} span={1}>
+        <SectionLabel>Fechando Este Mes</SectionLabel>
         <div style={{ marginTop: "var(--space-md)" }}>
           <MetricValue
-            value="5"
-            label="Deals qualificados"
+            value={String(stats.closingThisMonth)}
+            label="Deals previstos"
             size="large"
-            subtitle="R$ 620K total"
-            subtitleColor="success"
+            subtitle={formatBRL(stats.closingValue) + " total"}
+            subtitleColor={stats.closingThisMonth > 0 ? "success" : "muted"}
           />
         </div>
       </GlassCard>
     </BentoGrid>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <BentoGrid columns={4} gap="10px">
+      {[2, 1, 1, 1, 2, 2, 1, 1].map((span, i) => (
+        <GlassCard key={i} span={span as 1 | 2 | 3 | 4}>
+          <div style={{ height: i === 3 ? "180px" : "100px" }} className="animate-pulse rounded bg-[var(--border-subtle)]" />
+        </GlassCard>
+      ))}
+    </BentoGrid>
+  );
+}
+
+function DashboardError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <GlassCard>
+      <div style={{ textAlign: "center", padding: "var(--space-xl)" }}>
+        <p style={{ fontSize: "14px", color: "var(--text-secondary)", margin: "0 0 var(--space-md)" }}>
+          Erro ao carregar dados do dashboard
+        </p>
+        <button
+          onClick={onRetry}
+          style={{
+            padding: "var(--space-sm) var(--space-lg)",
+            borderRadius: "var(--radius-sm)",
+            border: "0.5px solid var(--accent-border)",
+            background: "var(--accent-muted)",
+            color: "var(--accent-text)",
+            fontSize: "13px",
+            fontWeight: 500,
+            cursor: "pointer",
+          }}
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </GlassCard>
   );
 }
 
@@ -204,6 +328,8 @@ export default function HomePage() {
   const [onboardingDone, setOnboardingDone] = useState(true);
   const [showDebrief, setShowDebrief] = useState(false);
   const [debriefOppId, setDebriefOppId] = useState("");
+
+  const { data: dashboardData, loading, error, refetch } = useApi<DashboardData>("/api/dashboard");
 
   useEffect(() => {
     const done = isOnboardingComplete();
@@ -247,7 +373,11 @@ export default function HomePage() {
 
       {/* Bento Grid Dashboard Overview */}
       <div style={{ marginBottom: "var(--space-2xl)" }}>
-        <DashboardBentoOverview workspace={workspace} />
+        {loading && <DashboardSkeleton />}
+        {error && !loading && <DashboardError onRetry={refetch} />}
+        {dashboardData && !loading && (
+          <DashboardBentoOverview workspace={workspace} data={dashboardData} />
+        )}
       </div>
 
       {/* Dinheiro em Risco + Debrief */}

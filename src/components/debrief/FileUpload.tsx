@@ -7,18 +7,12 @@ const ACCEPTED_TYPES = [
   ".txt",
   ".vtt",
   ".srt",
-  ".doc",
-  ".docx",
-  ".pdf",
 ];
 
 const ACCEPTED_MIME_TYPES = [
   "text/plain",
   "text/vtt",
   "application/x-subrip",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/pdf",
 ];
 
 const MAX_SIZE_MB = 10;
