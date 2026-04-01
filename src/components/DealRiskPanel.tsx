@@ -20,15 +20,15 @@ interface DealRiskPanelProps {
   data?: ScoresData;
 }
 
-type StatusType = "idle" | "active" | "success" | "danger" | "warning";
+type RiskStatus = "success" | "danger" | "warning";
 
-function scoreToStatus(score: number): StatusType {
+function scoreToStatus(score: number): RiskStatus {
   if (score >= 70) return "success";
   if (score >= 40) return "warning";
   return "danger";
 }
 
-function riskToStatus(score: number): StatusType {
+function riskToStatus(score: number): RiskStatus {
   if (score >= 70) return "danger";
   if (score >= 40) return "warning";
   return "success";
