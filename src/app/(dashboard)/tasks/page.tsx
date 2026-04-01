@@ -127,7 +127,7 @@ export default function TasksPage() {
                       : task.status === "COMPLETED"
                         ? "Done"
                         : task.dueDate
-                          ? new Date(task.dueDate).toLocaleDateString([], { month: "short", day: "numeric" })
+                          ? new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })
                           : "No date"}
                   </span>
                   <button

@@ -539,8 +539,8 @@ export default function IntegrationDetailPage() {
               {[
                 { label: "Provider", value: providerKey },
                 { label: "Status", value: integration.status },
-                { label: "Created", value: new Date(integration.createdAt).toLocaleDateString() },
-                { label: "Updated", value: new Date(integration.updatedAt).toLocaleDateString() },
+                { label: "Created", value: new Date(integration.createdAt).toLocaleDateString("en-US") },
+                { label: "Updated", value: new Date(integration.updatedAt).toLocaleDateString("en-US") },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">
                   <dt className="text-xs text-muted">{item.label}</dt>

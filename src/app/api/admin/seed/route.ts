@@ -108,7 +108,61 @@ export async function POST(request: NextRequest) {
     // Contacts — add ownerId if missing (migration exists but may not have run)
     await addCol("contacts", "ownerId", "TEXT");
 
+    // ─── Create ICP tables if missing ─────────────────────────────────
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "icp_profiles" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "organizationId" TEXT NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+        "version" INTEGER NOT NULL DEFAULT 1,
+        "isActive" BOOLEAN NOT NULL DEFAULT true,
+        "name" TEXT NOT NULL,
+        "idealIndustries" TEXT,
+        "idealCompanySizeMin" INTEGER,
+        "idealCompanySizeMax" INTEGER,
+        "idealAnnualRevenueMinBRL" INTEGER,
+        "idealAnnualRevenueMaxBRL" INTEGER,
+        "bigFiveProfile" TEXT,
+        "motivationProfile" TEXT,
+        "decisionStyle" TEXT,
+        "riskTolerance" TEXT,
+        "valueDrivers" TEXT,
+        "avgDealValueBRL" INTEGER,
+        "avgSalesCycleDays" INTEGER,
+        "avgWinRate" INTEGER,
+        "topObjections" TEXT,
+        "topWinReasons" TEXT,
+        "sampleSize" INTEGER NOT NULL DEFAULT 0,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "icp_profiles_orgId" ON "icp_profiles"("organizationId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "icp_profiles_orgActive" ON "icp_profiles"("organizationId", "isActive")`);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "icp_scores" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "organizationId" TEXT NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+        "icpProfileId" TEXT NOT NULL REFERENCES "icp_profiles"("id") ON DELETE CASCADE,
+        "leadId" TEXT REFERENCES "leads"("id") ON DELETE SET NULL,
+        "opportunityId" TEXT REFERENCES "opportunities"("id") ON DELETE SET NULL,
+        "fitScore" INTEGER NOT NULL,
+        "firmographicScore" INTEGER NOT NULL,
+        "psychographicScore" INTEGER NOT NULL,
+        "breakdown" TEXT,
+        "scoreLabel" TEXT,
+        "computedAt" TIMESTAMPTZ NOT NULL,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "icp_scores_orgId" ON "icp_scores"("organizationId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "icp_scores_profileId" ON "icp_scores"("icpProfileId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "icp_scores_leadId" ON "icp_scores"("leadId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "icp_scores_oppId" ON "icp_scores"("opportunityId")`);
+
     // ─── Clear all tables ─────────────────────────────────────────────
+    await prisma.$executeRawUnsafe(`DELETE FROM "icp_scores"`).catch(() => {});
+    await prisma.$executeRawUnsafe(`DELETE FROM "icp_profiles"`).catch(() => {});
     await prisma.auditLog.deleteMany();
     await prisma.webhookEvent.deleteMany();
     await prisma.integrationCredential.deleteMany();

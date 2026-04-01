@@ -236,7 +236,7 @@ export class ReportEngine {
     return {
       id: `report-${Date.now()}`,
       title: this.generateTitle(input),
-      subtitle: `Generated on ${new Date().toLocaleDateString()} — ${dateRange.label}`,
+      subtitle: `Generated on ${new Date().toLocaleDateString("en-US")} — ${dateRange.label}`,
       generatedAt: new Date().toISOString(),
       period: {
         label: dateRange.label,
@@ -910,7 +910,7 @@ export class ReportEngine {
 
     if (period === "custom" && start) {
       return {
-        label: `${start.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
+        label: `${start.toLocaleDateString("en-US")} to ${endDate.toLocaleDateString("en-US")}`,
         start: start.toISOString(),
         end: endDate.toISOString(),
         startDate: start,

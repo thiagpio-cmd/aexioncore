@@ -404,7 +404,7 @@ export function CloserWorkspace() {
                         {new Date(meeting.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </p>
                       <p className="text-[10px] text-muted">
-                        {new Date(meeting.startTime).toLocaleDateString([], { month: "short", day: "numeric" })}
+                        {new Date(meeting.startTime).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </p>
                     </div>
                     <div className="min-w-0 flex-1">

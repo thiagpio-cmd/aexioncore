@@ -213,7 +213,7 @@ export default function TaskDetailPage() {
                 ...(task.completedAt
                   ? [{ label: "Completed", value: new Date(task.completedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) }]
                   : []),
-                { label: "Created", value: new Date(task.createdAt).toLocaleDateString() },
+                { label: "Created", value: new Date(task.createdAt).toLocaleDateString("en-US") },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">
                   <dt className="text-xs text-muted">{item.label}</dt>

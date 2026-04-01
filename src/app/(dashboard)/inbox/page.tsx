@@ -212,7 +212,7 @@ export default function InboxPage() {
                             {msg.sender}
                           </span>
                           <span className="text-[11px] text-muted whitespace-nowrap ml-2">
-                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            {new Date(msg.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                           </span>
                         </div>
                         {msg.subject && <p className={`text-xs truncate mt-0.5 ${!msg.isRead ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>{msg.subject}</p>}
@@ -240,7 +240,7 @@ export default function InboxPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-foreground">{selected.sender}</h2>
-                    <p className="text-sm text-muted">{channelConfig[selected.channel]?.label} · {new Date(selected.createdAt).toLocaleString()}</p>
+                    <p className="text-sm text-muted">{channelConfig[selected.channel]?.label} · {new Date(selected.createdAt).toLocaleString("en-US")}</p>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -279,7 +279,7 @@ export default function InboxPage() {
               <div className="flex-1 px-6 py-4 overflow-y-auto">
                 <div className="rounded-lg bg-background p-4">
                   <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{selected.body}</p>
-                  <p className="text-xs text-muted mt-3">{new Date(selected.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-muted mt-3">{new Date(selected.createdAt).toLocaleString("en-US")}</p>
                 </div>
 
                 {/* Related to */}

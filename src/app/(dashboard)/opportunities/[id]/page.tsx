@@ -356,7 +356,7 @@ export default function OpportunityDetailPage() {
               </svg>
               <div>
                 <p className="text-sm font-medium text-danger">Closing Deadline Approaching</p>
-                <p className="text-xs text-muted">Expected close date is {new Date(deal.expectedCloseDate).toLocaleDateString()} but deal is still in {deal.stage.replace(/_/g, " ")} stage.</p>
+                <p className="text-xs text-muted">Expected close date is {new Date(deal.expectedCloseDate).toLocaleDateString("en-US")} but deal is still in {deal.stage.replace(/_/g, " ")} stage.</p>
               </div>
             </div>
           )}

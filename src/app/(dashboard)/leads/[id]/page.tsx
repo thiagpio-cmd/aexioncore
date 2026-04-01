@@ -360,8 +360,8 @@ export default function LeadDetailPage() {
                 { label: "Status", value: lead.status },
                 { label: "Owner", value: lead.owner?.name || "Unassigned" },
                 { label: "Company", value: lead.company?.name || "Unknown" },
-                { label: "Created", value: new Date(lead.createdAt).toLocaleDateString() },
-                ...(lead.lastContact ? [{ label: "Last Contact", value: new Date(lead.lastContact).toLocaleDateString() }] : []),
+                { label: "Created", value: new Date(lead.createdAt).toLocaleDateString("en-US") },
+                ...(lead.lastContact ? [{ label: "Last Contact", value: new Date(lead.lastContact).toLocaleDateString("en-US") }] : []),
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">
                   <dt className="text-xs text-muted">{item.label}</dt>
