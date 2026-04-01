@@ -66,11 +66,19 @@ export async function GET(_request: NextRequest, ctx: Ctx) {
     const toneSelection = selectTone(moneyMetrics, scores);
     const narrative = generateNarrativeContext(opp, moneyMetrics, scores, toneSelection.mode);
 
+    // Risk score: inverse of average intent+momentum health
+    const avgHealth = (intent.score + momentum.score) / 2;
+    const riskScore = Math.max(0, Math.min(100, 100 - avgHealth));
+
     return sendSuccess({
-      intentScore: intent,
-      momentumScore: momentum,
-      tone: toneSelection,
-      narrative,
+      riskScore,
+      intentScore: intent.score,
+      momentumScore: momentum.score,
+      moneyAtRisk: moneyMetrics.moneyAtRisk ?? 0,
+      commissionAtRisk: moneyMetrics.commissionAtRisk ?? 0,
+      delayCost: moneyMetrics.delayCost ?? 0,
+      tone: toneSelection.mode,
+      nextAction: narrative.suggestedActions?.[0] ?? null,
     });
   } catch (error: any) {
     console.error("GET /api/opportunities/[id]/scores error:", error);

@@ -106,7 +106,7 @@ export function DealRiskPanel({ opportunityId, data: propData }: DealRiskPanelPr
     <div className="flex flex-col gap-[var(--space-md)]">
       {/* Scores section */}
       <GlassCard className="flex flex-col gap-[var(--space-md)]">
-        <SectionLabel>Scores do Deal</SectionLabel>
+        <SectionLabel>Deal Scores</SectionLabel>
         <div className="flex flex-col gap-[var(--space-sm)]">
           <ScoreRow label="Risk" score={scores.riskScore} statusFn={riskToStatus} />
           <ScoreRow label="Intent" score={scores.intentScore} statusFn={scoreToStatus} />
@@ -138,7 +138,7 @@ export function DealRiskPanel({ opportunityId, data: propData }: DealRiskPanelPr
 
       {/* Tone indicator */}
       <GlassCard className="flex items-center justify-between">
-        <SectionLabel>Tom da Negociacao</SectionLabel>
+        <SectionLabel>Negotiation Tone</SectionLabel>
         <span className={cn("text-sm font-bold", toneInfo.color)}>
           {toneInfo.label}
         </span>
