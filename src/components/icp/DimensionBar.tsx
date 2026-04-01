@@ -11,7 +11,7 @@ interface DimensionBarProps {
 }
 
 const VARIANT_COLORS: Record<string, string> = {
-  accent: "bg-[var(--accent,#2457FF)]",
+  accent: "bg-[var(--accent)]",
   success: "bg-emerald-500",
   warning: "bg-amber-500",
   danger: "bg-red-500",
@@ -35,10 +35,10 @@ export function DimensionBar({
 
   return (
     <div className="flex items-center gap-3">
-      <span className="w-[140px] shrink-0 text-xs text-[var(--text-muted,#888)] truncate">
+      <span className="w-[140px] shrink-0 text-xs text-[var(--text-muted)] truncate">
         {label}
       </span>
-      <div className="flex-1 h-2 rounded-full bg-[var(--border-subtle,rgba(255,255,255,0.06))] overflow-hidden">
+      <div className="flex-1 h-2 rounded-full bg-[var(--border-subtle)] overflow-hidden">
         <div
           className={cn(
             "h-full rounded-full transition-all duration-700 ease-out",
@@ -47,7 +47,7 @@ export function DimensionBar({
           style={{ width: animated ? `${pct}%` : "0%" }}
         />
       </div>
-      <span className="w-8 text-right text-xs font-semibold text-[var(--text-primary,#fff)]">
+      <span className="w-8 text-right text-xs font-semibold text-[var(--text-primary)]">
         {Math.round(value)}
       </span>
     </div>

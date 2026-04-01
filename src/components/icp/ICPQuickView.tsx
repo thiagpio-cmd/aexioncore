@@ -56,7 +56,7 @@ export function ICPQuickView({
       <button
         onClick={toggle}
         title="Ver perfil psicografico"
-        className={`${btnClass} inline-flex items-center justify-center border border-[var(--border-subtle,rgba(255,255,255,0.08))] bg-[var(--glass-bg,rgba(255,255,255,0.03))] text-[var(--text-muted,#888)] transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--accent,#2457FF)]`}
+        className={`${btnClass} inline-flex items-center justify-center border border-[var(--border-subtle)] bg-[var(--glass-bg)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-card-hover)] hover:text-[var(--accent)]`}
       >
         <svg
           width={iconSize}
@@ -80,7 +80,7 @@ export function ICPQuickView({
           {/* Backdrop */}
           <div className="fixed inset-0 z-50 bg-black/50" onClick={close} />
           {/* Modal content */}
-          <div className="fixed inset-4 z-50 mx-auto max-w-lg overflow-y-auto rounded-xl border border-[var(--glass-border,rgba(255,255,255,0.06))] bg-[var(--surface-elevated,#1a1a2e)] p-4 shadow-2xl lg:inset-auto lg:right-4 lg:top-4 lg:bottom-4 lg:left-auto lg:w-[480px]">
+          <div className="fixed inset-4 z-50 mx-auto max-w-lg overflow-y-auto rounded-xl border border-[var(--glass-border)] bg-[var(--bg-card-elevated)] p-4 shadow-2xl lg:inset-auto lg:right-4 lg:top-4 lg:bottom-4 lg:left-auto lg:w-[480px]">
             <CustomerProfileCard
               contactId={contactId}
               contactName={contactName}

@@ -89,7 +89,7 @@ function AIInsightsPanel() {
 
       {/* LLM Executive Synthesis */}
       {data.synthesis && (
-        <div className="mb-4 rounded-lg border border-primary/10 bg-white/50 p-4">
+        <div className="mb-4 rounded-lg border border-primary/10 bg-[var(--glass-bg)] p-4">
           <p className="text-[10px] font-semibold text-primary uppercase tracking-wider mb-2">Executive Summary</p>
           <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{data.synthesis}</p>
         </div>

@@ -108,7 +108,7 @@ export function BigFiveRadar({ data, overlay, size = 250 }: BigFiveRadarProps) {
           key={i}
           points={points}
           fill="none"
-          stroke="var(--border-subtle, rgba(255,255,255,0.08))"
+          stroke="var(--border-subtle)"
           strokeWidth={0.5}
         />
       ))}
@@ -118,7 +118,7 @@ export function BigFiveRadar({ data, overlay, size = 250 }: BigFiveRadarProps) {
         <line
           key={i}
           {...line}
-          stroke="var(--border-subtle, rgba(255,255,255,0.08))"
+          stroke="var(--border-subtle)"
           strokeWidth={0.5}
         />
       ))}
@@ -127,8 +127,8 @@ export function BigFiveRadar({ data, overlay, size = 250 }: BigFiveRadarProps) {
       {overlayPolygon && (
         <polygon
           points={overlayPolygon}
-          fill="var(--text-muted, rgba(150,150,150,0.1))"
-          stroke="var(--text-muted, rgba(150,150,150,0.5))"
+          fill="var(--accent-muted)"
+          stroke="var(--text-muted)"
           strokeWidth={1}
           strokeDasharray="4 2"
           opacity={0.5}
@@ -138,8 +138,8 @@ export function BigFiveRadar({ data, overlay, size = 250 }: BigFiveRadarProps) {
       {/* Primary polygon */}
       <polygon
         points={primaryPolygon}
-        fill="var(--accent, rgba(36,87,255,0.15))"
-        stroke="var(--accent, #2457FF)"
+        fill="var(--accent-muted)"
+        stroke="var(--accent)"
         strokeWidth={1.5}
         opacity={0.85}
       />
@@ -155,8 +155,8 @@ export function BigFiveRadar({ data, overlay, size = 250 }: BigFiveRadarProps) {
             cx={x}
             cy={y}
             r={3}
-            fill="var(--accent, #2457FF)"
-            stroke="var(--bg-card, #1a1a2e)"
+            fill="var(--accent)"
+            stroke="var(--bg-card)"
             strokeWidth={1.5}
           />
         );
@@ -170,7 +170,7 @@ export function BigFiveRadar({ data, overlay, size = 250 }: BigFiveRadarProps) {
           y={l.y}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill="var(--text-muted, #888)"
+          fill="var(--text-muted)"
           fontSize={10}
           fontFamily="inherit"
         >
@@ -180,7 +180,7 @@ export function BigFiveRadar({ data, overlay, size = 250 }: BigFiveRadarProps) {
           <tspan
             x={l.x}
             dy={13}
-            fill="var(--text-primary, #fff)"
+            fill="var(--text-primary)"
             fontWeight={600}
             fontSize={11}
           >

@@ -52,7 +52,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 ? "bg-red-600 text-white"
                 : t.type === "warning"
                 ? "bg-amber-500 text-white"
-                : "bg-[#1e293b] text-white"
+                : "bg-[var(--bg-card-elevated)] text-[var(--text-primary)] border border-[var(--border-default)]"
             }`}
           >
             {t.type === "success" && (

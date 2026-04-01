@@ -505,7 +505,7 @@ export default function OpportunityDetailPage() {
               </h3>
               <div className="space-y-3">
                 {deal.insights.map((insight) => (
-                  <div key={insight.id} className="rounded-lg bg-white/60 px-3 py-2.5 border border-primary/10">
+                  <div key={insight.id} className="rounded-lg bg-[var(--glass-bg)] px-3 py-2.5 border border-[var(--border-subtle)]">
                     <p className="text-sm font-medium text-foreground">{insight.title}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span className="text-xs text-muted">Impact: {insight.impact}</span>

@@ -68,7 +68,7 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
           </h2>
           <button
             onClick={handleClose}
-            className="rounded-[var(--radius-sm)] p-2 text-[var(--text-muted)] transition-colors hover:bg-white/5 hover:text-[var(--text-secondary)] min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="rounded-[var(--radius-sm)] p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-secondary)] min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6L6 18M6 6l12 12" />

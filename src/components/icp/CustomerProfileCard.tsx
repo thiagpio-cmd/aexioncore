@@ -56,7 +56,7 @@ interface ProfileData {
 function SkeletonBlock({ className }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded bg-[var(--border-subtle,rgba(255,255,255,0.06))] ${className ?? ""}`}
+      className={`animate-pulse rounded bg-[var(--border-subtle)] ${className ?? ""}`}
     />
   );
 }
@@ -100,7 +100,7 @@ function FomapGauge({ score }: { score: number }) {
             cy="18"
             r="15.5"
             fill="none"
-            stroke="var(--border-subtle, rgba(255,255,255,0.06))"
+            stroke="var(--border-subtle)"
             strokeWidth="3"
           />
           <circle
@@ -122,10 +122,10 @@ function FomapGauge({ score }: { score: number }) {
         </span>
       </div>
       <div>
-        <p className="text-sm font-semibold text-[var(--text-primary,#fff)]">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">
           FOMAP Score
         </p>
-        <p className="text-xs text-[var(--text-muted,#888)]">
+        <p className="text-xs text-[var(--text-muted)]">
           Motivacao x Habilidade x Prompt
         </p>
       </div>
@@ -143,14 +143,14 @@ function TagChips({
   if (!items || items.length === 0) return null;
   return (
     <div>
-      <p className="text-xs font-semibold text-[var(--text-muted,#888)] mb-1.5">
+      <p className="text-xs font-semibold text-[var(--text-muted)] mb-1.5">
         {title}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {items.map((item) => (
           <span
             key={item}
-            className="inline-block rounded-full border border-[var(--border-subtle,rgba(255,255,255,0.08))] bg-[var(--glass-bg,rgba(255,255,255,0.03))] px-2.5 py-0.5 text-xs text-[var(--text-primary,#fff)]"
+            className="inline-block rounded-full border border-[var(--border-subtle)] bg-[var(--glass-bg)] px-2.5 py-0.5 text-xs text-[var(--text-primary)]"
           >
             {item.replace(/_/g, " ")}
           </span>
@@ -162,7 +162,7 @@ function TagChips({
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted,#888)] mb-2">
+    <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
       {children}
     </h4>
   );
@@ -202,7 +202,7 @@ export function CustomerProfileCard({
   if (!data?.profile) {
     return (
       <GlassCard className="p-4">
-        <p className="text-sm text-[var(--text-muted,#888)]">
+        <p className="text-sm text-[var(--text-muted)]">
           Nenhum perfil encontrado para este contato.
         </p>
       </GlassCard>
@@ -217,15 +217,15 @@ export function CustomerProfileCard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-semibold text-[var(--text-primary,#fff)]">
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">
             {contactName ?? contact.name}
           </h3>
-          <p className="text-xs text-[var(--text-muted,#888)]">
+          <p className="text-xs text-[var(--text-muted)]">
             Perfil Psicografico
             {profile.confidence != null && (
               <span className="ml-2">
                 &middot; Confianca:{" "}
-                <span className="font-semibold text-[var(--text-primary,#fff)]">
+                <span className="font-semibold text-[var(--text-primary)]">
                   {Math.round(profile.confidence * 100)}%
                 </span>
               </span>
@@ -236,14 +236,14 @@ export function CustomerProfileCard({
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="rounded-lg border border-[var(--border-subtle,rgba(255,255,255,0.08))] bg-[var(--glass-bg,rgba(255,255,255,0.03))] px-3 py-1.5 text-xs font-medium text-[var(--text-primary,#fff)] transition-colors hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-50"
+            className="rounded-lg border border-[var(--border-subtle)] bg-[var(--glass-bg)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-card-hover)] disabled:opacity-50"
           >
             {refreshing ? "Atualizando..." : "Atualizar Perfil"}
           </button>
           {onClose && (
             <button
               onClick={onClose}
-              className="rounded-lg p-1.5 text-[var(--text-muted,#888)] hover:bg-[rgba(255,255,255,0.06)]"
+              className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-card-hover)]"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                 <path d="M18 6L6 18M6 6l12 12" />

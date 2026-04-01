@@ -96,7 +96,7 @@ function SliderField({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="w-[140px] shrink-0 text-xs text-[var(--text-muted,#888)]">
+      <span className="w-[140px] shrink-0 text-xs text-[var(--text-muted)]">
         {label}
       </span>
       <input
@@ -105,9 +105,9 @@ function SliderField({
         max={max}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 accent-[var(--accent,#2457FF)] h-1.5"
+        className="flex-1 accent-[var(--accent)] h-1.5"
       />
-      <span className="w-6 text-right text-xs font-semibold text-[var(--text-primary,#fff)]">
+      <span className="w-6 text-right text-xs font-semibold text-[var(--text-primary)]">
         {value}
       </span>
     </div>
@@ -116,14 +116,14 @@ function SliderField({
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted,#888)] mb-2 mt-4 first:mt-0">
+    <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2 mt-4 first:mt-0">
       {children}
     </h4>
   );
 }
 
 const INPUT_CLASS =
-  "w-full rounded-lg border border-[var(--border-subtle,rgba(255,255,255,0.08))] bg-[var(--glass-bg,rgba(255,255,255,0.03))] px-3 py-2 text-sm text-[var(--text-primary,#fff)] placeholder:text-[var(--text-muted,#888)] focus:outline-none focus:ring-1 focus:ring-[var(--accent,#2457FF)]";
+  "w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--glass-bg)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]";
 
 const SELECT_CLASS = INPUT_CLASS + " appearance-none";
 
@@ -281,7 +281,7 @@ export function ICPTemplateForm({
         <SectionTitle>Estilo de Decisao</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-[var(--text-muted,#888)] mb-1">
+            <label className="block text-xs text-[var(--text-muted)] mb-1">
               Estilo de decisao
             </label>
             <select
@@ -297,7 +297,7 @@ export function ICPTemplateForm({
             </select>
           </div>
           <div>
-            <label className="block text-xs text-[var(--text-muted,#888)] mb-1">
+            <label className="block text-xs text-[var(--text-muted)] mb-1">
               Tolerancia a risco
             </label>
             <select
@@ -328,8 +328,8 @@ export function ICPTemplateForm({
                 onClick={() => toggleDriver(d.value)}
                 className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                   active
-                    ? "border-[var(--accent,#2457FF)] bg-[var(--accent,#2457FF)]/10 text-[var(--accent,#2457FF)]"
-                    : "border-[var(--border-subtle,rgba(255,255,255,0.08))] text-[var(--text-muted,#888)] hover:border-[var(--accent,#2457FF)]/40"
+                    ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                    : "border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--accent)]/40"
                 }`}
               >
                 {d.label}
@@ -344,7 +344,7 @@ export function ICPTemplateForm({
         <SectionTitle>Firmografia</SectionTitle>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs text-[var(--text-muted,#888)] mb-1">
+            <label className="block text-xs text-[var(--text-muted)] mb-1">
               Industrias (separadas por virgula)
             </label>
             <input
@@ -359,7 +359,7 @@ export function ICPTemplateForm({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[var(--text-muted,#888)] mb-1">
+              <label className="block text-xs text-[var(--text-muted)] mb-1">
                 Tamanho min. (funcionarios)
               </label>
               <input
@@ -376,7 +376,7 @@ export function ICPTemplateForm({
               />
             </div>
             <div>
-              <label className="block text-xs text-[var(--text-muted,#888)] mb-1">
+              <label className="block text-xs text-[var(--text-muted)] mb-1">
                 Tamanho max.
               </label>
               <input
@@ -395,7 +395,7 @@ export function ICPTemplateForm({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[var(--text-muted,#888)] mb-1">
+              <label className="block text-xs text-[var(--text-muted)] mb-1">
                 Receita anual min. (BRL)
               </label>
               <input
@@ -414,7 +414,7 @@ export function ICPTemplateForm({
               />
             </div>
             <div>
-              <label className="block text-xs text-[var(--text-muted,#888)] mb-1">
+              <label className="block text-xs text-[var(--text-muted)] mb-1">
                 Receita anual max.
               </label>
               <input
@@ -447,7 +447,7 @@ export function ICPTemplateForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-[var(--border-subtle,rgba(255,255,255,0.08))] px-4 py-2 text-sm text-[var(--text-muted,#888)] transition-colors hover:bg-[rgba(255,255,255,0.03)]"
+            className="rounded-lg border border-[var(--border-subtle)] px-4 py-2 text-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-card-hover)]"
           >
             Cancelar
           </button>
@@ -455,7 +455,7 @@ export function ICPTemplateForm({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-[var(--accent,#2457FF)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
         >
           {submitting
             ? "Salvando..."
