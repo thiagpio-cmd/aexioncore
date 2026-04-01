@@ -1,0 +1,133 @@
+/* ============================================
+   Aexion Core — Premium Design Tokens
+   Complete token system with white-label support
+   ============================================ */
+
+:root {
+  /* Background layers */
+  --bg-root: #08080A;
+  --bg-card: rgba(255, 255, 255, 0.02);
+  --bg-card-hover: rgba(255, 255, 255, 0.035);
+  --bg-card-elevated: rgba(255, 255, 255, 0.025);
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.1);
+  --border-hairline: rgba(255, 255, 255, 0.08);
+
+  /* Text hierarchy (warm gray scale) */
+  --text-primary: #F0EDEA;
+  --text-secondary: #B0ACA5;
+  --text-tertiary: #7A7672;
+  --text-muted: #5C5856;
+  --text-ghost: #3D3A37;
+  --text-invisible: #2A2824;
+
+  /* Functional colors */
+  --color-danger: #EF4444;
+  --color-danger-muted: rgba(239, 68, 68, 0.04);
+  --color-danger-border: rgba(239, 68, 68, 0.08);
+  --color-success: #34D399;
+  --color-success-muted: rgba(52, 211, 153, 0.03);
+  --color-success-border: rgba(52, 211, 153, 0.08);
+  --color-warning: #FBBF24;
+  --color-warning-muted: rgba(251, 191, 36, 0.04);
+  --color-warning-border: rgba(251, 191, 36, 0.08);
+
+  /* Layout */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Glass effect */
+  --glass-blur: blur(20px);
+  --glass-hairline: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  --glass-hairline-subtle: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+
+  /* Ambient light */
+  --ambient-warm: radial-gradient(circle, rgba(140, 130, 115, 0.06) 0%, transparent 70%);
+  --ambient-cool: radial-gradient(circle, rgba(100, 100, 120, 0.04) 0%, transparent 70%);
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', monospace;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 40px;
+
+  /* Dots */
+  --dot-sm: 4px;
+  --dot-md: 5px;
+  --dot-lg: 6px;
+
+  /* Transitions */
+  --transition-fast: 120ms ease;
+  --transition-default: 200ms ease;
+
+  /* Tenant accent (default Aexion neutral) */
+  --accent: #B0ACA5;
+  --accent-text: #B0ACA5;
+  --accent-muted: rgba(176, 172, 165, 0.08);
+  --accent-border: rgba(176, 172, 165, 0.12);
+  --accent-glow: rgba(176, 172, 165, 0.06);
+}
+
+[data-theme="light"] {
+  --bg-root: #FAF9F6;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+  --bg-card-elevated: #FFFFFF;
+  --border-subtle: rgba(28, 26, 23, 0.05);
+  --border-default: rgba(28, 26, 23, 0.06);
+  --border-hover: rgba(28, 26, 23, 0.12);
+  --border-hairline: rgba(28, 26, 23, 0.06);
+  --text-primary: #1C1A17;
+  --text-secondary: #6B6560;
+  --text-tertiary: #9B9389;
+  --text-muted: #B5AFA6;
+  --text-ghost: #D5D0C8;
+  --text-invisible: #E8E5DF;
+  --color-danger: #DC2626;
+  --color-success: #16A34A;
+  --color-warning: #D97706;
+  --glass-hairline: linear-gradient(90deg, transparent, rgba(28, 26, 23, 0.06), transparent);
+  --glass-hairline-subtle: linear-gradient(90deg, transparent, rgba(28, 26, 23, 0.04), transparent);
+  --ambient-warm: radial-gradient(circle, rgba(150, 140, 120, 0.04) 0%, transparent 70%);
+  --ambient-cool: radial-gradient(circle, rgba(100, 100, 120, 0.03) 0%, transparent 70%);
+}
+
+/* Legacy compatibility aliases */
+:root {
+  --glass-bg: var(--bg-card);
+  --glass-border: var(--border-default);
+  --surface-primary: var(--bg-root);
+  --surface-elevated: var(--bg-card-elevated);
+  --surface-card: var(--bg-card);
+  --text-dim: var(--text-ghost);
+  --accent-gold: var(--color-warning);
+  --accent-emerald: var(--color-success);
+  --accent-red: var(--color-danger);
+  --accent-blue: #3B82F6;
+  --status-idle: var(--text-muted);
+  --status-active: var(--color-warning);
+  --status-success: var(--color-success);
+  --status-danger: var(--color-danger);
+}
+
+/* Status pulse animation */
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-status-pulse {
+  animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

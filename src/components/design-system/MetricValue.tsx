@@ -2,71 +2,87 @@
 
 import { cn } from "@/lib/utils";
 
-type TrendDirection = "up" | "down" | "stable";
-type MetricSize = "sm" | "md" | "lg";
+type MetricSize = "hero" | "large" | "medium" | "small";
+type SubtitleColor = "success" | "danger" | "warning" | "muted";
 
 interface MetricValueProps {
   value: string | number;
   label: string;
-  trend?: TrendDirection;
+  subtitle?: string;
+  subtitleColor?: SubtitleColor;
   prefix?: string;
   size?: MetricSize;
+  className?: string;
 }
 
-const sizeStyles: Record<MetricSize, { value: string; label: string }> = {
-  sm: { value: "text-xl font-bold", label: "text-[11px]" },
-  md: { value: "text-3xl font-bold", label: "text-xs" },
-  lg: { value: "text-5xl font-extrabold", label: "text-sm" },
+const sizeStyles: Record<MetricSize, { fontSize: string; fontWeight: number; letterSpacing: string }> = {
+  hero: { fontSize: "46px", fontWeight: 300, letterSpacing: "-0.03em" },
+  large: { fontSize: "28px", fontWeight: 300, letterSpacing: "-0.02em" },
+  medium: { fontSize: "22px", fontWeight: 400, letterSpacing: "0" },
+  small: { fontSize: "20px", fontWeight: 400, letterSpacing: "0" },
 };
 
-const trendConfig: Record<TrendDirection, { icon: string; color: string }> = {
-  up: { icon: "\u2191", color: "text-[var(--accent-emerald)]" },
-  down: { icon: "\u2193", color: "text-[var(--accent-red)]" },
-  stable: { icon: "\u2192", color: "text-[var(--text-muted)]" },
+const subtitleColorVars: Record<SubtitleColor, string> = {
+  success: "var(--color-success)",
+  danger: "var(--color-danger)",
+  warning: "var(--color-warning)",
+  muted: "var(--text-muted)",
 };
 
 export function MetricValue({
   value,
   label,
-  trend,
+  subtitle,
+  subtitleColor = "muted",
   prefix,
-  size = "md",
+  size = "medium",
+  className,
 }: MetricValueProps) {
   const styles = sizeStyles[size];
 
   return (
-    <div className="flex flex-col gap-[var(--space-xs)]">
+    <div className={cn("flex flex-col", className)} style={{ gap: "var(--space-xs)" }}>
       <p
-        className={cn(
-          "font-medium uppercase tracking-wider text-[var(--text-muted)]",
-          styles.label
-        )}
+        style={{
+          fontSize: "11px",
+          fontWeight: 500,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+          color: "var(--text-muted)",
+          margin: 0,
+        }}
       >
         {label}
       </p>
-      <div className="flex items-baseline gap-[var(--space-sm)]">
+      <div className="flex items-baseline" style={{ gap: "var(--space-sm)" }}>
         <p
-          className={cn(
-            "tabular-nums text-[var(--text-primary)]",
-            styles.value
-          )}
+          style={{
+            fontSize: styles.fontSize,
+            fontWeight: styles.fontWeight,
+            letterSpacing: styles.letterSpacing,
+            color: "var(--text-primary)",
+            margin: 0,
+            fontVariantNumeric: "tabular-nums",
+            lineHeight: 1.2,
+          }}
         >
           {prefix && (
-            <span className="text-[var(--text-secondary)]">{prefix}</span>
+            <span style={{ color: "var(--text-secondary)" }}>{prefix}</span>
           )}
           {value}
         </p>
-        {trend && (
-          <span
-            className={cn(
-              "text-sm font-medium",
-              trendConfig[trend].color
-            )}
-          >
-            {trendConfig[trend].icon}
-          </span>
-        )}
       </div>
+      {subtitle && (
+        <span
+          style={{
+            fontSize: "12px",
+            fontWeight: 400,
+            color: subtitleColorVars[subtitleColor],
+          }}
+        >
+          {subtitle}
+        </span>
+      )}
     </div>
   );
 }

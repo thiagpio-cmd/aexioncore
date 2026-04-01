@@ -21,11 +21,14 @@ model Organization {
   slug  String @unique
 
   // Branding
-  displayName    String?
-  logoUrl        String?
-  primaryColor   String?   @default("#2457FF")
-  secondaryColor String?   @default("#1a1a2e")
-  favicon        String?
+  displayName       String?
+  logoUrl           String?
+  primaryColor      String?   @default("#2457FF")
+  secondaryColor    String?   @default("#1a1a2e")
+  favicon           String?
+  brandAccentColor  String?
+  brandThemeDefault String?   @default("dark")
+  brandLogoMarkUrl  String?
 
   // Module activation (JSON array of enabled module keys)
   enabledModules String?   @default("[\"commercial\",\"data\",\"reports\",\"automation\",\"post_sale\",\"playbooks\"]")

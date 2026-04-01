@@ -3,13 +3,21 @@
 import { useState } from "react";
 import { GlassCard } from "@/components/design-system";
 import { ActionApprovalCard, ActionProposal } from "@/components/ActionApprovalCard";
-import { apiPost } from "@/lib/hooks/use-api";
+import { DebriefInput } from "@/components/debrief/DebriefInput";
 import { cn } from "@/lib/utils";
 
 interface DebriefResult {
   id: string;
   summary: string;
-  proposals: ActionProposal[];
+  proposals: Array<{
+    id: string;
+    actionType: string;
+    description: string;
+    urgency: string;
+    financialImpact: string | null;
+    status: string;
+    params: Record<string, unknown>;
+  }>;
 }
 
 interface DebriefModalProps {
@@ -20,42 +28,17 @@ interface DebriefModalProps {
 }
 
 export function DebriefModal({ open, onClose, opportunityId, onComplete }: DebriefModalProps) {
-  const [text, setText] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<DebriefResult | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!text.trim()) return;
-
-    setSubmitting(true);
-    setError(null);
-
-    const { data, error: err } = await apiPost<DebriefResult>("/api/debriefs", {
-      text: text.trim(),
-      opportunityId,
-    });
-
-    setSubmitting(false);
-
-    if (err) {
-      setError(err);
-      return;
-    }
-
-    if (data) {
-      setResult(data);
-    }
+  function handleResult(r: DebriefResult) {
+    setResult(r);
   }
 
   function handleClose() {
-    setText("");
-    setError(null);
+    const hadResult = !!result;
     setResult(null);
-    setSubmitting(false);
     onClose();
-    if (result) {
+    if (hadResult) {
       onComplete?.();
     }
   }
@@ -94,49 +77,12 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
         </div>
 
         <div className="px-[var(--space-lg)] py-[var(--space-md)]">
-          {/* Input phase */}
+          {/* Input phase — now uses DebriefInput with text/audio/file tabs */}
           {!result && (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--space-md)]">
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Conte o que aconteceu no deal..."
-                rows={5}
-                disabled={submitting}
-                className={cn(
-                  "w-full resize-none rounded-[var(--radius-sm)] border border-[var(--glass-border)]",
-                  "bg-[var(--glass-bg)] px-[var(--space-md)] py-[var(--space-sm)]",
-                  "text-sm text-[var(--text-primary)] placeholder:text-[var(--text-dim)]",
-                  "focus:outline-none focus:border-[var(--accent-gold)]/50",
-                  "disabled:opacity-50"
-                )}
-              />
-
-              {error && (
-                <p className="text-xs text-[var(--accent-red)]">{error}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting || !text.trim()}
-                className={cn(
-                  "w-full rounded-[var(--radius-sm)] px-4 py-3 text-sm font-semibold transition-all",
-                  "bg-[var(--accent-gold)]/15 text-[var(--accent-gold)]",
-                  "hover:bg-[var(--accent-gold)]/25 active:scale-[0.99]",
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                  "min-h-[48px]"
-                )}
-              >
-                {submitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--accent-gold)] border-t-transparent" />
-                    Processando com IA...
-                  </span>
-                ) : (
-                  "Enviar Debrief"
-                )}
-              </button>
-            </form>
+            <DebriefInput
+              opportunityId={opportunityId}
+              onResult={handleResult}
+            />
           )}
 
           {/* Result phase */}
@@ -161,7 +107,13 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
                   {result.proposals.map((proposal) => (
                     <ActionApprovalCard
                       key={proposal.id}
-                      proposal={proposal}
+                      proposal={{
+                        id: proposal.id,
+                        type: proposal.actionType,
+                        description: proposal.description,
+                        priority: mapUrgencyToPriority(proposal.urgency),
+                        financialImpact: parseFinancialImpact(proposal.financialImpact),
+                      }}
                       debriefId={result.id}
                     />
                   ))}
@@ -192,4 +144,22 @@ export function DebriefModal({ open, onClose, opportunityId, onComplete }: Debri
       </div>
     </div>
   );
+}
+
+function mapUrgencyToPriority(urgency: string): "high" | "medium" | "low" {
+  switch (urgency) {
+    case "immediate":
+      return "high";
+    case "today":
+      return "medium";
+    case "this_week":
+    default:
+      return "low";
+  }
+}
+
+function parseFinancialImpact(impact: string | null): number | undefined {
+  if (!impact) return undefined;
+  const match = impact.replace(/\./g, "").match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : undefined;
 }
