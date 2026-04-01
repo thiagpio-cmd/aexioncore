@@ -121,18 +121,17 @@ export function DealRiskPanel({ opportunityId, data: propData }: DealRiskPanelPr
           <MetricValue
             value={formatBRL(scores.moneyAtRisk)}
             label="Em risco"
-            size="sm"
-            trend={scores.moneyAtRisk > 50000 ? "down" : "stable"}
+            size="small"
           />
           <MetricValue
             value={formatBRL(scores.commissionAtRisk)}
             label="Comissao"
-            size="sm"
+            size="small"
           />
           <MetricValue
             value={formatBRL(scores.delayCost)}
             label="Custo atraso"
-            size="sm"
+            size="small"
           />
         </div>
       </GlassCard>

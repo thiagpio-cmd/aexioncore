@@ -86,8 +86,7 @@ export function MoneyAtRiskWidget({ opportunityId, data: propData }: MoneyAtRisk
       <MetricValue
         value={formatBRL(totalRisk)}
         label="Total em risco"
-        size="lg"
-        trend={isHighRisk ? "down" : "stable"}
+        size="large"
       />
 
       <div className="flex flex-col gap-[var(--space-sm)] border-t border-[var(--glass-border)] pt-[var(--space-md)]">
