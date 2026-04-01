@@ -140,7 +140,7 @@ export const authOptions: NextAuthOptions = {
      * 2. Periodically re-validating the session against the DB.
      * 3. Propagating role/workspace changes without requiring re-login.
      */
-    async jwt({ token, user }: { token: JWT; user?: Record<string, unknown> | any }) {
+    async jwt({ token, user }: { token: JWT; user?: Record<string, unknown> | any }): Promise<JWT> {
       // ── Initial login ─────────────────────────────────────────────────
       if (user) {
         token.id = user.id as string;
@@ -177,8 +177,9 @@ export const authOptions: NextAuthOptions = {
         if (!dbUser || !dbUser.isActive) {
           // Returning null destroys the session — user is redirected to login.
           // NextAuth v4 supports null return from jwt callback to invalidate.
-          // @ts-expect-error NextAuth v4: returning null invalidates the session
-          return null;
+          // Returning null destroys the session — user is redirected to login.
+          // NextAuth v4 supports null return from jwt callback to invalidate.
+          return null as unknown as JWT;
         }
 
         // ── Session invalidated via invalidateUserSessions() ──────────
@@ -186,8 +187,7 @@ export const authOptions: NextAuthOptions = {
         // token.iat is set by NextAuth as Unix seconds — convert to ms.
         const issuedAtMs = ((token.iat as number) ?? 0) * 1000;
         if (!isSessionValid(token.id as string, issuedAtMs)) {
-          // @ts-expect-error NextAuth v4: returning null invalidates the session
-          return null;
+          return null as unknown as JWT;
         }
 
         // ── Refresh mutable fields (role/workspace may change) ────────
