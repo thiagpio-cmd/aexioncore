@@ -1,7 +1,7 @@
 /**
  * Money Engine — Deterministic financial risk calculations.
  *
- * All values in BRL (R$). No LLM calls — pure math from existing data.
+ * All values in USD ($). No LLM calls — pure math from existing data.
  *
  * Core metrics:
  *  - moneyAtRisk:      value × (1 - probability) × riskFactor

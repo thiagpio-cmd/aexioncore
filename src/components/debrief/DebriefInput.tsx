@@ -29,18 +29,18 @@ interface DebriefResult {
 }
 
 const MODE_TABS: { key: InputMode; label: string }[] = [
-  { key: "text", label: "Escrever" },
+  { key: "text", label: "Write" },
   { key: "audio", label: "Audio" },
-  { key: "file", label: "Arquivo" },
+  { key: "file", label: "File" },
 ];
 
 const PHASE_LABELS: Record<SubmitPhase, string> = {
   idle: "",
-  uploading: "Enviando...",
-  transcribing: "Transcrevendo audio...",
-  analyzing: "Analisando...",
-  done: "Concluido",
-  error: "Erro",
+  uploading: "Uploading...",
+  transcribing: "Transcribing audio...",
+  analyzing: "Analyzing...",
+  done: "Done",
+  error: "Error",
 };
 
 export function DebriefInput({ opportunityId, onResult, disabled = false }: DebriefInputProps) {
@@ -202,7 +202,7 @@ export function DebriefInput({ opportunityId, onResult, disabled = false }: Debr
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Conte o que aconteceu no deal..."
+            placeholder="Describe what happened in the deal..."
             rows={5}
             disabled={isSubmitting || disabled}
             className={cn(
@@ -238,7 +238,7 @@ export function DebriefInput({ opportunityId, onResult, disabled = false }: Debr
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          Audio gravado. Pronto para enviar.
+          Audio recorded. Ready to submit.
         </div>
       )}
 
@@ -267,7 +267,7 @@ export function DebriefInput({ opportunityId, onResult, disabled = false }: Debr
               {PHASE_LABELS[phase]}
             </span>
           ) : (
-            "Enviar para analise"
+            "Submit for analysis"
           )}
         </button>
       )}
@@ -278,7 +278,7 @@ export function DebriefInput({ opportunityId, onResult, disabled = false }: Debr
           onClick={handleReset}
           className="text-sm text-[var(--text-muted)] hover:text-[var(--text-secondary)] underline"
         >
-          Tentar novamente
+          Try again
         </button>
       )}
     </div>

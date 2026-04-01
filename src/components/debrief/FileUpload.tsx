@@ -42,13 +42,13 @@ export function FileUpload({ onFileSelected, disabled = false }: FileUploadProps
       // Check extension
       const ext = "." + file.name.split(".").pop()?.toLowerCase();
       if (!ACCEPTED_TYPES.includes(ext)) {
-        setError(`Tipo de arquivo nao suportado: ${ext}. Use ${ACCEPTED_TYPES.join(", ")}`);
+        setError(`Unsupported file type: ${ext}. Use ${ACCEPTED_TYPES.join(", ")}`);
         return;
       }
 
       // Check size
       if (file.size > MAX_SIZE_BYTES) {
-        setError(`Arquivo muito grande (${formatFileSize(file.size)}). Maximo: ${MAX_SIZE_MB}MB`);
+        setError(`File too large (${formatFileSize(file.size)}). Max: ${MAX_SIZE_MB}MB`);
         return;
       }
 
@@ -140,7 +140,7 @@ export function FileUpload({ onFileSelected, disabled = false }: FileUploadProps
               }}
               className="text-xs text-[var(--accent-red)] hover:underline"
             >
-              Remover
+              Remove
             </button>
           </>
         ) : (
@@ -162,7 +162,7 @@ export function FileUpload({ onFileSelected, disabled = false }: FileUploadProps
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <p className="text-sm text-[var(--text-secondary)] text-center">
-              Arraste um arquivo ou clique para selecionar
+              Drag a file or click to select
             </p>
             <p className="text-xs text-[var(--text-dim)]">
               {ACCEPTED_TYPES.join(", ")} — max {MAX_SIZE_MB}MB
