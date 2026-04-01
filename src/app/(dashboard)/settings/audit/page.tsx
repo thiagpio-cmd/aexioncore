@@ -64,7 +64,7 @@ export default function SettingsAuditPage() {
                   <td className="px-5 py-3 text-sm text-muted">{log.objectName || `${log.objectType || ""}${log.objectId ? ` #${log.objectId}` : ""}`}</td>
                   <td className="px-5 py-3 text-xs text-muted max-w-xs truncate">{log.details}</td>
                   <td className="px-5 py-3"><span className="rounded-full bg-background px-2 py-0.5 text-[10px] font-medium text-muted">{log.source}</span></td>
-                  <td className="px-5 py-3 text-xs text-muted">{new Date(log.createdAt).toLocaleString()}</td>
+                  <td className="px-5 py-3 text-xs text-muted">{new Date(log.createdAt).toLocaleString("en-US")}</td>
                 </tr>
               ))}
               {logList.length === 0 && (

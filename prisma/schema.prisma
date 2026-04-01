@@ -1087,7 +1087,7 @@ model ICPProfile {
 
   version  Int     @default(1)
   isActive Boolean @default(true)
-  name     String  // e.g., "ICP v1 - Alto Padrão Imobiliário"
+  name     String  // e.g., "ICP v1 - US Commercial Real Estate"
 
   // Firmographic ideal
   idealIndustries          String? // JSON array of industry strings

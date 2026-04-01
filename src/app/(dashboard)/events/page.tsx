@@ -68,7 +68,7 @@ export default function EventsPage() {
                   <td className="px-5 py-3.5"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${sc.color}`}>{sc.label}</span></td>
                   <td className="px-5 py-3.5 text-sm text-muted">{evt.eventType}</td>
                   <td className="px-5 py-3.5 text-sm text-muted">{(evt.retryCount || 0) > 0 ? <span className="text-danger font-medium">{evt.retryCount}</span> : "0"}</td>
-                  <td className="px-5 py-3.5 text-xs text-muted">{new Date(evt.createdAt).toLocaleString()}</td>
+                  <td className="px-5 py-3.5 text-xs text-muted">{new Date(evt.createdAt).toLocaleString("en-US")}</td>
                 </tr>
               );
             })}

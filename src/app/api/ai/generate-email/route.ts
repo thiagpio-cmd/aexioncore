@@ -326,7 +326,7 @@ Status: ${l.status}
 Temperature: ${l.temperature}
 Lead Source: ${l.source}
 Fit Score: ${l.fitScore}/100
-${l.lastContact ? `Last Contact: ${new Date(l.lastContact).toLocaleDateString()}` : "No previous contact"}`;
+${l.lastContact ? `Last Contact: ${new Date(l.lastContact).toLocaleDateString("en-US")}` : "No previous contact"}`;
   }
 
   if (crmContext.opportunity) {
@@ -336,14 +336,14 @@ Deal: ${o.title}
 Value: $${o.value.toLocaleString()}
 Stage: ${o.stage}
 Probability: ${o.probability}%
-${o.expectedCloseDate ? `Expected Close: ${new Date(o.expectedCloseDate).toLocaleDateString()}` : ""}
+${o.expectedCloseDate ? `Expected Close: ${new Date(o.expectedCloseDate).toLocaleDateString("en-US")}` : ""}
 ${o.description ? `Description: ${o.description}` : ""}`;
   }
 
   if (crmContext.recentActivities.length > 0) {
     contextBlock += `\n--- Recent Interactions ---`;
     for (const a of crmContext.recentActivities.slice(0, 3)) {
-      contextBlock += `\n- ${a.type}${a.subject ? `: ${a.subject}` : ""} (${new Date(a.createdAt).toLocaleDateString()})`;
+      contextBlock += `\n- ${a.type}${a.subject ? `: ${a.subject}` : ""} (${new Date(a.createdAt).toLocaleDateString("en-US")})`;
     }
   }
 

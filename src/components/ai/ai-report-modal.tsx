@@ -91,7 +91,7 @@ export function AIReportModal({ open, onClose, report, loading, onRegenerate }: 
       }
       description={
         report
-          ? `Generated ${new Date(report.generatedAt).toLocaleString()} via ${report.provider === "openai" ? "GPT-4o" : "Deterministic Analysis"}`
+          ? `Generated ${new Date(report.generatedAt).toLocaleString("en-US")} via ${report.provider === "openai" ? "GPT-4o" : "Deterministic Analysis"}`
           : undefined
       }
       maxWidth="max-w-4xl"
@@ -370,7 +370,7 @@ function buildPlainText(report: GeneratedReport): string {
   const m = report.report.keyMetrics;
 
   lines.push(`=== ${typeLabels[report.type] || report.type} - ${periodLabels[report.period] || report.period} ===`);
-  lines.push(`Generated: ${new Date(report.generatedAt).toLocaleString()}`);
+  lines.push(`Generated: ${new Date(report.generatedAt).toLocaleString("en-US")}`);
   lines.push(`Provider: ${report.provider === "openai" ? "GPT-4o" : "Deterministic"}`);
   lines.push("");
 

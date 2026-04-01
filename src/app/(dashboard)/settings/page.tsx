@@ -397,7 +397,7 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-foreground">Current Session</p>
-                      <p className="text-xs text-muted">macOS - Chrome - {new Date().toLocaleDateString()}</p>
+                      <p className="text-xs text-muted">macOS - Chrome - {new Date().toLocaleDateString("en-US")}</p>
                     </div>
                     <span className="flex items-center gap-1 text-xs text-success">
                       <span className="h-1.5 w-1.5 rounded-full bg-success" /> Active
@@ -489,7 +489,7 @@ export default function SettingsPage() {
                         </td>
                         <td className="px-6 py-3 text-sm text-foreground">{log.objectType}</td>
                         <td className="px-6 py-3 text-sm text-muted">{log.user?.name || "System"}</td>
-                        <td className="px-6 py-3 text-xs text-muted">{new Date(log.createdAt).toLocaleString()}</td>
+                        <td className="px-6 py-3 text-xs text-muted">{new Date(log.createdAt).toLocaleString("en-US")}</td>
                       </tr>
                     ))}
                   </tbody>
