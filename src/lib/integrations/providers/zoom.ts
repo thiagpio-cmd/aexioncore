@@ -182,7 +182,7 @@ export class ZoomProvider extends BaseProvider {
 
   async fetchInitialData(
     credentials: StoredCredentials,
-    cursor?: SyncCursor
+    _options?: { lookbackDays?: number }
   ): Promise<SyncResult> {
     // Fetch recent recordings with transcripts
     const events: CanonicalEvent[] = [];
@@ -237,7 +237,7 @@ export class ZoomProvider extends BaseProvider {
     credentials: StoredCredentials,
     cursor: SyncCursor
   ): Promise<SyncResult> {
-    return this.fetchInitialData(credentials, cursor);
+    return this.fetchInitialData(credentials);
   }
 
   async healthcheck(credentials: StoredCredentials): Promise<HealthCheckResult> {
