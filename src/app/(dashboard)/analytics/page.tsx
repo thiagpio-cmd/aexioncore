@@ -226,7 +226,7 @@ export default function AnalyticsPage() {
                   return (
                     <div key={a.type}>
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm text-foreground">{a.type}</span>
+                        <span className="text-sm text-foreground">{stageLabel(a.type)}</span>
                         <span className="text-sm font-medium text-foreground">{a.count}</span>
                       </div>
                       <div className="h-2 rounded-full bg-background">

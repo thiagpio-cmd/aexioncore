@@ -554,7 +554,7 @@ export default function ReportsPage() {
                       </td>
                       <td className="px-5 py-3">
                         <span className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary">
-                          {report.type}
+                          {enumLabel(report.type)}
                         </span>
                       </td>
                       <td className="px-5 py-3 text-sm text-muted">{report.period}</td>
