@@ -8,6 +8,14 @@ import { formatCurrency, cn } from "@/lib/utils";
 
 type Tab = "overview" | "pipeline" | "leads" | "team";
 
+/** Convert DB enum names like LEAD_INQUIRY → "Lead Inquiry" */
+function stageLabel(stage: string): string {
+  return stage
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 const STAGE_COLORS: Record<string, string> = {
   LEAD_INQUIRY: "bg-blue-500",
   PROPERTY_TOUR: "bg-indigo-500",
@@ -272,7 +280,7 @@ export default function AnalyticsPage() {
                 <div key={p.stage} className="rounded-xl border border-border bg-background p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <div className={`h-2.5 w-2.5 rounded-full ${STAGE_COLORS[p.stage] || "bg-gray-400"}`} />
-                    <span className="text-xs font-medium text-muted">{p.stage}</span>
+                    <span className="text-xs font-medium text-muted">{stageLabel(p.stage)}</span>
                   </div>
                   <p className="text-xl font-bold text-foreground">{p.count}</p>
                   <p className="text-sm text-muted">{formatCurrency(p.value, "USD")}</p>
@@ -288,7 +296,7 @@ export default function AnalyticsPage() {
                 const pct = (p.value / maxValue) * 100;
                 return (
                   <div key={p.stage} className="flex items-center gap-4">
-                    <span className="w-28 text-sm text-foreground">{p.stage}</span>
+                    <span className="w-28 text-sm text-foreground">{stageLabel(p.stage)}</span>
                     <div className="flex-1 h-8 rounded bg-background flex items-center">
                       <div
                         className={`h-8 rounded flex items-center justify-end px-3 ${STAGE_COLORS[p.stage] || "bg-gray-400"}`}
@@ -338,7 +346,7 @@ export default function AnalyticsPage() {
                   return (
                     <div key={l.status}>
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm text-foreground">{l.status}</span>
+                        <span className="text-sm text-foreground">{stageLabel(l.status)}</span>
                         <span className="text-sm font-medium text-foreground">{l.count}</span>
                       </div>
                       <div className="h-6 rounded bg-background flex items-center">
@@ -360,7 +368,7 @@ export default function AnalyticsPage() {
                   <div key={t.temperature} className="text-center rounded-xl border border-border bg-background p-4">
                     <div className={`mx-auto mb-2 h-3 w-3 rounded-full ${TEMP_COLORS[t.temperature] || "bg-gray-400"}`} />
                     <p className="text-2xl font-bold text-foreground">{t.count}</p>
-                    <p className="text-xs text-muted">{t.temperature}</p>
+                    <p className="text-xs text-muted">{stageLabel(t.temperature)}</p>
                   </div>
                 ))}
               </div>
@@ -369,7 +377,7 @@ export default function AnalyticsPage() {
               <div className="space-y-2">
                 {leadsBySource.map((l: any) => (
                   <div key={l.source} className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-2.5">
-                    <span className="text-sm text-foreground">{l.source}</span>
+                    <span className="text-sm text-foreground">{stageLabel(l.source)}</span>
                     <div className="flex items-center gap-4">
                       <span className="text-sm text-muted">{l.count} leads</span>
                       <span className="text-sm font-medium text-foreground">{l.conversionRate}% conv.</span>

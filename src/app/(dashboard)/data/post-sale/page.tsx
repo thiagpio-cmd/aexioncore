@@ -72,7 +72,7 @@ export default function PostSaleChurnPage() {
           </div>
         </div>
         <p className="text-xs text-muted mt-3 pl-1 border-l-2 border-border ml-1">
-          <strong>Note:</strong> Data is extrapolated based on current <code>Account</code> model realities. Missing lifecycle dates are ignored from averages.
+          <strong>Note:</strong> Data is calculated from account lifecycle dates. Missing dates are excluded from averages.
         </p>
       </div>
 

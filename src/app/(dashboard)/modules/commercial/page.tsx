@@ -9,6 +9,14 @@ function fmt(n: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
+/** Convert DB enum names like LEAD_INQUIRY → "Lead Inquiry" */
+function stageLabel(stage: string): string {
+  return stage
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function CommercialModulePage() {
   return <ModuleGuard moduleKey="commercial"><CommercialContent /></ModuleGuard>;
 }
@@ -106,7 +114,7 @@ function CommercialContent() {
             {t.stageVelocity.map(sv => (
               <div key={sv.stage} className="rounded-lg border border-border p-3 text-center">
                 <p className="text-lg font-bold">{sv.avgDays}d</p>
-                <p className="text-xs text-muted">{sv.stage}</p>
+                <p className="text-xs text-muted">{stageLabel(sv.stage)}</p>
                 <p className="text-xs text-muted">{sv.dealCount} deals</p>
               </div>
             ))}
@@ -121,7 +129,7 @@ function CommercialContent() {
         <Link href="/opportunities" className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-background">View Opportunities</Link>
       </div>
 
-      <p className="text-xs text-muted">Last 90 days. ACV = avg CLOSED_WON value. MQL = fitScore ≥ 60. Sales cycle = creation to close.</p>
+      <p className="text-xs text-muted">Last 90 days. ACV = avg Closed Won value. MQL = leads with fit score ≥ 60. Sales cycle = creation to close.</p>
     </div>
   );
 }

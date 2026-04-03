@@ -14,6 +14,14 @@ import { cn, formatDate } from "@/lib/utils";
 type Tab = "generator" | "saved";
 type Period = "7d" | "30d" | "90d" | "365d" | "custom";
 
+/** Convert DB enum names like LEAD_INQUIRY → "Lead Inquiry" */
+function enumLabel(val: string): string {
+  return val
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 const PERIODS: { key: Period; label: string }[] = [
   { key: "7d", label: "7 days" },
   { key: "30d", label: "30 days" },
@@ -354,7 +362,7 @@ export default function ReportsPage() {
                       <option value="">All Stages</option>
                       {STAGES.map((s) => (
                         <option key={s} value={s}>
-                          {s}
+                          {enumLabel(s)}
                         </option>
                       ))}
                     </select>
@@ -369,7 +377,7 @@ export default function ReportsPage() {
                       <option value="">All Sources</option>
                       {SOURCES.map((s) => (
                         <option key={s} value={s}>
-                          {s}
+                          {enumLabel(s)}
                         </option>
                       ))}
                     </select>

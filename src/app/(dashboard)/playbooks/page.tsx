@@ -6,6 +6,15 @@ import { useApi } from "@/lib/hooks/use-api";
 import { PageHeader } from "@/components/shared/page-header";
 import { CardSkeleton } from "@/components/shared/skeleton";
 
+/** Convert DB enum names like LEAD_INQUIRY → "Lead Inquiry" */
+function stageLabel(stage: string): string {
+  if (!stage) return "—";
+  return stage
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 const categoryColors: Record<string, string> = {
   Outbound: "bg-blue-100 text-blue-700",
   Qualification: "bg-green-100 text-green-700",
@@ -60,13 +69,13 @@ export default function PlaybooksPage() {
           <div key={pb.id} className="rounded-xl border border-border bg-surface p-5 hover:shadow-sm transition-shadow">
             <div className="flex items-start justify-between mb-2">
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${categoryColors[pb.segment] || "bg-gray-100 text-gray-600"}`}>{pb.segment || "General"}</span>
-              <span className="text-xs text-muted">{pb.stage}</span>
+              <span className="text-xs text-muted">{stageLabel(pb.stage)}</span>
             </div>
             <h3 className="text-sm font-semibold text-foreground mb-1">{pb.name}</h3>
             <p className="text-xs text-muted leading-relaxed mb-3">{pb.description}</p>
             <div className="flex items-center gap-4 mb-3">
               <span className="text-xs text-muted">{pb.steps?.length || 0} steps</span>
-              <span className="text-xs text-muted">Stage: {pb.stage}</span>
+              <span className="text-xs text-muted">Stage: {stageLabel(pb.stage)}</span>
               <span className="text-xs text-success font-medium">{pb.conversionRate}% avg. conversion</span>
             </div>
             <div className="flex items-center justify-between">

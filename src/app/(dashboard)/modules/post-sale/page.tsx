@@ -91,10 +91,10 @@ function PostSaleContent() {
       <div className="rounded-xl border border-border bg-surface p-5">
         <h2 className="text-sm font-semibold mb-3">Metric Definitions</h2>
         <div className="space-y-2 text-xs text-muted">
-          <p><strong>TTV (Time to Value):</strong> Average days from the account becoming a customer (becameCustomerAt) to activation (activationDate). Measures how quickly customers start deriving value.</p>
-          <p><strong>Churn Rate:</strong> Percentage of customer accounts that have a churnDate set, relative to total customer accounts. Does not account for revenue-weighted churn.</p>
-          <p><strong>MRR:</strong> Monthly Recurring Revenue = ARR / 12. ARR is the sum of all CLOSED_WON opportunity values (assumption: annual contracts).</p>
-          <p><strong>Contract Length:</strong> Average days from becameCustomerAt to churnDate (or current date for active customers).</p>
+          <p><strong>TTV (Time to Value):</strong> Average days from the account becoming a customer to activation. Measures how quickly customers start deriving value.</p>
+          <p><strong>Churn Rate:</strong> Percentage of customer accounts that have churned, relative to total customer accounts. Does not account for revenue-weighted churn.</p>
+          <p><strong>MRR:</strong> Monthly Recurring Revenue = ARR / 12. ARR is the sum of all Closed Won opportunity values (assumption: annual contracts).</p>
+          <p><strong>Contract Length:</strong> Average days from customer start date to churn date (or current date for active customers).</p>
         </div>
       </div>
     </div>
