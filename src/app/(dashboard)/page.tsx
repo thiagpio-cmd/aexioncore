@@ -64,6 +64,14 @@ interface DashboardData {
   priorityLeads: Array<{ id: string; name: string; company: string; status: string; temperature: string }>;
 }
 
+/** Convert DB stage names like LEAD_INQUIRY → "Lead Inquiry" */
+function stageLabel(stage: string): string {
+  return stage
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function formatUSD(value: number): string {
   if (value >= 1_000_000) {
     return `$${(value / 1_000_000).toFixed(1)}M`;
@@ -183,7 +191,7 @@ function DashboardBentoOverview({ workspace, data }: { workspace: WorkspaceType;
                   {data.dealsNeedingAttention[0].title}
                 </p>
                 <p style={{ fontSize: "12px", color: "var(--text-tertiary)", margin: "var(--space-xs) 0 0" }}>
-                  {data.dealsNeedingAttention[0].account} — {data.dealsNeedingAttention[0].stage}
+                  {data.dealsNeedingAttention[0].account} — {stageLabel(data.dealsNeedingAttention[0].stage)}
                 </p>
               </div>
               <MetricValue value={formatUSD(data.dealsNeedingAttention[0].value)} label="Value" size="small" />

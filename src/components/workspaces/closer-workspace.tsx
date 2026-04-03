@@ -81,7 +81,10 @@ function daysSince(dateStr: string | null | undefined): number {
 const PIPELINE_STAGES = ["LEAD_INQUIRY", "PROPERTY_TOUR", "OFFER_SUBMITTED", "UNDER_CONTRACT", "DUE_DILIGENCE"] as const;
 
 function stageLabel(stage: string): string {
-  return stage.replace(/_/g, " ");
+  return stage
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // ─── Skeletons ────────────────────────────────────────────────────────────────
@@ -484,7 +487,7 @@ export function CloserWorkspace() {
                   <div className="flex-1 h-2 rounded-full bg-background">
                     <div className={`h-2 rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="text-xs font-medium text-foreground w-20 text-right">{st.count} deals &middot; {pct}%</span>
+                  <span className="text-xs font-medium text-foreground w-20 text-right">{st.count} {st.count === 1 ? "deal" : "deals"} &middot; {pct}%</span>
                 </div>
               );
             })}

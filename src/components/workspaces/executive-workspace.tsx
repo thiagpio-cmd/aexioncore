@@ -53,7 +53,10 @@ interface OpportunityItem {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function stageLabel(stage: string): string {
-  return stage.replace(/_/g, " ");
+  return stage
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // ─── Skeletons ────────────────────────────────────────────────────────────────
@@ -231,7 +234,7 @@ export function ExecutiveWorkspace() {
                     <Link href="/pipeline" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                       {stageLabel(st.stage)}
                     </Link>
-                    <span className="text-sm text-muted">{formatCurrency(st.value, "USD")} &middot; {st.count} deals</span>
+                    <span className="text-sm text-muted">{formatCurrency(st.value, "USD")} &middot; {st.count} {st.count === 1 ? "deal" : "deals"}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-3 rounded-full bg-background">

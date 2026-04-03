@@ -78,6 +78,13 @@ function daysSince(date: Date): number {
   return Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function stageLabel(stage: string): string {
+  return stage
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 
 // ---------------------------------------------------------------------------
 // AlertEngine
@@ -168,7 +175,7 @@ export class AlertEngine {
       severity: this.getSeverity("STALE_LEAD"),
       title: `Lead "${lead.name}" has no recent activity`,
       description: `This lead hasn't been updated in ${daysSince(lead.updatedAt)} days.`,
-      reasoning: `Last update was ${lead.updatedAt.toISOString()}. Threshold is ${threshold} days.`,
+      reasoning: `Last update was ${new Date(lead.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}. Threshold is ${threshold} days.`,
       entityType: "lead",
       entityId: lead.id,
       entityName: lead.name,
@@ -206,10 +213,10 @@ export class AlertEngine {
         type: "OVERDUE_TASK" as AlertType,
         severity: (daysOver > 7 ? "critical" : this.getSeverity("OVERDUE_TASK")) as AlertSeverity,
         title: `Task "${task.title}" is overdue`,
-        description: `This task is ${daysOver} day${daysOver !== 1 ? "s" : ""} past due.${
+        description: `This task is ${daysOver === 0 ? "due today" : `${daysOver} day${daysOver !== 1 ? "s" : ""} past due`}.${
           task.opportunity ? ` Related to deal: ${task.opportunity.title}` : ""
         }`,
-        reasoning: `Due date was ${task.dueDate?.toISOString() ?? "unknown"}. Currently ${daysOver} day${daysOver !== 1 ? "s" : ""} overdue.`,
+        reasoning: `Due date was ${task.dueDate ? new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "unknown"}. Currently ${daysOver === 0 ? "due today" : `${daysOver} day${daysOver !== 1 ? "s" : ""} overdue`}.`,
         entityType: "task",
         entityId: task.id,
         entityName: task.title,
@@ -252,9 +259,9 @@ export class AlertEngine {
         id: `stuck-deal-${opp.id}`,
         type: "STUCK_DEAL" as AlertType,
         severity: (inactive > 30 ? "critical" : this.getSeverity("STUCK_DEAL")) as AlertSeverity,
-        title: `Deal "${opp.title}" is stuck in ${opp.stage}`,
+        title: `Deal "${opp.title}" is stuck in ${stageLabel(opp.stage)}`,
         description: `This deal hasn't been updated in ${inactive} days. Account: ${opp.account?.name ?? "Unknown"}.`,
-        reasoning: `Last update was ${opp.updatedAt.toISOString()}. Threshold is ${threshold} days. Value: $${opp.value.toLocaleString()}.`,
+        reasoning: `Last update was ${new Date(opp.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}. Threshold is ${threshold} days. Value: $${opp.value.toLocaleString()}.`,
         entityType: "opportunity",
         entityId: opp.id,
         entityName: opp.title,
@@ -331,7 +338,7 @@ export class AlertEngine {
       type: "NO_NEXT_STEP" as AlertType,
       severity: this.getSeverity("NO_NEXT_STEP"),
       title: `Deal "${opp.title}" has no next step`,
-      description: `This open deal has no pending tasks. Stage: ${opp.stage}. Account: ${opp.account?.name ?? "Unknown"}.`,
+      description: `This open deal has no pending tasks. Stage: ${stageLabel(opp.stage)}. Account: ${opp.account?.name ?? "Unknown"}.`,
       reasoning: `No incomplete tasks found for this opportunity. Every active deal should have a defined next step.`,
       entityType: "opportunity",
       entityId: opp.id,
@@ -490,7 +497,7 @@ export class AlertEngine {
           severity: this.getSeverity("MEETING_NO_FOLLOWUP"),
           title: `Meeting "${meeting.title}" has no follow-up`,
           description: `Meeting held ${age} days ago has no follow-up task created.`,
-          reasoning: `Meeting "${meeting.title}" occurred on ${meeting.startTime.toISOString()}. No tasks created by owner after the meeting.`,
+          reasoning: `Meeting "${meeting.title}" occurred on ${new Date(meeting.startTime).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}. No tasks created by owner after the meeting.`,
           entityType: "meeting",
           entityId: meeting.id,
           entityName: meeting.title,
@@ -535,8 +542,8 @@ export class AlertEngine {
         type: "DEAL_AGING" as AlertType,
         severity: (age > 60 ? "warning" : this.getSeverity("DEAL_AGING")) as AlertSeverity,
         title: `Deal "${opp.title}" has been open for ${age} days`,
-        description: `This deal was created ${age} days ago and is still in ${opp.stage}. Account: ${opp.account?.name ?? "Unknown"}.`,
-        reasoning: `Deal created on ${opp.createdAt.toISOString()}, age ${age} days (threshold ${threshold} days). Value: $${opp.value.toLocaleString()}.`,
+        description: `This deal was created ${age} days ago and is still in ${stageLabel(opp.stage)}. Account: ${opp.account?.name ?? "Unknown"}.`,
+        reasoning: `Deal created on ${new Date(opp.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}, age ${age} days (threshold ${threshold} days). Value: $${opp.value.toLocaleString()}.`,
         entityType: "opportunity",
         entityId: opp.id,
         entityName: opp.title,

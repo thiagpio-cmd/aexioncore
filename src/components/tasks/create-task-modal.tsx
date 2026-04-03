@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, FormField, inputStyles, selectStyles } from "@/components/shared/modal";
 import { useToast } from "@/components/shared/toast";
 import { apiPost } from "@/lib/hooks/use-api";
@@ -19,6 +19,22 @@ export function CreateTaskModal({ open, onClose, onCreated, currentUserId, leadI
   const { toastSuccess, toastError } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoadingUsers(true);
+    fetch("/api/users")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setUsers(json.data.map((u: any) => ({ id: u.id, name: u.name })));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingUsers(false));
+  }, [open]);
 
   const [form, setForm] = useState({
     title: "",
@@ -39,7 +55,7 @@ export function CreateTaskModal({ open, onClose, onCreated, currentUserId, leadI
   function validate(): boolean {
     const e: Record<string, string> = {};
     if (!form.title.trim()) e.title = "Title is required";
-    if (!form.ownerId.trim()) e.ownerId = "Owner ID is required";
+    if (!form.ownerId.trim()) e.ownerId = "Owner is required";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -131,14 +147,22 @@ export function CreateTaskModal({ open, onClose, onCreated, currentUserId, leadI
               className={inputStyles}
             />
           </FormField>
-          <FormField label="Owner ID" required error={errors.ownerId}>
-            <input
-              type="text"
+          <FormField label="Owner" required error={errors.ownerId}>
+            <select
               value={form.ownerId}
               onChange={(e) => set("ownerId", e.target.value)}
-              placeholder="Owner ID"
-              className={inputStyles}
-            />
+              className={selectStyles}
+              disabled={loadingUsers}
+            >
+              <option value="">
+                {loadingUsers ? "Loading..." : "Select owner"}
+              </option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
           </FormField>
         </div>
 

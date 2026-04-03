@@ -10,6 +10,14 @@ import { CreateOpportunityModal } from "@/components/opportunities/create-opport
 import { useSession } from "next-auth/react";
 import { TableSkeleton } from "@/components/shared/skeleton";
 
+/** Convert DB stage names like LEAD_INQUIRY → "Lead Inquiry" */
+function stageLabel(stage: string): string {
+  return stage
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 const STAGE_COLORS: Record<string, string> = {
   LEAD_INQUIRY: "bg-blue-50 text-blue-700",
   PROPERTY_TOUR: "bg-indigo-50 text-indigo-700",
@@ -162,7 +170,7 @@ export default function OpportunitiesPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STAGE_COLORS[opp.stage] || "bg-gray-50 text-gray-600"}`}>
-                      {(opp.stage || "").replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                      {stageLabel(opp.stage || "")}
                     </span>
                   </td>
                   <td className="px-4 py-3">

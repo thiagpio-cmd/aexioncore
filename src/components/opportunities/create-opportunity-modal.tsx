@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, FormField, inputStyles, selectStyles } from "@/components/shared/modal";
 import { useToast } from "@/components/shared/toast";
 import { apiPost } from "@/lib/hooks/use-api";
@@ -16,17 +16,46 @@ export function CreateOpportunityModal({ open, onClose, onCreated, currentUserId
   const { toastSuccess, toastError } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
+  const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
     description: "",
     value: "",
-    stage: "discovery",
+    stage: "LEAD_INQUIRY",
     accountId: "",
     ownerId: currentUserId || "",
     probability: "20",
     expectedCloseDate: "",
   });
+
+  useEffect(() => {
+    if (!open) return;
+
+    setLoadingUsers(true);
+    fetch("/api/users")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setUsers(json.data.map((u: any) => ({ id: u.id, name: u.name })));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingUsers(false));
+
+    setLoadingAccounts(true);
+    fetch("/api/accounts?limit=100")
+      .then((res) => res.json())
+      .then((json) => {
+        const list = json.success ? json.data : Array.isArray(json) ? json : [];
+        setAccounts(list.map((a: any) => ({ id: a.id, name: a.name })));
+      })
+      .catch(() => {})
+      .finally(() => setLoadingAccounts(false));
+  }, [open]);
 
   function set(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -36,8 +65,8 @@ export function CreateOpportunityModal({ open, onClose, onCreated, currentUserId
   function validate(): boolean {
     const e: Record<string, string> = {};
     if (!form.title.trim()) e.title = "Title is required";
-    if (!form.accountId.trim()) e.accountId = "Account ID is required";
-    if (!form.ownerId.trim()) e.ownerId = "Owner ID is required";
+    if (!form.accountId.trim()) e.accountId = "Account is required";
+    if (!form.ownerId.trim()) e.ownerId = "Owner is required";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -71,7 +100,7 @@ export function CreateOpportunityModal({ open, onClose, onCreated, currentUserId
     onCreated();
     onClose();
     setForm({
-      title: "", description: "", value: "", stage: "discovery",
+      title: "", description: "", value: "", stage: "LEAD_INQUIRY",
       accountId: "", ownerId: currentUserId || "", probability: "20", expectedCloseDate: "",
     });
   }
@@ -84,7 +113,7 @@ export function CreateOpportunityModal({ open, onClose, onCreated, currentUserId
             type="text"
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
-            placeholder="Enterprise License Deal"
+            placeholder="Waterfront Mixed-Use Development"
             className={inputStyles}
           />
         </FormField>
@@ -105,42 +134,58 @@ export function CreateOpportunityModal({ open, onClose, onCreated, currentUserId
               type="number"
               value={form.value}
               onChange={(e) => set("value", e.target.value)}
-              placeholder="50000"
+              placeholder="5000000"
               min="0"
               className={inputStyles}
             />
           </FormField>
           <FormField label="Stage">
             <select value={form.stage} onChange={(e) => set("stage", e.target.value)} className={selectStyles}>
-              <option value="discovery">Discovery</option>
-              <option value="qualification">Qualification</option>
-              <option value="proposal">Proposal</option>
-              <option value="negotiation">Negotiation</option>
-              <option value="closing">Closing</option>
-              <option value="won">Won</option>
-              <option value="lost">Lost</option>
+              <option value="LEAD_INQUIRY">Lead Inquiry</option>
+              <option value="PROPERTY_TOUR">Property Tour</option>
+              <option value="OFFER_SUBMITTED">Offer Submitted</option>
+              <option value="UNDER_CONTRACT">Under Contract</option>
+              <option value="DUE_DILIGENCE">Due Diligence</option>
+              <option value="CLOSED_WON">Closed Won</option>
+              <option value="CLOSED_LOST">Closed Lost</option>
             </select>
           </FormField>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="Account ID" required error={errors.accountId}>
-            <input
-              type="text"
+          <FormField label="Account" required error={errors.accountId}>
+            <select
               value={form.accountId}
               onChange={(e) => set("accountId", e.target.value)}
-              placeholder="Account ID"
-              className={inputStyles}
-            />
+              className={selectStyles}
+              disabled={loadingAccounts}
+            >
+              <option value="">
+                {loadingAccounts ? "Loading..." : "Select account"}
+              </option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
           </FormField>
-          <FormField label="Owner ID" required error={errors.ownerId}>
-            <input
-              type="text"
+          <FormField label="Owner" required error={errors.ownerId}>
+            <select
               value={form.ownerId}
               onChange={(e) => set("ownerId", e.target.value)}
-              placeholder="Owner ID"
-              className={inputStyles}
-            />
+              className={selectStyles}
+              disabled={loadingUsers}
+            >
+              <option value="">
+                {loadingUsers ? "Loading..." : "Select owner"}
+              </option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
           </FormField>
         </div>
 

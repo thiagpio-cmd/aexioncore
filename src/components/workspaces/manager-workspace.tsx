@@ -43,7 +43,10 @@ interface DashboardData {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function stageLabel(stage: string): string {
-  return stage.replace(/_/g, " ");
+  return stage
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 type SortKey = "name" | "leads" | "activities" | "overdueTasks" | "tasks";
@@ -332,7 +335,7 @@ export function ManagerWorkspace() {
                 <div key={st.stage}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm text-foreground">{stageLabel(st.stage)}</span>
-                    <span className="text-xs text-muted">{st.count} deals &middot; {formatCurrency(st.value, "USD")}</span>
+                    <span className="text-xs text-muted">{st.count} {st.count === 1 ? "deal" : "deals"} &middot; {formatCurrency(st.value, "USD")}</span>
                   </div>
                   <div className="h-2 rounded-full bg-background">
                     <div className="h-2 rounded-full bg-primary" style={{ width: `${pct}%` }} />
