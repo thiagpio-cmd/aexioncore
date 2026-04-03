@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
     await addCol("opportunities", "competitivePressure", "INTEGER");
     await addCol("opportunities", "riskReasons", "JSONB");
     await addCol("opportunities", "lastScoredAt", "TIMESTAMPTZ");
+    await addCol("opportunities", "healthScore", "INTEGER", "0");
 
     // Contacts — add ownerId if missing (migration exists but may not have run)
     await addCol("contacts", "ownerId", "TEXT");
