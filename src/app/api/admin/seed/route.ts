@@ -104,7 +104,6 @@ export async function POST(request: NextRequest) {
     await addCol("opportunities", "competitivePressure", "INTEGER");
     await addCol("opportunities", "riskReasons", "JSONB");
     await addCol("opportunities", "lastScoredAt", "TIMESTAMPTZ");
-    await addCol("opportunities", "healthScore", "INTEGER", "0");
 
     // Contacts — add ownerId if missing (migration exists but may not have run)
     await addCol("contacts", "ownerId", "TEXT");
@@ -435,14 +434,8 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── Opportunities (15) — Real Estate Deals ─────────────────────
-    const mkOpp = (p: { title: string; description?: string; value: number; stage: string; stageId: string; probability: number; accountId: string; ownerId: string; ownerName: string; expectedCloseDate: Date; createdAt?: Date; primaryContactId?: string }) => {
-      // Compute healthScore from probability + stage progression
-      const stageWeight: Record<string, number> = { LEAD_INQUIRY: 10, PROPERTY_TOUR: 25, OFFER_SUBMITTED: 45, UNDER_CONTRACT: 65, DUE_DILIGENCE: 80, CLOSED_WON: 100, CLOSED_LOST: 0 };
-      const base = stageWeight[p.stage] ?? 0;
-      const probBoost = Math.round(p.probability * 0.4);
-      const healthScore = Math.min(100, Math.max(0, base + probBoost + Math.floor(Math.random() * 10) - 5));
-      return prisma.opportunity.create({ data: { organizationId: O, healthScore, ...p } });
-    };
+    const mkOpp = (p: { title: string; description?: string; value: number; stage: string; stageId: string; probability: number; accountId: string; ownerId: string; ownerName: string; expectedCloseDate: Date; createdAt?: Date; primaryContactId?: string }) =>
+      prisma.opportunity.create({ data: { organizationId: O, ...p } });
 
     const opps: any[] = [];
     // LEAD INQUIRY (3)

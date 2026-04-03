@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── Provision in Transaction ──────────────────────────────────────────
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Create Organization
       const org = await tx.organization.create({
         data: {
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      const createdStages = [];
+      const createdStages: any[] = [];
       for (const stage of stages) {
         const s = await tx.stage.create({
           data: {

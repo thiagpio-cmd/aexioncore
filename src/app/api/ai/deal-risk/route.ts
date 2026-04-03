@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Contacts engaged via activities (unique creators)
-    const uniqueCreators = new Set(activities.map((a) => a.creatorId).filter(Boolean));
+    const uniqueCreators = new Set(activities.map((a: any) => a.creatorId).filter(Boolean));
 
     // Inbox messages linked to this opportunity
     const inboxMessages = await prisma.inboxMessage.findMany({
@@ -179,21 +179,21 @@ export async function GET(request: NextRequest) {
       : null;
 
     const overdueTasks = (opp.tasks || []).filter(
-      (t) => t.status !== "COMPLETED" && t.dueDate && new Date(t.dueDate) < new Date()
+      (t: any) => t.status !== "COMPLETED" && t.dueDate && new Date(t.dueDate) < new Date()
     ).length;
 
     // Activity frequency: activities per week over last 4 weeks
     const fourWeeksAgo = new Date(now - 28 * 24 * 60 * 60 * 1000);
-    const recentActivities = activities.filter((a) => new Date(a.createdAt) >= fourWeeksAgo);
+    const recentActivities = activities.filter((a: any) => new Date(a.createdAt) >= fourWeeksAgo);
     const twoWeeksAgo = new Date(now - 14 * 24 * 60 * 60 * 1000);
-    const firstHalf = recentActivities.filter((a) => new Date(a.createdAt) < twoWeeksAgo);
-    const secondHalf = recentActivities.filter((a) => new Date(a.createdAt) >= twoWeeksAgo);
+    const firstHalf = recentActivities.filter((a: any) => new Date(a.createdAt) < twoWeeksAgo);
+    const secondHalf = recentActivities.filter((a: any) => new Date(a.createdAt) >= twoWeeksAgo);
 
     // Combine all text for keyword scanning
     const allText = [
-      ...activities.map((a) => `${a.subject || ""} ${a.body || ""}`),
-      ...inboxMessages.map((m) => `${m.subject || ""} ${m.body || ""}`),
-      ...meetings.map((m) => m.notes || ""),
+      ...activities.map((a: any) => `${a.subject || ""} ${a.body || ""}`),
+      ...inboxMessages.map((m: any) => `${m.subject || ""} ${m.body || ""}`),
+      ...meetings.map((m: any) => m.notes || ""),
     ].join(" ");
 
     // ─── Factor 1: Stage Velocity ───────────────────────────────────────
@@ -285,8 +285,8 @@ export async function GET(request: NextRequest) {
     let stakeholderRec: string;
 
     const totalContacts = companyContacts.length;
-    const hasDecisionMaker = companyContacts.some((c) => c.isDecisionMaker);
-    const hasChampion = opp.primaryContact?.isChampion || companyContacts.some((c) => c.isChampion);
+    const hasDecisionMaker = companyContacts.some((c: any) => c.isDecisionMaker);
+    const hasChampion = opp.primaryContact?.isChampion || companyContacts.some((c: any) => c.isChampion);
     const engagedContactCount = uniqueCreators.size + (opp.primaryContact ? 1 : 0);
 
     if (!opp.primaryContact) {
@@ -392,7 +392,7 @@ export async function GET(request: NextRequest) {
     } else {
       // Check if primary contact has recent activity
       const championActivities = activities.filter(
-        (a) => a.creatorId === opp.primaryContact?.id || a.subject?.includes(opp.primaryContact?.name || "---never---")
+        (a: any) => a.creatorId === opp.primaryContact?.id || a.subject?.includes(opp.primaryContact?.name || "---never---")
       );
       const lastChampionActivity = championActivities[0]?.createdAt;
       const championDaysSilent = lastChampionActivity

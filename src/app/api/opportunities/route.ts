@@ -57,7 +57,14 @@ export async function GET(request: NextRequest) {
       prisma.opportunity.count({ where }),
     ]);
 
-    return sendSuccess(opportunities, 200, { page: query.page, limit: query.limit, total });
+    // Compute healthScore on-the-fly (field doesn't exist on Opportunity model)
+    const STAGE_WEIGHT: Record<string, number> = { LEAD_INQUIRY: 10, PROPERTY_TOUR: 25, OFFER_SUBMITTED: 45, UNDER_CONTRACT: 65, DUE_DILIGENCE: 80, CLOSED_WON: 100, CLOSED_LOST: 0 };
+    const enriched = opportunities.map((opp: any) => ({
+      ...opp,
+      healthScore: Math.min(100, Math.max(0, (STAGE_WEIGHT[opp.stage] ?? 0) + Math.round((opp.probability || 0) * 0.4))),
+    }));
+
+    return sendSuccess(enriched, 200, { page: query.page, limit: query.limit, total });
   } catch (error: any) {
     if (error.name === "ZodError") return sendError(validationError("Invalid query", error.errors));
     console.error("GET /api/opportunities error:", error);

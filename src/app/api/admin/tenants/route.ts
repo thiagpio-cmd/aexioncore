@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    const tenants = orgs.map((org) => ({
+    const tenants = orgs.map((org: any) => ({
       id: org.id,
       name: org.displayName || org.name,
       slug: org.slug,

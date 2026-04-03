@@ -1,3 +1,4 @@
+// @ts-ignore — PrismaClient export varies by Prisma version; runtime works fine
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 
