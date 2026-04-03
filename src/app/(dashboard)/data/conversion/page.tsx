@@ -8,6 +8,7 @@ import { DetailSkeleton } from "@/components/shared/skeleton";
 function stageLabel(stage: string): string {
   return stage
     .replace(/_/g, " ")
+    .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase())
     .replace(/\bSf\b/g, "SF");
 }

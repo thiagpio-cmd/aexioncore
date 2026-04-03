@@ -23,6 +23,7 @@ function sourceLabel(source: string): string {
   if (!source) return "—";
   return source
     .replace(/_/g, " ")
+    .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 import { EmailComposer } from "@/components/ai/email-composer";

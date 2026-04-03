@@ -14,6 +14,7 @@ type Period = "7d" | "30d" | "90d" | "all";
 function stageLabel(stage: string): string {
   return stage
     .replace(/_/g, " ")
+    .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase())
     .replace(/\bSf\b/g, "SF");
 }
