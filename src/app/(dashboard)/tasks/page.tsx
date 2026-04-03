@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "@/components/shared/page-header";
 import { useApi, apiPut } from "@/lib/hooks/use-api";
 import { CreateTaskModal } from "@/components/tasks/create-task-modal";
 import { EditTaskModal } from "@/components/tasks/edit-task-modal";
 import { useToast } from "@/components/shared/toast";
+import { Pagination } from "@/components/pagination";
 import { useSession } from "next-auth/react";
 import { TableSkeleton } from "@/components/shared/skeleton";
 
@@ -33,13 +34,19 @@ export default function TasksPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
 
-  const { data: tasks, loading, refetch } = useApi<any[]>("/api/tasks?limit=50");
+  const [page, setPage] = useState(1);
+  const perPage = 15;
+
+  const { data: tasks, loading, refetch } = useApi<any[]>("/api/tasks?limit=200");
 
   const filtered = useMemo(() => {
     if (!tasks) return [];
     if (filter === "all") return tasks;
     return tasks.filter((t: any) => t.status === filter);
   }, [tasks, filter]);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => { setPage(1); }, [filter]);
 
   const pendingCount = tasks?.filter((t: any) => t.status === "PENDING").length ?? 0;
   const inProgressCount = tasks?.filter((t: any) => t.status === "IN_PROGRESS").length ?? 0;
@@ -51,6 +58,8 @@ export default function TasksPage() {
   };
 
   const overdueCount = tasks?.filter(isOverdue).length ?? 0;
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paginatedTasks = filtered.slice((page - 1) * perPage, page * perPage);
 
   return (
     <div className="space-y-4">
@@ -88,7 +97,7 @@ export default function TasksPage() {
           <TableSkeleton rows={6} cols={5} />
         ) : (
           <div className="divide-y divide-border">
-            {filtered.map((task: any) => {
+            {paginatedTasks.map((task: any) => {
               const pr = priorityConfig[task.priority] || priorityConfig.MEDIUM;
               const overdue = isOverdue(task);
               return (
@@ -150,6 +159,15 @@ export default function TasksPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={filtered.length}
+        limit={perPage}
+        onPageChange={setPage}
+      />
 
       <CreateTaskModal
         open={showCreate}

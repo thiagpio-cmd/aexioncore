@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/health-badge";
 import { formatRelativeTime, getInitials } from "@/lib/utils";
 import { useApi } from "@/lib/hooks/use-api";
 import { CreateLeadModal } from "@/components/leads/create-lead-modal";
+import { Pagination } from "@/components/pagination";
 import { useSession } from "next-auth/react";
 import { TableSkeleton } from "@/components/shared/skeleton";
 
@@ -27,6 +28,8 @@ export default function LeadsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterTab>("ALL");
   const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = 15;
 
   const queryParams = new URLSearchParams({ limit: "50" });
   if (filter !== "ALL") queryParams.set("status", filter);
@@ -45,7 +48,12 @@ export default function LeadsPage() {
     { key: "CONVERTED", label: "Converted", count: allLeads?.filter((l: any) => l.status === "CONVERTED").length ?? 0 },
   ], [allLeads]);
 
-  const displayLeads = leads ?? [];
+  // Reset to page 1 when filter/search changes
+  useEffect(() => { setPage(1); }, [filter, search]);
+
+  const allDisplayLeads = leads ?? [];
+  const totalPages = Math.ceil(allDisplayLeads.length / perPage);
+  const displayLeads = allDisplayLeads.slice((page - 1) * perPage, page * perPage);
 
   return (
     <div>
@@ -193,6 +201,15 @@ export default function LeadsPage() {
           </table>
         )}
       </div>
+
+      {/* Pagination */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={allDisplayLeads.length}
+        limit={perPage}
+        onPageChange={setPage}
+      />
 
       <CreateLeadModal
         open={showCreate}

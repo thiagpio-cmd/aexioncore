@@ -12,6 +12,7 @@ import { SetupWizard, isOnboardingComplete } from "@/components/onboarding/setup
 import { SetupProgressBanner } from "@/components/onboarding/progress-banner";
 import { MoneyAtRiskWidget } from "@/components/MoneyAtRiskWidget";
 import { DebriefModal } from "@/components/DebriefModal";
+import { TodayView, TodayViewData } from "@/components/today-view";
 import { BentoGrid } from "@/components/design-system/BentoGrid";
 import { GlassCard } from "@/components/design-system/GlassCard";
 import { MetricValue } from "@/components/design-system/MetricValue";
@@ -62,6 +63,7 @@ interface DashboardData {
   dealsNeedingAttention: DealAttention[];
   upcomingMeetings: UpcomingMeeting[];
   priorityLeads: Array<{ id: string; name: string; company: string; status: string; temperature: string }>;
+  todayView?: TodayViewData;
 }
 
 /** Convert DB stage names like LEAD_INQUIRY → "Lead Inquiry" */
@@ -330,12 +332,20 @@ function DashboardError({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+type HomeView = "today" | "overview";
+
 export default function HomePage() {
-  const { workspace } = useAuth();
+  const { workspace, user } = useAuth();
   const [showWizard, setShowWizard] = useState(false);
   const [onboardingDone, setOnboardingDone] = useState(true);
   const [showDebrief, setShowDebrief] = useState(false);
   const [debriefOppId, setDebriefOppId] = useState("");
+  const [activeView, setActiveView] = useState<HomeView>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("aexion_home_view") as HomeView) || "today";
+    }
+    return "today";
+  });
 
   const { data: dashboardData, loading, error, refetch } = useApi<DashboardData>("/api/dashboard");
 
@@ -346,6 +356,11 @@ export default function HomePage() {
       setShowWizard(true);
     }
   }, []);
+
+  function handleViewChange(view: HomeView) {
+    setActiveView(view);
+    localStorage.setItem("aexion_home_view", view);
+  }
 
   function handleWizardComplete() {
     setShowWizard(false);
@@ -372,6 +387,11 @@ export default function HomePage() {
     }
   })();
 
+  const viewTabs: { key: HomeView; label: string; icon: string }[] = [
+    { key: "today", label: "Today", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+    { key: "overview", label: "Overview", icon: "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" },
+  ];
+
   return (
     <>
       {showWizard && <SetupWizard onComplete={handleWizardComplete} />}
@@ -379,18 +399,47 @@ export default function HomePage() {
         <SetupProgressBanner onResumeSetup={handleResumeSetup} />
       )}
 
-      {/* Bento Grid Dashboard Overview */}
-      <div style={{ marginBottom: "var(--space-2xl)" }}>
-        {loading && <DashboardSkeleton />}
-        {error && !loading && <DashboardError onRetry={refetch} />}
-        {dashboardData && !loading && (
-          <DashboardBentoOverview workspace={workspace} data={dashboardData} />
-        )}
-      </div>
+      {/* ─── View Toggle ──────────────────────────────────────── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-xl)" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            gap: "2px",
+            padding: "3px",
+            borderRadius: "var(--radius-sm)",
+            background: "var(--bg-card)",
+            border: "0.5px solid var(--border-subtle)",
+          }}
+        >
+          {viewTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => handleViewChange(tab.key)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "var(--space-xs)",
+                padding: "6px 14px",
+                borderRadius: "calc(var(--radius-sm) - 2px)",
+                border: "none",
+                background: activeView === tab.key ? "var(--bg-card-elevated)" : "transparent",
+                color: activeView === tab.key ? "var(--text-primary)" : "var(--text-tertiary)",
+                fontSize: "13px",
+                fontWeight: activeView === tab.key ? 600 : 400,
+                cursor: "pointer",
+                transition: "all var(--transition-default)",
+                boxShadow: activeView === tab.key ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d={tab.icon} />
+              </svg>
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-      {/* Money at Risk + Debrief */}
-      <div style={{ marginBottom: "var(--space-xl)", display: "grid", gridTemplateColumns: "1fr auto", gap: "var(--space-lg)", alignItems: "start" }}>
-        <MoneyAtRiskWidget />
+        {/* Debrief button (always visible) */}
         <button
           onClick={() => {
             setDebriefOppId("");
@@ -419,8 +468,51 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* Role-specific workspace */}
-      {workspaceContent}
+      {/* ─── Today View ───────────────────────────────────────── */}
+      {activeView === "today" && (
+        <>
+          {loading && <DashboardSkeleton />}
+          {error && !loading && <DashboardError onRetry={refetch} />}
+          {dashboardData && !loading && dashboardData.todayView && (
+            <TodayView
+              data={dashboardData.todayView}
+              stats={{
+                totalPipeline: dashboardData.stats.totalPipeline,
+                overdueTasks: dashboardData.stats.overdueTasks,
+                hotLeads: dashboardData.stats.hotLeads,
+                activeDeals: dashboardData.stats.activeDeals,
+                atRiskDeals: dashboardData.stats.atRiskDeals,
+              }}
+              userName={user?.name}
+            />
+          )}
+          {dashboardData && !loading && !dashboardData.todayView && (
+            <DashboardBentoOverview workspace={workspace} data={dashboardData} />
+          )}
+        </>
+      )}
+
+      {/* ─── Overview (original bento + workspace) ────────────── */}
+      {activeView === "overview" && (
+        <>
+          {/* Bento Grid Dashboard Overview */}
+          <div style={{ marginBottom: "var(--space-2xl)" }}>
+            {loading && <DashboardSkeleton />}
+            {error && !loading && <DashboardError onRetry={refetch} />}
+            {dashboardData && !loading && (
+              <DashboardBentoOverview workspace={workspace} data={dashboardData} />
+            )}
+          </div>
+
+          {/* Money at Risk */}
+          <div style={{ marginBottom: "var(--space-xl)" }}>
+            <MoneyAtRiskWidget />
+          </div>
+
+          {/* Role-specific workspace */}
+          {workspaceContent}
+        </>
+      )}
 
       <DebriefModal
         open={showDebrief}

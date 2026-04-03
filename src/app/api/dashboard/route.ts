@@ -184,6 +184,106 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // --- Today View data ---
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+
+    // Tasks due today (not completed)
+    const todayTasks = tasks
+      .filter((t) => {
+        if (!t.dueDate || t.status === "COMPLETED") return false;
+        const due = new Date(t.dueDate);
+        return due >= todayStart && due < todayEnd;
+      })
+      .map((t) => ({
+        id: t.id,
+        title: t.title,
+        type: t.type,
+        priority: t.priority,
+        status: t.status,
+        dueDate: t.dueDate,
+        owner: t.owner?.name || "Unassigned",
+        opportunityId: (t as any).opportunityId || null,
+        leadId: (t as any).leadId || null,
+      }));
+
+    // Overdue tasks (past due, not completed) — detailed for Today View
+    const overdueTasksDetailed = tasks
+      .filter((t) => {
+        if (!t.dueDate || t.status === "COMPLETED") return false;
+        return new Date(t.dueDate) < todayStart;
+      })
+      .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+      .slice(0, 10)
+      .map((t) => ({
+        id: t.id,
+        title: t.title,
+        type: t.type,
+        priority: t.priority,
+        status: t.status,
+        dueDate: t.dueDate,
+        owner: t.owner?.name || "Unassigned",
+        daysOverdue: Math.floor((todayStart.getTime() - new Date(t.dueDate!).getTime()) / 86400000),
+      }));
+
+    // Today's meetings (sorted by start time)
+    const todayMeetings = meetings
+      .filter((m) => {
+        const s = new Date(m.startTime);
+        return s >= todayStart && s < todayEnd;
+      })
+      .map((m) => ({
+        id: m.id,
+        title: m.title,
+        startTime: m.startTime,
+        endTime: m.endTime,
+        location: m.location || "Meeting",
+      }));
+
+    // Deals with milestones today (expectedCloseDate = today)
+    const todayMilestones = activeOpps
+      .filter((o) => {
+        if (!o.expectedCloseDate) return false;
+        const d = new Date(o.expectedCloseDate);
+        return d >= todayStart && d < todayEnd;
+      })
+      .map((o) => ({
+        id: o.id,
+        title: o.title,
+        account: o.account?.name || "Unknown",
+        value: o.value,
+        stage: o.stage,
+        type: "closing_today" as const,
+      }));
+
+    // New leads to contact (status = NEW, created in last 48h)
+    const twoDaysAgo = new Date(todayStart);
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const newLeadsToContact = leads
+      .filter((l) => l.status === "NEW" && new Date(l.createdAt) >= twoDaysAgo)
+      .slice(0, 8)
+      .map((l) => ({
+        id: l.id,
+        name: l.name,
+        company: l.company?.name || "Unknown",
+        temperature: l.temperature,
+        source: l.source,
+        createdAt: l.createdAt,
+      }));
+
+    // Recent activities (last 24h)
+    const recentActivities = activities
+      .filter((a) => new Date(a.createdAt) >= todayStart)
+      .slice(0, 10)
+      .map((a) => ({
+        id: a.id,
+        type: a.type,
+        channel: a.channel,
+        subject: a.subject,
+        createdAt: a.createdAt,
+        creator: a.creator?.name || "System",
+      }));
+
     return sendSuccess({
       stats: {
         totalPipeline,
@@ -212,6 +312,23 @@ export async function GET(request: NextRequest) {
       priorityLeads,
       dealsNeedingAttention,
       upcomingMeetings,
+      // Today View data
+      todayView: {
+        todayTasks,
+        overdueTasksDetailed,
+        todayMeetings,
+        todayMilestones,
+        newLeadsToContact,
+        recentActivities,
+        summary: {
+          tasksToday: todayTasks.length,
+          tasksDue: todayTasks.length + overdueTasksDetailed.length,
+          meetingsToday: todayMeetings.length,
+          newLeads: newLeadsToContact.length,
+          dealsClosingToday: todayMilestones.length,
+          activitiesToday: recentActivities.length,
+        },
+      },
     });
   } catch (error: any) {
     console.error("GET /api/dashboard error:", error);

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { HealthBadge } from "@/components/shared/health-badge";
 import { formatCurrency, getInitials } from "@/lib/utils";
 import { useApi } from "@/lib/hooks/use-api";
 import { CreateOpportunityModal } from "@/components/opportunities/create-opportunity-modal";
+import { Pagination } from "@/components/pagination";
 import { useSession } from "next-auth/react";
 import { TableSkeleton } from "@/components/shared/skeleton";
 
@@ -36,8 +37,10 @@ export default function OpportunitiesPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterTab>("ALL");
   const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = 15;
 
-  const { data: allOpps, loading, refetch } = useApi<any[]>("/api/opportunities?limit=100");
+  const { data: allOpps, loading, refetch } = useApi<any[]>("/api/opportunities?limit=200");
 
   const filtered = useMemo(() => {
     if (!allOpps) return [];
@@ -66,7 +69,12 @@ export default function OpportunitiesPage() {
     { key: "CLOSED_LOST", label: "Closed Lost", count: allOpps?.filter((o: any) => o.stage === "CLOSED_LOST").length ?? 0 },
   ], [allOpps]);
 
+  // Reset to page 1 when filter/search changes
+  useEffect(() => { setPage(1); }, [filter, search]);
+
   const totalValue = filtered.reduce((sum: number, o: any) => sum + (o.value || 0), 0);
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paginatedOpps = filtered.slice((page - 1) * perPage, page * perPage);
 
   return (
     <div>
@@ -153,7 +161,7 @@ export default function OpportunitiesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((opp: any) => (
+              {paginatedOpps.map((opp: any) => (
                 <tr
                   key={opp.id}
                   onClick={() => router.push(`/opportunities/${opp.id}`)}
@@ -217,6 +225,15 @@ export default function OpportunitiesPage() {
           </table>
         )}
       </div>
+
+      {/* Pagination */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={filtered.length}
+        limit={perPage}
+        onPageChange={setPage}
+      />
 
       <CreateOpportunityModal
         open={showCreate}

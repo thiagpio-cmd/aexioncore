@@ -57,6 +57,8 @@ function DealCard({
   const aging = getDaysInStage(deal.updatedAt);
   const healthScore = deal.probability || 50;
   const isRisk = healthScore < 40 || aging > 21;
+  const isRotting = aging > 14;
+  const isStale = aging > 7 && !isRotting;
 
   return (
     <div
@@ -64,16 +66,35 @@ function DealCard({
       onDragStart={(e) => onDragStart(e, deal.id)}
       onClick={onClick}
       className={cn(
-        "rounded-lg border bg-surface p-3 cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-primary/30",
-        isRisk ? "border-danger/30" : "border-border",
+        "rounded-lg border bg-surface p-3 cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:border-primary/30 relative overflow-hidden",
+        isRotting ? "border-danger/40" : isStale ? "border-warning/40" : isRisk ? "border-danger/30" : "border-border",
         isDragging && "opacity-40 scale-95"
       )}
     >
+      {/* Rotting indicator bar — Pipedrive pattern */}
+      {(isRotting || isStale) && (
+        <div
+          className={cn(
+            "absolute top-0 left-0 right-0 h-[2px]",
+            isRotting ? "bg-danger" : "bg-warning"
+          )}
+        />
+      )}
       <div className="flex items-start justify-between mb-2">
         <p className="text-sm font-medium text-foreground leading-tight">{deal.title}</p>
-        {isRisk && (
+        {isRotting ? (
+          <span className="shrink-0 ml-2 flex items-center gap-1 text-[10px] font-medium text-danger" title="Rotting — no activity for 14+ days">
+            <span className="h-2 w-2 rounded-full bg-danger animate-pulse" />
+            Rotting
+          </span>
+        ) : isStale ? (
+          <span className="shrink-0 ml-2 flex items-center gap-1 text-[10px] font-medium text-warning" title="Stale — no activity for 7+ days">
+            <span className="h-2 w-2 rounded-full bg-warning" />
+            Stale
+          </span>
+        ) : isRisk ? (
           <span className="shrink-0 ml-2 h-2 w-2 rounded-full bg-danger" title="At Risk" />
-        )}
+        ) : null}
       </div>
       <p className="text-xs text-muted mb-2">{accountName}</p>
       <div className="flex items-center justify-between">
