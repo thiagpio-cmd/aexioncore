@@ -266,7 +266,7 @@ export function CloserWorkspace() {
               return (
                 <div key={stage} className="rounded-lg border border-border bg-background/50 p-3">
                   <div className="mb-3">
-                    <p className="text-xs font-semibold text-muted uppercase tracking-wide">{stageLabel(stage)}</p>
+                    <p className="text-xs font-semibold text-muted tracking-wide">{stageLabel(stage)}</p>
                     <div className="flex items-baseline gap-2 mt-1">
                       <span className="text-lg font-bold text-foreground">{stageData?.count || 0}</span>
                       <span className="text-xs text-muted">{formatCurrency(stageData?.value || 0, "USD")}</span>
