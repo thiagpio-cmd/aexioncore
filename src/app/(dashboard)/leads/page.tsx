@@ -12,6 +12,14 @@ import { TableSkeleton } from "@/components/shared/skeleton";
 
 type FilterTab = "ALL" | "NEW" | "CONTACTED" | "QUALIFIED" | "CONVERTED" | "UNQUALIFIED";
 
+/** Convert DB source names like COLD_OUTBOUND → "Cold Outbound" */
+function sourceLabel(source: string): string {
+  if (!source) return "—";
+  return source
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function LeadsPage() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -156,7 +164,7 @@ export default function LeadsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-sm text-muted">{lead.source}</span>
+                    <span className="text-sm text-muted">{sourceLabel(lead.source)}</span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

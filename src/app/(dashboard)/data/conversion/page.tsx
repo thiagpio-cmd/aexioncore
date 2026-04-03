@@ -4,6 +4,14 @@ import { useApi } from "@/lib/hooks/use-api";
 import { PageHeader } from "@/components/shared/page-header";
 import { DetailSkeleton } from "@/components/shared/skeleton";
 
+/** Convert DB stage names like LEAD_INQUIRY → "Lead Inquiry" */
+function stageLabel(stage: string): string {
+  return stage
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\bSf\b/g, "SF");
+}
+
 interface StageAnalysis {
   stage: string;
   count: number;
@@ -87,7 +95,7 @@ export default function ConversionByStagePage() {
                   <tr key={stage.stage} className={`hover:bg-sidebar-hover transition-colors ${isRotting ? 'bg-danger/5' : ''}`}>
                     <td className="px-5 py-4 font-medium text-foreground flex items-center gap-2">
                       {isRotting && <div className="h-2 w-2 rounded-full bg-danger"></div>}
-                      {stage.stage}
+                      {stageLabel(stage.stage)}
                     </td>
                     <td className="px-5 py-4 text-center">
                       <span className="font-bold">{stage.count}</span>

@@ -17,6 +17,14 @@ import { CanonicalTimeline } from "@/components/shared/canonical-timeline";
 import { SuggestedPlaybooks } from "@/components/shared/suggested-playbooks";
 import { ExplainableScore } from "@/components/scoring/explainable-score";
 import { AICoachPanel } from "@/components/ai/ai-coach-panel";
+
+/** Convert DB source names like COLD_OUTBOUND → "Cold Outbound" */
+function sourceLabel(source: string): string {
+  if (!source) return "—";
+  return source
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 import { EmailComposer } from "@/components/ai/email-composer";
 import type { ScoreResult } from "@/lib/scoring/engine";
 
@@ -314,7 +322,7 @@ export default function LeadDetailPage() {
                 <p className="text-[10px] font-semibold text-primary uppercase tracking-wider mb-2">AI Suggested Channel</p>
                 <p className="text-sm font-semibold text-foreground">{channelLabels[best[0]] || best[0]}</p>
                 <p className="text-xs text-muted mt-1">Best time: {timeHint}</p>
-                <p className="text-[11px] text-muted mt-2">Based on lead source ({lead.source}), temperature ({lead.temperature}), and {activityChannels.length} past interactions.</p>
+                <p className="text-[11px] text-muted mt-2">Based on lead source ({sourceLabel(lead.source)}), temperature ({lead.temperature}), and {activityChannels.length} past interactions.</p>
               </div>
             );
           })()}
@@ -355,7 +363,7 @@ export default function LeadDetailPage() {
             <h3 className="mb-3 text-sm font-semibold text-foreground">Lead Information</h3>
             <dl className="space-y-3">
               {[
-                { label: "Source", value: lead.source },
+                { label: "Source", value: sourceLabel(lead.source) },
                 { label: "Temperature", value: lead.temperature },
                 { label: "Status", value: lead.status },
                 { label: "Owner", value: lead.owner?.name || "Unassigned" },

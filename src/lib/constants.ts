@@ -134,7 +134,7 @@ export const NAV_SECTIONS = [
       { label: "Pipeline", href: "/pipeline", icon: "git-branch", roles: [UserRole.CLOSER, UserRole.MANAGER, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.REVOPS] },
       { label: "Tasks", href: "/tasks", icon: "check-square", roles: allRoles },
       { label: "Meetings", href: "/meetings", icon: "calendar", roles: allRoles },
-      { label: "Transcripts", href: "/transcripts", icon: "file-text", roles: allRoles },
+      // Transcripts removed — requires external integrations (Zoom/Meet/Teams/Twilio)
     ],
   },
   {

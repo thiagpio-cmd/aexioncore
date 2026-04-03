@@ -10,6 +10,14 @@ import { cn } from "@/lib/utils";
 
 type Period = "7d" | "30d" | "90d" | "all";
 
+/** Convert DB stage names like LEAD_INQUIRY → "Lead Inquiry" */
+function stageLabel(stage: string): string {
+  return stage
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/\bSf\b/g, "SF");
+}
+
 function formatCurrency(v: number) {
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
   return `$${(v / 1000).toFixed(0)}K`;
@@ -374,7 +382,7 @@ export default function DashboardsPage() {
             {stages.map((s: any) => (
               <div key={s.stage}>
                 <div className="flex justify-between mb-1">
-                  <span className="text-sm text-foreground">{s.stage}</span>
+                  <span className="text-sm text-foreground">{stageLabel(s.stage)}</span>
                   <span className="text-sm text-muted">{s.count} deals · {formatCurrency(s.value)}</span>
                 </div>
                 <div className="h-2 rounded-full bg-background"><div className="h-2 rounded-full bg-primary" style={{ width: `${Math.min((s.value / 800000) * 100, 100)}%` }} /></div>
