@@ -59,7 +59,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile sidebar — only when open */}
       {sidebarOpen && (
-        <div className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden">
+        <div className="fixed inset-y-0 left-0 z-50 w-72 bg-surface shadow-2xl lg:hidden">
           <Sidebar />
         </div>
       )}
