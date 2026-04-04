@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { KeyboardShortcutsProvider } from "@/components/shared/keyboard-shortcuts";
+import { AIChatAssistant } from "@/components/ai/ai-chat-assistant";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -45,7 +46,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -85,6 +86,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 p-4 lg:p-6">{children}</main>
       </div>
     </div>
+    <AIChatAssistant />
     </KeyboardShortcutsProvider>
   );
 }
