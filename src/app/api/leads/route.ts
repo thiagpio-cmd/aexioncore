@@ -115,13 +115,38 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = LeadCreateSchema.parse(body);
 
-    // Verify company exists
-    const company = await prisma.company.findUnique({
-      where: { id: data.companyId },
-    });
+    // Resolve company: use existing companyId or create a new company from companyName
+    let resolvedCompanyId = data.companyId;
 
-    if (!company) {
-      return sendError(badRequest("Company not found"));
+    if (!resolvedCompanyId && data.companyName) {
+      // Check if a company with this name already exists in the organization
+      const existing = await prisma.company.findFirst({
+        where: {
+          organizationId: session.user.organizationId,
+          name: { equals: data.companyName, mode: "insensitive" },
+        },
+      });
+
+      if (existing) {
+        resolvedCompanyId = existing.id;
+      } else {
+        const newCompany = await prisma.company.create({
+          data: {
+            name: data.companyName,
+            organizationId: session.user.organizationId,
+          },
+        });
+        resolvedCompanyId = newCompany.id;
+      }
+    } else if (resolvedCompanyId) {
+      // Verify existing company
+      const company = await prisma.company.findUnique({
+        where: { id: resolvedCompanyId },
+      });
+
+      if (!company) {
+        return sendError(badRequest("Company not found"));
+      }
     }
 
     // Check if email already exists
@@ -133,9 +158,13 @@ export async function POST(request: NextRequest) {
       return sendError(badRequest("Lead with this email already exists"));
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { companyName: _companyName, companyId: _companyId, ...leadFields } = data;
+
     const lead = await prisma.lead.create({
       data: {
-        ...data,
+        ...leadFields,
+        companyId: resolvedCompanyId!,
         organizationId: session.user.organizationId,
       },
       include: {

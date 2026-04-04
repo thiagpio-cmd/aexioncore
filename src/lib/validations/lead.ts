@@ -9,10 +9,14 @@ export const LeadCreateSchema = z.object({
   status: z.enum(["NEW", "CONTACTED", "QUALIFIED", "CONVERTED", "DISQUALIFIED"]).default("NEW"),
   temperature: z.enum(["COLD", "COOL", "WARM", "HOT"]).default("COLD"),
   fitScore: z.number().min(0).max(100).default(0),
-  companyId: z.string().min(1, "Company ID is required"),
+  companyId: z.string().optional(),
+  companyName: z.string().optional(),
   contactId: z.string().optional(),
   ownerId: z.string().min(1, "Owner ID is required"),
-});
+}).refine(
+  (data) => (data.companyId && data.companyId.length > 0) || (data.companyName && data.companyName.length > 0),
+  { message: "Either an existing company or a new company name is required", path: ["companyId"] },
+);
 
 export const LeadUpdateSchema = z.object({
   name: z.string().min(1).max(255).optional(),

@@ -160,6 +160,29 @@ export async function POST(request: NextRequest) {
     await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "icp_scores_leadId" ON "icp_scores"("leadId")`);
     await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "icp_scores_oppId" ON "icp_scores"("opportunityId")`);
 
+    // ─── Create Customer Profiles table if missing ────────────────────
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "customer_profiles" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "contactId" TEXT NOT NULL REFERENCES "contacts"("id") ON DELETE CASCADE,
+        "organizationId" TEXT NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+        "bigFive" JSONB,
+        "jungArchetype" TEXT,
+        "lifestyle" JSONB,
+        "valueSensitivity" JSONB,
+        "motivationProfile" JSONB,
+        "conditioningProfile" JSONB,
+        "fomapScore" INTEGER,
+        "confidence" DOUBLE PRECISION DEFAULT 0,
+        "lastUpdatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        UNIQUE("contactId", "organizationId")
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "customer_profiles_contactId" ON "customer_profiles"("contactId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "customer_profiles_orgId" ON "customer_profiles"("organizationId")`);
+
     // ─── Create Debrief tables if missing ──────────────────────────────
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "debriefs" (

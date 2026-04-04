@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface ReportSectionProps {
   section: {
@@ -42,14 +42,90 @@ function ConfidenceIndicator({ confidence }: { confidence: string }) {
   );
 }
 
+/** Keys whose numeric values represent currency amounts */
+const CURRENCY_KEYS = new Set([
+  "totalValue",
+  "avgValue",
+  "wonRevenue",
+  "lostRevenue",
+  "commit",
+  "bestCase",
+  "weighted",
+  "totalPipeline",
+  "closingSoonValue",
+  "revenue",
+  "pipeline",
+]);
+
+/** Keys whose numeric values represent percentages */
+const PERCENT_KEYS = new Set(["winRate", "conversionRate"]);
+
+/** Convert a camelCase key like "byStage" → "By Stage" */
+function metricLabel(key: string): string {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (s) => s.toUpperCase());
+}
+
+/** Convert DB enum names like LEAD_INQUIRY → "Lead Inquiry" */
+function enumLabel(val: string): string {
+  return val
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Format a metric value based on its key and type */
+function formatMetricValue(key: string, value: unknown): string {
+  if (value === null || value === undefined) return "—";
+
+  // If it's an array, skip rendering in the simple grid (handled separately)
+  if (Array.isArray(value)) return `${value.length} items`;
+
+  // If it's an object, render as a breakdown list
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (entries.length === 0) return "—";
+    return entries
+      .map(([k, v]) => {
+        const label = enumLabel(k);
+        if (typeof v === "object" && v !== null && !Array.isArray(v)) {
+          // e.g. byStage: { LEAD_INQUIRY: { count: 3, value: 500000 } }
+          const inner = v as Record<string, unknown>;
+          const parts: string[] = [];
+          if ("count" in inner) parts.push(`${inner.count}`);
+          if ("value" in inner) parts.push(formatCurrency(inner.value as number));
+          return `${label}: ${parts.join(" / ") || JSON.stringify(v)}`;
+        }
+        return `${label}: ${v}`;
+      })
+      .join(", ");
+  }
+
+  if (typeof value === "number") {
+    if (CURRENCY_KEYS.has(key)) return formatCurrency(value);
+    if (PERCENT_KEYS.has(key)) return `${value}%`;
+    // Format large numbers with commas
+    if (Number.isInteger(value)) return value.toLocaleString("en-US");
+    return value.toLocaleString("en-US", { maximumFractionDigits: 1 });
+  }
+
+  return String(value);
+}
+
 function MetricsSection({ data }: { data: Record<string, unknown> }) {
   const entries = Object.entries(data);
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
       {entries.map(([key, value]) => (
         <div key={key} className="rounded-lg border border-border bg-background p-3">
-          <p className="text-xs text-muted mb-0.5">{key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}</p>
-          <p className="text-lg font-semibold text-foreground">{String(value)}</p>
+          <p className="text-xs text-muted mb-0.5">{metricLabel(key)}</p>
+          <p className={cn(
+            "font-semibold text-foreground",
+            typeof value === "object" && value !== null && !Array.isArray(value)
+              ? "text-sm leading-relaxed"
+              : "text-lg"
+          )}>{formatMetricValue(key, value)}</p>
         </div>
       ))}
     </div>

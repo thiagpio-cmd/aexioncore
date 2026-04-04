@@ -26,6 +26,9 @@ export function CreateLeadModal({ open, onClose, onCreated, currentUserId }: Cre
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
+  const [companySearch, setCompanySearch] = useState("");
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -36,6 +39,7 @@ export function CreateLeadModal({ open, onClose, onCreated, currentUserId }: Cre
     temperature: "COLD",
     fitScore: 50,
     companyId: "",
+    companyName: "",
     ownerId: currentUserId || "",
   });
 
@@ -87,7 +91,7 @@ export function CreateLeadModal({ open, onClose, onCreated, currentUserId }: Cre
     if (!form.name.trim()) e.name = "Name is required";
     if (!form.email.trim()) e.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Invalid email";
-    if (!form.companyId.trim()) e.companyId = "Company is required";
+    if (!form.companyId.trim() && !form.companyName.trim()) e.companyId = "Company is required";
     if (!form.ownerId.trim()) e.ownerId = "Owner is required";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -116,8 +120,9 @@ export function CreateLeadModal({ open, onClose, onCreated, currentUserId }: Cre
     setForm({
       name: "", email: "", phone: "", title: "", source: "web",
       status: "NEW", temperature: "COLD", fitScore: 50,
-      companyId: "", ownerId: currentUserId || "",
+      companyId: "", companyName: "", ownerId: currentUserId || "",
     });
+    setCompanySearch("");
   }
 
   return (
@@ -188,21 +193,60 @@ export function CreateLeadModal({ open, onClose, onCreated, currentUserId }: Cre
 
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Company" required error={errors.companyId}>
-            <select
-              value={form.companyId}
-              onChange={(e) => set("companyId", e.target.value)}
-              className={selectStyles}
-              disabled={loadingCompanies}
-            >
-              <option value="">
-                {loadingCompanies ? "Loading companies..." : "Select a company"}
-              </option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <input
+                type="text"
+                value={companySearch}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCompanySearch(val);
+                  setShowCompanyDropdown(true);
+                  // Clear selected company when user types
+                  set("companyId", "");
+                  set("companyName", val);
+                }}
+                onFocus={() => setShowCompanyDropdown(true)}
+                onBlur={() => {
+                  // Delay to allow click on dropdown items
+                  setTimeout(() => setShowCompanyDropdown(false), 200);
+                }}
+                placeholder={loadingCompanies ? "Loading companies..." : "Select or type a new company"}
+                className={inputStyles}
+                disabled={loadingCompanies}
+              />
+              {showCompanyDropdown && companySearch.trim() && (
+                <div className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-border bg-card shadow-lg">
+                  {companies
+                    .filter((c) =>
+                      c.name.toLowerCase().includes(companySearch.toLowerCase())
+                    )
+                    .map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-background transition-colors"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          set("companyId", c.id);
+                          set("companyName", "");
+                          setCompanySearch(c.name);
+                          setShowCompanyDropdown(false);
+                        }}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  {!companies.some(
+                    (c) => c.name.toLowerCase() === companySearch.toLowerCase()
+                  ) && (
+                    <div className="px-3 py-2 text-sm text-muted-foreground border-t border-border">
+                      <span className="font-medium text-primary">+ Create</span>{" "}
+                      &quot;{companySearch}&quot;
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </FormField>
           <FormField label="Owner" required error={errors.ownerId}>
             <select

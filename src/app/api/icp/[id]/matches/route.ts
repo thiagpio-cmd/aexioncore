@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
@@ -81,48 +81,56 @@ export async function GET(request: NextRequest, ctx: Ctx) {
     const results: ContactMatch[] = [];
 
     for (const contact of contacts) {
-      // Ensure a profile exists
-      let profile = await prisma.customerProfile.findUnique({
-        where: {
-          contactId_organizationId: {
-            contactId: contact.id,
-            organizationId: actor.organizationId,
-          },
-        },
-      });
-
-      if (!profile) {
-        // Infer and persist profile
-        const inferred = await inferProfile(contact.id, actor.organizationId);
-        profile = await prisma.customerProfile.create({
-          data: {
-            contactId: contact.id,
-            organizationId: actor.organizationId,
-            bigFive: inferred.bigFive as any,
-            jungArchetype: inferred.jungArchetype,
-            lifestyle: inferred.lifestyle as any,
-            valueSensitivity: inferred.valueSensitivity as any,
-            motivationProfile: inferred.motivationProfile as any,
-            conditioningProfile: inferred.conditioningProfile as any,
-            fomapScore: inferred.fomapScore,
-            confidence: inferred.confidence,
-            lastUpdatedAt: new Date(),
+      try {
+        // Ensure a profile exists
+        let profile = await prisma.customerProfile.findUnique({
+          where: {
+            contactId_organizationId: {
+              contactId: contact.id,
+              organizationId: actor.organizationId,
+            },
           },
         });
-      }
 
-      // Match against ICP
-      const match = await matchToICP(profile.id, icpId);
+        if (!profile) {
+          // Infer and persist profile
+          const inferred = await inferProfile(contact.id, actor.organizationId);
+          profile = await prisma.customerProfile.create({
+            data: {
+              contactId: contact.id,
+              organizationId: actor.organizationId,
+              bigFive: inferred.bigFive as any,
+              jungArchetype: inferred.jungArchetype,
+              lifestyle: inferred.lifestyle as any,
+              valueSensitivity: inferred.valueSensitivity as any,
+              motivationProfile: inferred.motivationProfile as any,
+              conditioningProfile: inferred.conditioningProfile as any,
+              fomapScore: inferred.fomapScore,
+              confidence: inferred.confidence,
+              lastUpdatedAt: new Date(),
+            },
+          });
+        }
 
-      if (match.score >= minScore) {
-        results.push({
-          contactId: contact.id,
-          contactName: contact.name,
-          contactEmail: contact.email,
-          companyName: contact.company?.name ?? null,
-          profileId: profile.id,
-          match,
-        });
+        // Match against ICP
+        const match = await matchToICP(profile.id, icpId);
+
+        if (match.score >= minScore) {
+          results.push({
+            contactId: contact.id,
+            contactName: contact.name,
+            contactEmail: contact.email,
+            companyName: contact.company?.name ?? null,
+            profileId: profile.id,
+            match,
+          });
+        }
+      } catch (contactError: any) {
+        // Log but continue processing other contacts
+        console.warn(
+          `Failed to process contact ${contact.id} for ICP matching:`,
+          contactError?.message ?? contactError,
+        );
       }
     }
 
@@ -137,6 +145,21 @@ export async function GET(request: NextRequest, ctx: Ctx) {
     });
   } catch (error: any) {
     console.error("GET /api/icp/[id]/matches error:", error);
-    return sendUnhandledError();
+
+    // Surface Prisma-specific errors (e.g., missing table) for easier debugging
+    const message =
+      error?.code === "P2021"
+        ? `Database table not found: ${error.meta?.table ?? "unknown"}. Run 'prisma db push' or 'prisma migrate deploy' to sync the schema.`
+        : error?.code === "P2010"
+          ? `Raw query failed: ${error.meta?.message ?? error.message}`
+          : "An unexpected error occurred";
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: { code: error?.code ?? "SERVER_ERROR", message },
+      },
+      { status: 500 },
+    );
   }
 }
