@@ -50,14 +50,19 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* Sidebar — fixed on desktop, slide-in on mobile */}
-      <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-in-out
-        lg:translate-x-0
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-      `}>
+      {/* Sidebar — always visible on desktop, overlay on mobile */}
+      <div
+        className="fixed inset-y-0 left-0 z-50 w-64 hidden lg:block"
+      >
         <Sidebar />
       </div>
+
+      {/* Mobile sidebar — only when open */}
+      {sidebarOpen && (
+        <div className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden">
+          <Sidebar />
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col lg:pl-64">
         {/* Mobile hamburger */}
