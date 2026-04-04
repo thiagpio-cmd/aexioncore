@@ -72,23 +72,19 @@ async function loadCRMContext(organizationId: string, userId: string): Promise<C
     }),
 
     // Overdue tasks
-    prisma.task.findMany({
+    prisma.task.count({
       where: {
         organizationId,
         status: { not: "COMPLETED" },
         dueDate: { lt: now },
-        assigneeId: userId,
       },
-      select: { id: true, title: true, dueDate: true, priority: true },
-      orderBy: { dueDate: "asc" },
-      take: 10,
     }),
 
     // Stale leads (no activity in 30 days)
     prisma.lead.findMany({
       where: {
         organizationId,
-        status: { notIn: ["CONVERTED", "DISQUALIFIED", "LOST"] },
+        status: { notIn: ["CONVERTED", "UNQUALIFIED"] },
         updatedAt: { lt: thirtyDaysAgo },
       },
       select: { id: true, name: true, updatedAt: true, status: true },
@@ -113,14 +109,14 @@ async function loadCRMContext(organizationId: string, userId: string): Promise<C
     }),
   ]);
 
-  const pipelineTotal = topOpps.reduce((sum, o) => sum + o.value, 0);
-  const atRiskDeals = topOpps.filter((o) => o.probability < 40);
+  const pipelineTotal = topOpps.reduce((sum, o) => sum + (o.value || 0), 0);
+  const atRiskDeals = topOpps.filter((o) => (o.probability || 0) < 40);
 
   const enrichedOpps = topOpps.slice(0, 5).map((o) => ({
     title: o.title,
-    value: o.value,
+    value: o.value || 0,
     stage: o.stage,
-    probability: o.probability,
+    probability: o.probability || 0,
     daysInStage: Math.floor((now.getTime() - new Date(o.updatedAt).getTime()) / (1000 * 60 * 60 * 24)),
   }));
 
@@ -128,7 +124,7 @@ async function loadCRMContext(organizationId: string, userId: string): Promise<C
     topOpportunities: enrichedOpps,
     pipelineTotal,
     activeDealsCount: topOpps.length,
-    overdueTasksCount: overdueTasks.length,
+    overdueTasksCount: overdueTasks,
     staleLeadsCount: staleLeads.length,
     recentActivitiesCount: recentActivities,
     todayMeetingsCount: todayMeetings,
