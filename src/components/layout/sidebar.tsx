@@ -116,7 +116,7 @@ export function Sidebar() {
   }).filter((section): section is NonNullable<typeof section> => section !== null && section.items.length > 0);
 
   return (
-    <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col border-r border-border/60 bg-surface shadow-sm">
+    <aside className="flex h-full w-64 flex-col border-r border-border/60 bg-surface shadow-sm">
       {/* Brand */}
       <div className="flex h-14 items-center gap-2.5 px-5 border-b border-border/40">
         <div
