@@ -101,12 +101,12 @@ export default function OpportunitiesPage() {
       />
 
       {/* Tabs */}
-      <div className="mb-4 flex items-center gap-1 border-b border-border">
+      <div className="mb-4 flex items-center gap-1 border-b border-border overflow-x-auto scrollbar-none">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
+            className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
               filter === tab.key
                 ? "border-primary text-primary"
                 : "border-transparent text-muted hover:text-foreground"
@@ -121,7 +121,7 @@ export default function OpportunitiesPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-border bg-surface">
+      <div className="rounded-xl border border-border bg-surface overflow-x-auto">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-3">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted">
@@ -147,7 +147,7 @@ export default function OpportunitiesPage() {
         {loading ? (
           <TableSkeleton rows={6} cols={8} />
         ) : (
-          <table className="w-full">
+          <table className="w-full min-w-[800px]">
             <thead>
               <tr className="border-b border-border">
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Deal</th>
