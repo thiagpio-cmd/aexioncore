@@ -43,9 +43,10 @@ function OpportunityPicker({ onSelect }: { onSelect: (id: string) => void }) {
     fetch("/api/opportunities?limit=50&sortBy=updatedAt&sortOrder=desc")
       .then((r) => r.json())
       .then((json) => {
-        if (json.success && json.data?.records) {
+        const records = json.data?.records || (Array.isArray(json.data) ? json.data : []);
+        if (json.success && records.length > 0) {
           setOpportunities(
-            json.data.records.map((o: any) => ({
+            records.map((o: any) => ({
               id: o.id,
               title: o.title,
               account: o.account?.name || "—",
