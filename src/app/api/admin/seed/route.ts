@@ -292,9 +292,9 @@ export async function POST(request: NextRequest) {
     const mkUser = (email: string, name: string, role: string, workspace: string, teamId: string, password: string) =>
       prisma.user.create({ data: { organizationId: O, teamId, email, name, password, role, workspace, isActive: true } });
 
-    const aexionAdmin = await mkUser("admin@aexionrealty.com",     "Victoria Sterling",  "ADMIN",   "EXECUTIVE", execTeam.id, adminPw);
-    const sarah       = await mkUser("sarah@aexionrealty.com",     "Sarah Chen",         "ADMIN",   "EXECUTIVE", execTeam.id, demoPw);
-    const mike        = await mkUser("mike@aexionrealty.com",      "Mike Harrison",      "MANAGER", "MANAGER",   mgrTeam.id,  demoPw);
+    const aexionAdmin = await mkUser("admin@aexionrealty.com",     "Thiago Pio",         "ADMIN",   "EXECUTIVE", execTeam.id, adminPw);
+    const sarah       = await mkUser("kim@aexionrealty.com",       "Kim Oliveira",       "ADMIN",   "EXECUTIVE", execTeam.id, demoPw);
+    const mike        = await mkUser("alexandre@aexionrealty.com", "Alexandre Santos",   "ADMIN",   "EXECUTIVE", mgrTeam.id,  demoPw);
     const emma        = await mkUser("emma@aexionrealty.com",      "Emma Blackwell",     "CLOSER",  "CLOSER",    closerTeam.id, demoPw);
     const james       = await mkUser("james@aexionrealty.com",     "James Whitfield",    "CLOSER",  "CLOSER",    closerTeam.id, demoPw);
     const alex        = await mkUser("alex@aexionrealty.com",      "Alex Rivera",        "SDR",     "SDR",       sdrTeam.id,  demoPw);
@@ -302,8 +302,8 @@ export async function POST(request: NextRequest) {
 
     await prisma.team.update({ where: { id: sdrTeam.id }, data: { managerId: mike.id } });
     await prisma.team.update({ where: { id: closerTeam.id }, data: { managerId: mike.id } });
-    await prisma.team.update({ where: { id: mgrTeam.id }, data: { managerId: sarah.id } });
-    await prisma.team.update({ where: { id: execTeam.id }, data: { managerId: sarah.id } });
+    await prisma.team.update({ where: { id: mgrTeam.id }, data: { managerId: aexionAdmin.id } });
+    await prisma.team.update({ where: { id: execTeam.id }, data: { managerId: aexionAdmin.id } });
 
     // ─── Companies (20) — US Real Estate ────────────────────────────
     const mkCo = (name: string, industry: string, size: string, website: string, annualRevenue?: number) =>
@@ -495,7 +495,7 @@ export async function POST(request: NextRequest) {
       data: [
         { organizationId: O, title: "Site visit — Palmetto Capital Savannah portfolio",          ownerId: emma.id,   contactId: ctCatherinePalm.id,  leadId: leads[11].id,              startTime: d(10, 9),     endTime: d(10, 10),     location: "Savannah, GA — Historic District",           notes: "Catherine confirmed fund allocation for Q2. Wants full due diligence before board presentation.",   attendees: JSON.stringify(["Catherine Palmer", "Jessica Hartley"]) },
         { organizationId: O, title: "Silverstone office campus walkthrough",                     ownerId: james.id,  contactId: ctMarcusSilver.id,   opportunityId: opps[3].id,         startTime: d(5, 14),     endTime: d(5, 16),      location: "Reston, VA — 1500 Innovation Dr",            notes: "Marcus impressed with building quality. Wants formal LOI by Friday. Legal team needs environmental review.", attendees: JSON.stringify(["Marcus Silverstein", "Steve Chambers"]) },
-        { organizationId: O, title: "Q1 pipeline review — sales leadership",                    ownerId: mike.id,   contactId: ctCatherinePalm.id,                                      startTime: d(3, 10),     endTime: d(3, 12),      location: "Aexion Realty HQ — Conference Room B",       notes: "Pipeline strong at $47M. Focus on converting Offer-stage deals. Need comp data for 2 properties.",  attendees: JSON.stringify(["Mike Harrison", "Sarah Chen", "Emma Blackwell", "James Whitfield"]) },
+        { organizationId: O, title: "Q1 pipeline review — sales leadership",                    ownerId: mike.id,   contactId: ctCatherinePalm.id,                                      startTime: d(3, 10),     endTime: d(3, 12),      location: "Aexion Realty HQ — Conference Room B",       notes: "Pipeline strong at $47M. Focus on converting Offer-stage deals. Need comp data for 2 properties.",  attendees: JSON.stringify(["Alexandre Santos", "Kim Oliveira", "Emma Blackwell", "James Whitfield"]) },
         { organizationId: O, title: "Summit Peak stakeholder alignment — Charleston",           ownerId: emma.id,   contactId: ctJamesSummit.id,    opportunityId: opps[6].id,         startTime: d(7, 11),     endTime: d(7, 12),      location: "Virtual — Zoom",                             notes: "James aligned with investment committee. Environmental review of waterfront site next week.",        attendees: JSON.stringify(["James Thornton", "Diana Okafor"]) },
         { organizationId: O, title: "Meridian DC — office building inspection",                  ownerId: emma.id,   contactId: ctThomasMerid.id,    opportunityId: opps[8].id,         startTime: d(4, 13),     endTime: d(4, 15),      location: "Washington DC — 1600 Pennsylvania Ave NW",   notes: "Thomas impressed with tenant roster. Needs rent roll and 5-year CapEx projections.",                  attendees: JSON.stringify(["Thomas Grant", "Greg Patterson"]) },
         { organizationId: O, title: "MetroNest — Brooklyn Heights site visit planning",          ownerId: james.id,  contactId: ctChrisMetro.id,     opportunityId: opps[7].id,         startTime: future(2, 14),endTime: future(2, 16),  location: "Brooklyn Heights, NYC",                      attendees: JSON.stringify(["Chris Nakamura", "Matt Kaplan"]) },
@@ -658,10 +658,10 @@ export async function POST(request: NextRequest) {
         recommendations: 5,
       },
       credentials: {
-        admin: { email: "admin@aexionrealty.com", password: "aexion123" },
+        admin: { email: "admin@aexionrealty.com", password: "aexion123", name: "Thiago Pio" },
         demo: [
-          { email: "sarah@aexionrealty.com", password: "demo123", role: "ADMIN" },
-          { email: "mike@aexionrealty.com", password: "demo123", role: "MANAGER" },
+          { email: "kim@aexionrealty.com", password: "demo123", role: "ADMIN", name: "Kim Oliveira" },
+          { email: "alexandre@aexionrealty.com", password: "demo123", role: "ADMIN", name: "Alexandre Santos" },
           { email: "emma@aexionrealty.com", password: "demo123", role: "CLOSER" },
           { email: "james@aexionrealty.com", password: "demo123", role: "CLOSER" },
           { email: "alex@aexionrealty.com", password: "demo123", role: "SDR" },
