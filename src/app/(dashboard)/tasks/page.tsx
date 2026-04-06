@@ -9,6 +9,7 @@ import { useToast } from "@/components/shared/toast";
 import { Pagination } from "@/components/pagination";
 import { useSession } from "next-auth/react";
 import { TableSkeleton } from "@/components/shared/skeleton";
+import { AIInsightBanner } from "@/components/ai/ai-insight-banner";
 
 const statusTabs = [
   { key: "all", label: "All" },
@@ -74,6 +75,13 @@ export default function TasksPage() {
             + New Task
           </button>
         }
+      />
+
+      {/* AI Tasks Insight */}
+      <AIInsightBanner
+        prompt="Quais tasks atrasadas têm maior impacto nos meus deals? Me ajude a priorizar"
+        compact
+        className="mb-3"
       />
 
       <div className="flex gap-2">

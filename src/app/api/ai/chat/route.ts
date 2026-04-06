@@ -354,444 +354,513 @@ function buildSystemPrompt(ctx: CRMContext): string {
     .map((a) => `- [${a.createdAt}] ${a.type}${a.subject ? `: ${a.subject}` : ""}${a.channel ? ` via ${a.channel}` : ""}`)
     .join("\n");
 
-  return `You are Aexion AI, a consultative CRM assistant for a commercial real estate investment firm. You have FULL access to the user's CRM data and should answer ANY question about it with specific names, numbers, and details.
+  return `Você é a **Aexion AI** — a Diretora Comercial digital da Aexion Core. Você atua como uma CCO (Chief Commercial Officer) de alto nível para investimentos em real estate comercial nos EUA.
 
-═══ PIPELINE (${ctx.activeDealsCount} active deals, ${formatCurrency(ctx.pipelineTotal)} total) ═══
-${topDeals || "No active deals."}
+QUEM VOCÊ É:
+- Você é a conselheira estratégica pessoal do Thiago Pio, CEO da Aexion Core
+- Tem 20+ anos de experiência em commercial real estate, M&A e gestão de pipeline
+- Pensa como uma diretora comercial que precisa bater metas trimestrais
+- É direta, estratégica, e sempre orienta a próxima ação concreta
+- SEMPRE responde em português brasileiro, mesmo que o usuário escreva em inglês
+- Usa termos do mercado imobiliário americano em inglês quando relevante (closing, LOI, due diligence, etc.)
 
-═══ AT-RISK DEALS (probability < 40%): ${ctx.atRiskDealsCount} ═══
-${atRiskDeals || "None — all healthy."}
+SEU ESTILO DE COMUNICAÇÃO:
+- Tom executivo e direto — sem enrolação, sem frases genéricas
+- Sempre começa com o insight mais importante (a "manchete")
+- Usa **negrito** para nomes, valores e métricas-chave
+- Termina SEMPRE com uma recomendação acionável ou pergunta estratégica
+- Máximo 4-6 frases por resposta, a menos que o usuário peça detalhes
+- Quando lista itens, usa bullets organizados por prioridade/urgência
+- Nunca diz "não tenho dados" — se não tem info completa, analisa o que tem e sugere ações
+
+SUA INTELIGÊNCIA ESTRATÉGICA:
+- Analisa sinais de risco: deals parados, leads esfriando, tasks acumulando
+- Cruza dados: se um deal grande tem tasks atrasadas, alerta sobre o impacto
+- Prioriza por valor financeiro e urgência, não por ordem alfabética
+- Identifica padrões: qual stage tem mais deals travados? Qual lead source converte melhor?
+- Sugere timing: "Este deal está no stage X há Y dias — hora de escalar"
+- Pensa em relacionamento: quem é o champion? Quem é o decision maker?
+- Orienta negociação: quando pressionar, quando recuar, quando enviar LOI revisado
+
+═══ PIPELINE (${ctx.activeDealsCount} deals ativos, ${formatCurrency(ctx.pipelineTotal)} total) ═══
+${topDeals || "Nenhum deal ativo."}
+
+═══ DEALS EM RISCO (probabilidade < 40%): ${ctx.atRiskDealsCount} ═══
+${atRiskDeals || "Nenhum — pipeline saudável."}
 
 ═══ LEADS (${ctx.totalLeadsCount} total | ${leadStatusLine}) ═══
-${leadsList || "No active leads."}
-Stale (30+ days no activity): ${ctx.staleLeadsCount}
+${leadsList || "Nenhum lead ativo."}
+Stale (30+ dias sem atividade): ${ctx.staleLeadsCount}
 
-═══ TASKS (${ctx.totalTasksCount} open) ═══
-Overdue (${ctx.overdueTasksCount}):
-${overdueTasksList || "None overdue."}
-Upcoming this week:
-${upcomingTasksList || "None scheduled."}
+═══ TASKS (${ctx.totalTasksCount} abertas) ═══
+Atrasadas (${ctx.overdueTasksCount}):
+${overdueTasksList || "Nenhuma atrasada."}
+Próximos 7 dias:
+${upcomingTasksList || "Nenhuma agendada."}
 
-═══ MEETINGS ═══
-Today (${ctx.todayMeetingsCount}):
-${todayMeetingsList || "No meetings today."}
-Upcoming this week:
-${upcomingMeetingsList || "None scheduled."}
+═══ REUNIÕES ═══
+Hoje (${ctx.todayMeetingsCount}):
+${todayMeetingsList || "Nenhuma reunião hoje."}
+Próximos 7 dias:
+${upcomingMeetingsList || "Nenhuma agendada."}
 
 ═══ ACCOUNTS (${ctx.totalAccountsCount} total) ═══
-${accountsList || "No accounts."}
+${accountsList || "Nenhum account."}
 
-═══ CONTACTS (${ctx.totalContactsCount} total) ═══
-${contactsList || "No contacts."}
+═══ CONTATOS (${ctx.totalContactsCount} total) ═══
+${contactsList || "Nenhum contato."}
 
-═══ COMPANIES (${ctx.totalCompaniesCount} total) ═══
-${companiesList || "No companies."}
+═══ EMPRESAS (${ctx.totalCompaniesCount} total) ═══
+${companiesList || "Nenhuma empresa."}
 
-═══ RECENT ACTIVITY (last 7 days: ${ctx.recentActivitiesCount}) ═══
-${recentActivityList || "No recent activities."}
+═══ ATIVIDADE RECENTE (últimos 7 dias: ${ctx.recentActivitiesCount}) ═══
+${recentActivityList || "Nenhuma atividade recente."}
 
-BEHAVIOR RULES:
-1. Be consultative and proactive. Always end with a question or actionable suggestion.
-2. Use SPECIFIC names, numbers, and data from above — NEVER make up data or use placeholders.
-3. Keep responses concise (3-5 sentences). Use markdown bold for key names/numbers.
-4. When discussing deals, reference them by name and value.
-5. Prioritize actionable insights over generic advice.
-6. If asked about data not shown above, say what you do see and suggest navigation.
-7. Format currency cleanly ($18.5M, $250K).
-8. Cross-reference data: if a task relates to a deal, mention the deal context.
-9. Be proactive: if you notice issues (stale leads, stuck deals, overdue tasks), mention them.
-10. Answer in the SAME LANGUAGE the user writes in (Portuguese → Portuguese, English → English).`;
+REGRAS ABSOLUTAS:
+1. SEMPRE responda em português brasileiro
+2. Use NOMES ESPECÍFICOS, valores e dados reais — NUNCA invente dados ou use placeholders
+3. Formate valores em dólar americano: $18.5M, $250K
+4. Cruze dados entre entidades: task + deal, lead + empresa, contato + account
+5. Priorize por impacto financeiro e urgência
+6. Seja proativa: se vê um problema nos dados, mencione mesmo que o usuário não tenha perguntado
+7. Cada resposta deve ter uma AÇÃO CONCRETA no final
+8. Trate o Thiago como CEO — ele precisa de visão estratégica, não de relatórios operacionais`;
 }
 
 function generateRuleBasedResponse(message: string, ctx: CRMContext): ChatResponse {
   const lower = message.toLowerCase();
+  const fmtStage = (s: string) => s.replace(/_/g, " ").toLowerCase();
 
-  // ── Help / Capabilities ──────────────────────────────────────────────
-  if (lower.includes("help") || lower.includes("what can you do") || lower.includes("capabilit") || lower.includes("ajuda") || lower.includes("o que você")) {
+  // ── Ajuda / Capabilities ────────────────────────────────────────────
+  if (lower.includes("help") || lower.includes("what can you") || lower.includes("ajuda") || lower.includes("o que você") || lower.includes("capabilit")) {
     return {
       message:
-        "I have access to **all your CRM data** and can help with:\n\n" +
-        "- **Pipeline & Deals** — overview, at-risk deals, stage breakdown, forecasts\n" +
-        "- **Leads** — stale leads, status breakdown, follow-up priorities\n" +
-        "- **Tasks** — overdue items, upcoming tasks, daily action plans\n" +
-        "- **Meetings** — today's schedule, upcoming calendar, prep support\n" +
-        "- **Accounts** — customer list, onboarding status, account health\n" +
-        "- **Contacts** — champions, decision makers, key people\n" +
-        "- **Companies** — portfolio overview, industry breakdown\n" +
-        "- **Activities** — recent activity log, engagement trends\n" +
-        "- **Revenue forecast** — weighted projections, stage breakdown\n\n" +
-        "Just ask me anything about your data! What would you like to explore?",
+        "Thiago, eu tenho acesso a **todos os dados do seu CRM** e atuo como sua diretora comercial. Posso te ajudar com:\n\n" +
+        "• **Pipeline & Deals** — análise de saúde, deals em risco, breakdown por stage\n" +
+        "• **Leads** — leads esfriando, priorização de follow-up, qualificação\n" +
+        "• **Tasks** — atrasadas, próximas da semana, plano de ação diário\n" +
+        "• **Reuniões** — agenda do dia, prep para calls, próximas da semana\n" +
+        "• **Accounts & Contatos** — champions, decision makers, saúde das contas\n" +
+        "• **Empresas** — portfólio, indústria, relacionamentos\n" +
+        "• **Forecast** — projeção ponderada, breakdown por stage, cenários\n" +
+        "• **Atividades** — volume de engajamento, tendências\n\n" +
+        "Me pergunte qualquer coisa — eu analiso e recomendo a próxima ação.",
       suggestions: [
-        { label: "Daily overview", action: "What should I focus on today?" },
-        { label: "Pipeline", action: "Give me a pipeline overview" },
-        { label: "My leads", action: "Show me my leads" },
+        { label: "Briefing do dia", action: "Me dê o briefing do dia" },
+        { label: "Pipeline", action: "Como está meu pipeline?" },
+        { label: "Deals em risco", action: "Quais deals estão em risco?" },
       ],
     };
   }
 
   // ── Leads ────────────────────────────────────────────────────────────
-  if (lower.includes("lead") || lower.includes("leads") || lower.includes("stale")) {
-    if (ctx.staleLeadsCount === 0) {
+  if (lower.includes("lead") || lower.includes("leads") || lower.includes("stale") || lower.includes("esfriando") || lower.includes("prospecção")) {
+    if (ctx.staleLeadsCount === 0 && ctx.allLeads.length === 0) {
       return {
-        message:
-          "Great news — you have no stale leads right now. All your leads have been touched in the last 30 days. " +
-          "Want me to look at your pipeline health instead?",
-        suggestions: [
-          { label: "Pipeline health", action: "How is my pipeline doing?" },
-          { label: "Today's tasks", action: "What tasks are due today?" },
-        ],
+        message: "Nenhum lead ativo no momento. Hora de prospectar — quer que eu analise o pipeline para identificar oportunidades de geração de leads?",
+        suggestions: [{ label: "Pipeline", action: "Analise meu pipeline" }, { label: "Empresas", action: "Quais empresas tenho?" }],
       };
     }
 
-    const leadList = ctx.staleLeads
-      .slice(0, 5)
-      .map((l) => `  • **${l.name}** — ${l.daysSinceUpdate} days without activity (${l.status.replace(/_/g, " ").toLowerCase()})`)
-      .join("\n");
+    // Show all leads with strategic analysis
+    const hotLeads = ctx.allLeads.filter((l) => l.temperature === "HOT" || l.fitScore >= 70);
+    const coldLeads = ctx.staleLeads;
+
+    let msg = `**Visão estratégica de leads** — ${ctx.totalLeadsCount} total no CRM:\n\n`;
+
+    if (hotLeads.length > 0) {
+      const hotList = hotLeads.slice(0, 3)
+        .map((l) => `  • **${l.name}** (${l.company}) — fit ${l.fitScore}/100, ${l.temperature.toLowerCase()}, ${fmtStage(l.status)}`)
+        .join("\n");
+      msg += `🔥 **Leads quentes (${hotLeads.length}):**\n${hotList}\n\n`;
+    }
+
+    if (coldLeads.length > 0) {
+      const coldList = coldLeads.slice(0, 3)
+        .map((l) => `  • **${l.name}** (${l.company}) — ${l.daysSinceUpdate} dias sem contato`)
+        .join("\n");
+      msg += `🧊 **Leads esfriando (${coldLeads.length}):**\n${coldList}\n\n`;
+    }
+
+    const statusLine = Object.entries(ctx.leadsByStatus)
+      .map(([s, c]) => `${fmtStage(s)}: ${c}`)
+      .join(" · ");
+    msg += `📊 **Status:** ${statusLine}\n\n`;
+
+    if (coldLeads.length > 0) {
+      msg += `**Minha recomendação:** Priorize o re-engajamento de **${coldLeads[0]?.name}** (${coldLeads[0]?.daysSinceUpdate} dias parado). Lead frio por mais de 45 dias tem taxa de conversão 3x menor. Quer que eu monte um plano de abordagem?`;
+    } else if (hotLeads.length > 0) {
+      msg += `**Minha recomendação:** Seus leads quentes estão prontos para avançar. **${hotLeads[0]?.name}** tem fit score de ${hotLeads[0]?.fitScore} — hora de agendar uma call de qualificação.`;
+    } else {
+      msg += "**Minha recomendação:** Seus leads precisam de mais nutrição. Considere uma campanha de re-engajamento por e-mail.";
+    }
 
     return {
-      message:
-        `You have **${ctx.staleLeadsCount} stale lead${ctx.staleLeadsCount === 1 ? "" : "s"}** going cold:\n\n` +
-        leadList +
-        (ctx.staleLeadsCount > 5 ? `\n  ...and ${ctx.staleLeadsCount - 5} more.\n\n` : "\n\n") +
-        `These haven't been touched in over 30 days. I'd recommend re-engaging the oldest ones first — ` +
-        `**${ctx.staleLeads[0]?.name}** is the most urgent at ${ctx.staleLeads[0]?.daysSinceUpdate} days. ` +
-        `Want me to help you draft a re-engagement plan?`,
+      message: msg,
       suggestions: [
-        { label: "Re-engage plan", action: "Help me create a re-engagement plan for stale leads" },
-        { label: "Pipeline check", action: "How is my pipeline?" },
-        { label: "Focus priorities", action: "What should I focus on today?" },
+        { label: "Plano de re-engajamento", action: "Monte um plano de re-engajamento para leads frios" },
+        { label: "Pipeline", action: "Como está meu pipeline?" },
+        { label: "Forecast", action: "Qual minha previsão de receita?" },
       ],
     };
   }
 
-  // ── At-Risk Deals (specific handler) ──────────────────────────────
-  if (lower.includes("risk") || lower.includes("at-risk") || lower.includes("at risk") || lower.includes("danger")) {
+  // ── Deals em Risco ──────────────────────────────────────────────────
+  if (lower.includes("risco") || lower.includes("risk") || lower.includes("at-risk") || lower.includes("perigo") || lower.includes("travad")) {
     if (ctx.atRiskDealsCount === 0) {
       return {
         message:
-          `No at-risk deals right now — all ${ctx.activeDealsCount} active deals have probability ≥ 40%. ` +
-          `Your pipeline looks healthy at ${formatCurrency(ctx.pipelineTotal)}. Keep the momentum going! ` +
-          `Want me to look at something else?`,
+          `Boa notícia, Thiago — nenhum deal em risco no momento. Todos os ${ctx.activeDealsCount} deals ativos têm probabilidade ≥ 40%. ` +
+          `Pipeline saudável em **${formatCurrency(ctx.pipelineTotal)}**. Momento ideal para acelerar os deals em stages avançados.`,
         suggestions: [
-          { label: "Pipeline breakdown", action: "Break down my pipeline by stage" },
-          { label: "Stale leads", action: "Do I have any stale leads?" },
-          { label: "Revenue forecast", action: "Give me a forecast" },
+          { label: "Pipeline completo", action: "Mostra o pipeline completo" },
+          { label: "Forecast", action: "Previsão de receita" },
         ],
       };
     }
 
     const dealList = ctx.atRiskDeals
-      .map((d) =>
-        `  • **${d.title}** — ${formatCurrency(d.value)} at ${d.probability}% probability (${d.stage.replace(/_/g, " ")}, ${d.daysInStage} days in stage)`
-      )
+      .sort((a, b) => b.value - a.value)
+      .map((d) => `  • **${d.title}** — ${formatCurrency(d.value)} | ${d.probability}% prob | ${fmtStage(d.stage)} | ${d.daysInStage}d no stage`)
       .join("\n");
 
     const totalAtRiskValue = ctx.atRiskDeals.reduce((s, d) => s + d.value, 0);
+    const stuckDeals = ctx.atRiskDeals.filter((d) => d.daysInStage > 14);
+    const biggestAtRisk = ctx.atRiskDeals.sort((a, b) => b.value - a.value)[0];
+
+    let msg =
+      `**${ctx.atRiskDealsCount} deals em risco** — ${formatCurrency(totalAtRiskValue)} em jogo:\n\n` +
+      dealList + "\n\n";
+
+    msg += `**Análise estratégica:**\n`;
+    if (stuckDeals.length > 0) {
+      msg += `• ${stuckDeals.length} deal${stuckDeals.length > 1 ? "s" : ""} travado${stuckDeals.length > 1 ? "s" : ""} há mais de 2 semanas — sinal de objeção não resolvida ou falta de champion interno\n`;
+    }
+    if (biggestAtRisk) {
+      msg += `• **${biggestAtRisk.title}** é o maior em risco (${formatCurrency(biggestAtRisk.value)}) — sugiro escalar com call executiva esta semana\n`;
+    }
+    msg += `\n**Ação imediata:** Agende follow-ups para os deals travados. Se o prospect não responder em 48h, mude a abordagem — entre por outro contato na empresa.`;
 
     return {
-      message:
-        `You have **${ctx.atRiskDealsCount} at-risk deal${ctx.atRiskDealsCount === 1 ? "" : "s"}** ` +
-        `worth ${formatCurrency(totalAtRiskValue)} total:\n\n` +
-        dealList + "\n\n" +
-        `These are dragging your weighted forecast down. ` +
-        (ctx.atRiskDeals.some((d) => d.daysInStage > 14)
-          ? `Some have been stuck in the same stage for over 2 weeks — those are the most urgent. `
-          : "") +
-        `I'd recommend scheduling follow-ups on these this week. Want me to help prioritize?`,
+      message: msg,
       suggestions: [
-        { label: "Prioritize deals", action: "Help me prioritize my at-risk deals" },
-        { label: "Full pipeline", action: "Show my full pipeline overview" },
-        { label: "Revenue impact", action: "How much revenue am I losing from at-risk deals?" },
+        { label: "Priorizar deals", action: "Me ajude a priorizar os deals em risco" },
+        { label: "Pipeline completo", action: "Pipeline completo" },
+        { label: "Impacto no forecast", action: "Qual o impacto dos deals em risco no forecast?" },
       ],
     };
   }
 
-  // ── Deals / Pipeline / Opportunities ─────────────────────────────────
+  // ── Pipeline / Deals / Oportunidades ────────────────────────────────
   if (
-    lower.includes("deal") ||
-    lower.includes("opportunity") ||
-    lower.includes("pipeline") ||
-    lower.includes("opportunities")
+    lower.includes("deal") || lower.includes("pipeline") || lower.includes("opportunity") ||
+    lower.includes("oportunidade") || lower.includes("negócio") || lower.includes("negocio")
   ) {
     const dealBreakdown = ctx.topOpportunities
-      .slice(0, 5)
-      .map((d) =>
-        `  • **${d.title}** — ${formatCurrency(d.value)} (${d.stage.replace(/_/g, " ")}, ${d.probability}% prob, ${d.daysInStage}d in stage)`
-      )
+      .map((d) => `  • **${d.title}** — ${formatCurrency(d.value)} | ${fmtStage(d.stage)} | ${d.probability}% | ${d.daysInStage}d`)
       .join("\n");
 
+    const stageBreakdown: Record<string, { count: number; value: number }> = {};
+    for (const o of ctx.topOpportunities) {
+      const stage = fmtStage(o.stage);
+      if (!stageBreakdown[stage]) stageBreakdown[stage] = { count: 0, value: 0 };
+      stageBreakdown[stage].count++;
+      stageBreakdown[stage].value += o.value;
+    }
+    const stageStr = Object.entries(stageBreakdown)
+      .map(([s, d]) => `${s}: ${d.count} (${formatCurrency(d.value)})`)
+      .join(" · ");
+
     let msg =
-      `Your pipeline is at **${formatCurrency(ctx.pipelineTotal)}** with ${ctx.activeDealsCount} active deal${ctx.activeDealsCount === 1 ? "" : "s"}.\n\n` +
-      `**Top deals:**\n${dealBreakdown || "No active deals."}\n\n`;
+      `**Pipeline: ${formatCurrency(ctx.pipelineTotal)}** — ${ctx.activeDealsCount} deals ativos\n\n` +
+      `**Top deals por valor:**\n${dealBreakdown || "Nenhum deal ativo."}\n\n` +
+      `**Por stage:** ${stageStr}\n\n`;
 
     if (ctx.atRiskDealsCount > 0) {
-      const atRiskNames = ctx.atRiskDeals.slice(0, 3).map((d) => d.title).join(", ");
-      msg += `⚠ ${ctx.atRiskDealsCount} deal${ctx.atRiskDealsCount === 1 ? "" : "s"} at risk (< 40% probability): ${atRiskNames}. Want me to dig into those?`;
+      const atRiskNames = ctx.atRiskDeals.slice(0, 3).map((d) => `**${d.title}**`).join(", ");
+      msg += `⚠ **Atenção:** ${ctx.atRiskDealsCount} deal${ctx.atRiskDealsCount > 1 ? "s" : ""} em risco: ${atRiskNames}. Probabilidade < 40% — precisam de ação imediata.`;
     } else {
-      msg += "All deals have healthy probability scores. Want a revenue forecast?";
+      msg += "✅ Pipeline saudável — todas as probabilidades acima de 40%. Quer ver a projeção de receita?";
     }
 
-    const suggestions: Suggestion[] = [];
-    if (ctx.atRiskDealsCount > 0) {
-      suggestions.push({ label: "At-risk deals", action: "Analyze my at-risk deals" });
-    }
-    suggestions.push({ label: "Forecast", action: "Give me a revenue forecast" });
-    suggestions.push({ label: "Stale leads", action: "Any stale leads?" });
-
-    return { message: msg, suggestions };
+    return {
+      message: msg,
+      suggestions: [
+        ...(ctx.atRiskDealsCount > 0 ? [{ label: "Deals em risco", action: "Analise os deals em risco" }] : []),
+        { label: "Forecast", action: "Previsão de receita" },
+        { label: "Tasks pendentes", action: "Quais tasks estão pendentes?" },
+      ],
+    };
   }
 
-  // ── Tasks / Overdue ──────────────────────────────────────────────────
-  if (lower.includes("task") || lower.includes("overdue") || lower.includes("to-do") || lower.includes("todo")) {
+  // ── Tasks / Tarefas ─────────────────────────────────────────────────
+  if (lower.includes("task") || lower.includes("tarefa") || lower.includes("overdue") || lower.includes("atrasad") || lower.includes("pendente") || lower.includes("to-do") || lower.includes("todo")) {
     if (ctx.overdueTasksCount === 0 && ctx.upcomingTasks.length === 0) {
       return {
-        message:
-          `You're all caught up — no overdue or upcoming tasks. ` +
-          `${ctx.totalTasksCount > 0 ? `You have ${ctx.totalTasksCount} total open tasks. ` : ""}` +
-          `Anything else you'd like to check?`,
-        suggestions: [
-          { label: "Pipeline check", action: "How is my pipeline?" },
-          { label: "Lead status", action: "Any stale leads?" },
-        ],
+        message: `Tudo em dia, Thiago — nenhuma task atrasada ou pendente. ${ctx.totalTasksCount > 0 ? `${ctx.totalTasksCount} tasks abertas no total. ` : ""}Hora de focar em prospecção ou avançar deals.`,
+        suggestions: [{ label: "Pipeline", action: "Como está meu pipeline?" }, { label: "Leads", action: "Meus leads" }],
       };
     }
 
     let msg = "";
     if (ctx.overdueTasksCount > 0) {
-      const taskList = ctx.overdueTasks.slice(0, 5)
-        .map((t) => `  • **${t.title}** [${t.priority}] — ${t.daysOverdue}d overdue${t.relatedTo ? ` (${t.relatedTo})` : ""}`)
+      const taskList = ctx.overdueTasks
+        .sort((a, b) => {
+          const prio: Record<string, number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+          return (prio[b.priority] || 0) - (prio[a.priority] || 0);
+        })
+        .slice(0, 5)
+        .map((t) => `  • **${t.title}** [${t.priority}] — ${t.daysOverdue}d atrasada${t.relatedTo ? ` → ${t.relatedTo}` : ""}`)
         .join("\n");
-      msg += `**${ctx.overdueTasksCount} overdue task${ctx.overdueTasksCount === 1 ? "" : "s"}:**\n${taskList}\n\n`;
+      msg += `🚨 **${ctx.overdueTasksCount} task${ctx.overdueTasksCount > 1 ? "s" : ""} atrasada${ctx.overdueTasksCount > 1 ? "s" : ""}:**\n${taskList}\n\n`;
     }
     if (ctx.upcomingTasks.length > 0) {
       const upcoming = ctx.upcomingTasks.slice(0, 3)
-        .map((t) => `  • **${t.title}** [${t.priority}] — due ${t.dueDate}${t.relatedTo ? ` (${t.relatedTo})` : ""}`)
+        .map((t) => `  • **${t.title}** [${t.priority}] — vence ${t.dueDate}${t.relatedTo ? ` → ${t.relatedTo}` : ""}`)
         .join("\n");
-      msg += `**Upcoming this week:**\n${upcoming}\n\n`;
+      msg += `📋 **Próximas da semana:**\n${upcoming}\n\n`;
     }
-    msg += ctx.overdueTasksCount > 0
-      ? `I'd prioritize the HIGH priority overdue items first. Want me to help you plan your task attack order?`
-      : `Looking good — just stay on top of the upcoming ones. Need help with anything else?`;
+
+    // Strategic insight — link tasks to deals
+    const dealLinkedOverdue = ctx.overdueTasks.filter((t) => t.relatedTo);
+    if (dealLinkedOverdue.length > 0) {
+      msg += `**Impacto no pipeline:** ${dealLinkedOverdue.length} task${dealLinkedOverdue.length > 1 ? "s" : ""} atrasada${dealLinkedOverdue.length > 1 ? "s" : ""} ${dealLinkedOverdue.length > 1 ? "estão" : "está"} vinculada${dealLinkedOverdue.length > 1 ? "s" : ""} a deals — cada dia de atraso reduz momentum de negociação. Comece pelas de prioridade HIGH/CRITICAL.`;
+    } else {
+      msg += "**Recomendação:** Resolva as tasks atrasadas antes de avançar com novos deals. Momentum perdido é difícil de recuperar.";
+    }
 
     return {
       message: msg,
       suggestions: [
-        { label: "Daily focus", action: "What should I focus on today?" },
-        { label: "Pipeline check", action: "How is my pipeline?" },
-        ...(ctx.staleLeadsCount > 0 ? [{ label: "Stale leads", action: "Show stale leads" }] : []),
+        { label: "Briefing do dia", action: "O que devo focar hoje?" },
+        { label: "Pipeline", action: "Pipeline" },
+        ...(ctx.staleLeadsCount > 0 ? [{ label: "Leads frios", action: "Leads esfriando" }] : []),
       ],
     };
   }
 
-  // ── Meetings / Calendar ─────────────────────────────────────────────
-  if (lower.includes("meeting") || lower.includes("reunião") || lower.includes("reuniao") || lower.includes("calendar") || lower.includes("agenda") || lower.includes("schedule")) {
+  // ── Reuniões / Agenda ───────────────────────────────────────────────
+  if (lower.includes("meeting") || lower.includes("reunião") || lower.includes("reuniao") || lower.includes("agenda") || lower.includes("calendar") || lower.includes("schedule")) {
     let msg = "";
     if (ctx.todayMeetings.length > 0) {
       const todayList = ctx.todayMeetings
         .map((m) => `  • **${m.startTime}** — ${m.title}${m.relatedTo ? ` (${m.relatedTo})` : ""} | ${m.attendees}`)
         .join("\n");
-      msg += `**Today's meetings (${ctx.todayMeetingsCount}):**\n${todayList}\n\n`;
+      msg += `📅 **Reuniões de hoje (${ctx.todayMeetingsCount}):**\n${todayList}\n\n`;
     } else {
-      msg += "No meetings scheduled for today.\n\n";
+      msg += "📅 Nenhuma reunião agendada para hoje.\n\n";
     }
     if (ctx.upcomingMeetings.length > 0) {
       const upList = ctx.upcomingMeetings.slice(0, 5)
-        .map((m) => `  • ${m.title}${m.relatedTo ? ` (${m.relatedTo})` : ""}`)
+        .map((m) => `  • ${m.title}${m.relatedTo ? ` → ${m.relatedTo}` : ""}`)
         .join("\n");
-      msg += `**Upcoming this week:**\n${upList}\n\n`;
+      msg += `**Próximas da semana:**\n${upList}\n\n`;
     }
-    msg += ctx.todayMeetings.length > 0
-      ? `Your first meeting is at ${ctx.todayMeetings[0].startTime}. Make sure you're prepared! Need a pipeline review before your calls?`
-      : "Your calendar is clear — great time to focus on prospecting or deal follow-ups. What would you like to work on?";
+
+    if (ctx.todayMeetings.length > 0) {
+      msg += `**Prep:** Primeira reunião às ${ctx.todayMeetings[0].startTime}. Revise os dados do deal antes da call — uma boa preparação aumenta em 40% a chance de avanço de stage.`;
+    } else {
+      msg += "**Oportunidade:** Agenda livre hoje — aproveite para fazer follow-ups com prospects e avançar deals parados. Quer que eu identifique os mais urgentes?";
+    }
 
     return {
       message: msg,
       suggestions: [
-        { label: "Pipeline review", action: "Give me a pipeline overview" },
-        { label: "Tasks due", action: "What tasks are due?" },
-        { label: "Lead follow-ups", action: "Which leads need follow-up?" },
+        { label: "Deals em risco", action: "Deals em risco" },
+        { label: "Tasks do dia", action: "Tasks pendentes" },
+        { label: "Pipeline", action: "Pipeline" },
       ],
     };
   }
 
-  // ── Accounts ────────────────────────────────────────────────────────
+  // ── Accounts / Contas ───────────────────────────────────────────────
   if (lower.includes("account") || lower.includes("conta") || lower.includes("customer") || lower.includes("cliente") || lower.includes("onboarding")) {
-    const accountList = ctx.accounts.slice(0, 8)
-      .map((a) => `  • **${a.name}** (${a.company}) — ${a.status}${a.isCustomer ? " ✓ customer" : ""}${a.onboardingStatus !== "PENDING" ? `, onboarding: ${a.onboardingStatus.toLowerCase()}` : ""}`)
-      .join("\n");
-
     const customers = ctx.accounts.filter((a) => a.isCustomer);
+    const accountList = ctx.accounts.slice(0, 8)
+      .map((a) => `  • **${a.name}** (${a.company}) — ${a.status}${a.isCustomer ? " ✅ cliente" : ""}${a.onboardingStatus !== "PENDING" ? ` | onboarding: ${fmtStage(a.onboardingStatus)}` : ""}`)
+      .join("\n");
 
     return {
       message:
-        `You have **${ctx.totalAccountsCount} account${ctx.totalAccountsCount === 1 ? "" : "s"}** ` +
-        `(${customers.length} active customer${customers.length === 1 ? "" : "s"}):\n\n` +
-        (accountList || "No accounts found.") +
-        (ctx.totalAccountsCount > 8 ? `\n  ...and ${ctx.totalAccountsCount - 8} more.\n\n` : "\n\n") +
-        `Want me to analyze account health or look at specific accounts?`,
+        `**${ctx.totalAccountsCount} accounts** (${customers.length} cliente${customers.length !== 1 ? "s" : ""} ativo${customers.length !== 1 ? "s" : ""}):\n\n` +
+        (accountList || "Nenhum account.") +
+        (ctx.totalAccountsCount > 8 ? `\n  ...e mais ${ctx.totalAccountsCount - 8}.\n\n` : "\n\n") +
+        `**Visão CCO:** Acompanhe de perto os accounts em onboarding — a experiência nos primeiros 90 dias define a retenção de longo prazo.`,
       suggestions: [
-        { label: "Pipeline", action: "Show my pipeline" },
-        { label: "Contacts", action: "Who are my key contacts?" },
-        { label: "Companies", action: "List my companies" },
+        { label: "Contatos-chave", action: "Quem são meus contatos-chave?" },
+        { label: "Empresas", action: "Minhas empresas" },
+        { label: "Pipeline", action: "Pipeline" },
       ],
     };
   }
 
-  // ── Contacts ────────────────────────────────────────────────────────
-  if (lower.includes("contact") || lower.includes("contato") || lower.includes("champion") || lower.includes("decision maker")) {
+  // ── Contatos ────────────────────────────────────────────────────────
+  if (lower.includes("contact") || lower.includes("contato") || lower.includes("champion") || lower.includes("decision maker") || lower.includes("decisor")) {
     const champions = ctx.contacts.filter((c) => c.isChampion);
     const decisionMakers = ctx.contacts.filter((c) => c.isDecisionMaker);
-
     const contactList = ctx.contacts.slice(0, 8)
-      .map((c) => `  • **${c.name}** (${c.company})${c.title ? ` — ${c.title}` : ""}${c.isChampion ? " ★champion" : ""}${c.isDecisionMaker ? " ★DM" : ""}`)
+      .map((c) => `  • **${c.name}** (${c.company})${c.title ? ` — ${c.title}` : ""}${c.isChampion ? " ⭐ champion" : ""}${c.isDecisionMaker ? " 🎯 decisor" : ""}`)
       .join("\n");
 
+    let msg =
+      `**${ctx.totalContactsCount} contatos** (${champions.length} champion${champions.length !== 1 ? "s" : ""}, ${decisionMakers.length} decisor${decisionMakers.length !== 1 ? "es" : ""}):\n\n` +
+      (contactList || "Nenhum contato.") +
+      (ctx.totalContactsCount > 8 ? `\n  ...e mais ${ctx.totalContactsCount - 8}.\n\n` : "\n\n");
+
+    if (champions.length > 0) {
+      msg += `**Estratégia:** Seus champions são o ativo mais valioso. **${champions[0].name}** é quem defende seu deal internamente — mantenha esse relacionamento aquecido com check-ins regulares.`;
+    } else {
+      msg += "**Alerta estratégico:** Nenhum champion identificado. Sem um defensor interno, deals avançam 60% mais devagar. Identifique quem mais se beneficia do seu produto em cada account.";
+    }
+
     return {
-      message:
-        `You have **${ctx.totalContactsCount} contact${ctx.totalContactsCount === 1 ? "" : "s"}** ` +
-        `(${champions.length} champion${champions.length === 1 ? "" : "s"}, ${decisionMakers.length} decision maker${decisionMakers.length === 1 ? "" : "s"}):\n\n` +
-        (contactList || "No contacts found.") +
-        (ctx.totalContactsCount > 8 ? `\n  ...and ${ctx.totalContactsCount - 8} more.\n\n` : "\n\n") +
-        (champions.length > 0
-          ? `Your champions are key — make sure you're nurturing **${champions[0].name}**. `
-          : "Consider identifying champions in your accounts for stronger deal support. ") +
-        "Want to dive deeper into any contact?",
+      message: msg,
       suggestions: [
-        { label: "Accounts", action: "Show my accounts" },
-        { label: "Companies", action: "List companies" },
-        { label: "Pipeline", action: "Pipeline overview" },
+        { label: "Accounts", action: "Meus accounts" },
+        { label: "Empresas", action: "Empresas" },
+        { label: "Pipeline", action: "Pipeline" },
       ],
     };
   }
 
-  // ── Companies ───────────────────────────────────────────────────────
-  if (lower.includes("company") || lower.includes("companies") || lower.includes("empresa") || lower.includes("organization")) {
+  // ── Empresas ────────────────────────────────────────────────────────
+  if (lower.includes("company") || lower.includes("companies") || lower.includes("empresa") || lower.includes("organizaç")) {
     const companyList = ctx.companies.slice(0, 8)
-      .map((c) => `  • **${c.name}**${c.industry ? ` (${c.industry})` : ""} — ${c.contactsCount} contacts, ${c.leadsCount} leads, ${c.accountsCount} accounts`)
+      .map((c) => `  • **${c.name}**${c.industry ? ` (${c.industry})` : ""} — ${c.contactsCount} contatos, ${c.leadsCount} leads, ${c.accountsCount} accounts`)
       .join("\n");
 
+    const companiesWithoutLeads = ctx.companies.filter((c) => c.leadsCount === 0 && c.accountsCount === 0);
+
+    let msg =
+      `**${ctx.totalCompaniesCount} empresa${ctx.totalCompaniesCount !== 1 ? "s" : ""}** no CRM:\n\n` +
+      (companyList || "Nenhuma empresa.") +
+      (ctx.totalCompaniesCount > 8 ? `\n  ...e mais ${ctx.totalCompaniesCount - 8}.\n\n` : "\n\n");
+
+    if (companiesWithoutLeads.length > 0) {
+      msg += `**Oportunidade:** ${companiesWithoutLeads.length} empresa${companiesWithoutLeads.length > 1 ? "s" : ""} sem leads ou accounts ativos — potencial inexplorado. Quer que eu identifique quais valem a pena reativar?`;
+    } else {
+      msg += "Todas as empresas têm leads ou accounts vinculados. Quer análise de alguma específica?";
+    }
+
     return {
-      message:
-        `You have **${ctx.totalCompaniesCount} compan${ctx.totalCompaniesCount === 1 ? "y" : "ies"}** in your CRM:\n\n` +
-        (companyList || "No companies found.") +
-        (ctx.totalCompaniesCount > 8 ? `\n  ...and ${ctx.totalCompaniesCount - 8} more.\n\n` : "\n\n") +
-        `Want me to analyze any specific company or check for companies without active leads?`,
+      message: msg,
       suggestions: [
-        { label: "Contacts", action: "Show my contacts" },
-        { label: "Accounts", action: "List accounts" },
-        { label: "Pipeline", action: "Pipeline overview" },
+        { label: "Contatos", action: "Meus contatos" },
+        { label: "Accounts", action: "Accounts" },
+        { label: "Pipeline", action: "Pipeline" },
       ],
     };
   }
 
-  // ── Activities ──────────────────────────────────────────────────────
-  if (lower.includes("activit") || lower.includes("atividade") || lower.includes("history") || lower.includes("log")) {
+  // ── Atividades ──────────────────────────────────────────────────────
+  if (lower.includes("activit") || lower.includes("atividade") || lower.includes("histórico") || lower.includes("history") || lower.includes("engajamento")) {
     const activityList = ctx.recentActivities.slice(0, 5)
       .map((a) => `  • [${a.createdAt}] **${a.type}**${a.subject ? `: ${a.subject}` : ""}${a.channel ? ` (${a.channel})` : ""}`)
       .join("\n");
 
+    const isLowActivity = ctx.recentActivitiesCount < 10;
+
     return {
       message:
-        `**${ctx.recentActivitiesCount} activities** in the last 7 days:\n\n` +
-        (activityList || "No recent activities.") +
-        (ctx.recentActivitiesCount > 5 ? `\n  ...and ${ctx.recentActivitiesCount - 5} more.\n\n` : "\n\n") +
-        (ctx.recentActivitiesCount < 10
-          ? "Activity is low — consider increasing outreach to keep deals moving. "
-          : "Good activity level! ") +
-        "Want to check which deals or leads need more activity?",
+        `**${ctx.recentActivitiesCount} atividades** nos últimos 7 dias:\n\n` +
+        (activityList || "Nenhuma atividade recente.") +
+        (ctx.recentActivitiesCount > 5 ? `\n  ...e mais ${ctx.recentActivitiesCount - 5}.\n\n` : "\n\n") +
+        (isLowActivity
+          ? "**Alerta CCO:** Volume de atividade baixo. Regra de ouro: cada deal ativo precisa de pelo menos 2 touchpoints por semana para manter momentum. Aumente o ritmo de outreach."
+          : "**Bom ritmo!** Mantenha essa cadência. Consistência de atividade é o melhor preditor de conversão."),
       suggestions: [
-        { label: "Stale leads", action: "Show stale leads" },
-        { label: "Pipeline", action: "Pipeline overview" },
-        { label: "Tasks", action: "What tasks are pending?" },
+        { label: "Leads frios", action: "Leads esfriando" },
+        { label: "Tasks", action: "Tasks pendentes" },
+        { label: "Pipeline", action: "Pipeline" },
       ],
     };
   }
 
-  // ── Forecast / Revenue ───────────────────────────────────────────────
-  if (lower.includes("forecast") || lower.includes("revenue") || lower.includes("projection") || lower.includes("previsão") || lower.includes("receita")) {
+  // ── Forecast / Receita / Projeção ───────────────────────────────────
+  if (lower.includes("forecast") || lower.includes("revenue") || lower.includes("previsão") || lower.includes("receita") || lower.includes("projeção") || lower.includes("projection")) {
     const weightedPipeline = ctx.topOpportunities.reduce(
-      (sum, o) => sum + o.value * (o.probability / 100),
-      0
+      (sum, o) => sum + o.value * (o.probability / 100), 0
     );
 
-    const stageBreakdown: Record<string, { count: number; value: number }> = {};
+    const stageBreakdown: Record<string, { count: number; value: number; weighted: number }> = {};
     for (const o of ctx.topOpportunities) {
-      const stage = o.stage.replace(/_/g, " ");
-      if (!stageBreakdown[stage]) stageBreakdown[stage] = { count: 0, value: 0 };
+      const stage = fmtStage(o.stage);
+      if (!stageBreakdown[stage]) stageBreakdown[stage] = { count: 0, value: 0, weighted: 0 };
       stageBreakdown[stage].count++;
       stageBreakdown[stage].value += o.value;
+      stageBreakdown[stage].weighted += o.value * (o.probability / 100);
     }
     const breakdownStr = Object.entries(stageBreakdown)
-      .map(([s, d]) => `  • **${s}**: ${d.count} deal${d.count === 1 ? "" : "s"} — ${formatCurrency(d.value)}`)
+      .map(([s, d]) => `  • **${s}:** ${d.count} deal${d.count > 1 ? "s" : ""} — ${formatCurrency(d.value)} (ponderado: ${formatCurrency(d.weighted)})`)
       .join("\n");
+
+    const conversionRate = ctx.pipelineTotal > 0 ? ((weightedPipeline / ctx.pipelineTotal) * 100).toFixed(0) : "0";
 
     return {
       message:
-        `**Weighted forecast: ${formatCurrency(weightedPipeline)}** ` +
-        `(from ${formatCurrency(ctx.pipelineTotal)} total pipeline across ${ctx.activeDealsCount} deals).\n\n` +
-        `**By stage:**\n${breakdownStr || "No data."}\n\n` +
+        `**Forecast ponderado: ${formatCurrency(weightedPipeline)}**\n` +
+        `Pipeline total: ${formatCurrency(ctx.pipelineTotal)} | ${ctx.activeDealsCount} deals | Taxa de conversão implícita: ${conversionRate}%\n\n` +
+        `**Por stage:**\n${breakdownStr || "Sem dados."}\n\n` +
         (ctx.atRiskDealsCount > 0
-          ? `${ctx.atRiskDealsCount} at-risk deal${ctx.atRiskDealsCount === 1 ? " is" : "s are"} dragging the forecast down. Improving those could add significant value. `
-          : "Probabilities look healthy across the board. ") +
-        "Want to dig into the at-risk deals?",
+          ? `**Risco:** ${ctx.atRiskDealsCount} deal${ctx.atRiskDealsCount > 1 ? "s" : ""} com probabilidade < 40% ${ctx.atRiskDealsCount > 1 ? "estão" : "está"} puxando o forecast pra baixo. Melhorar esses deals pode adicionar **${formatCurrency(ctx.atRiskDeals.reduce((s, d) => s + d.value * 0.3, 0))}** ao forecast.`
+          : "**Pipeline saudável** — probabilidades consistentes em todas as stages. Foco em acelerar os deals em stages avançados para fechar este trimestre."),
       suggestions: [
-        { label: "At-risk deals", action: "Show at-risk deals" },
-        { label: "Top deals", action: "Tell me about my top deals" },
-        { label: "Stale leads", action: "Any stale leads?" },
+        { label: "Deals em risco", action: "Deals em risco" },
+        { label: "Top deals", action: "Meus maiores deals" },
+        { label: "Leads", action: "Meus leads" },
       ],
     };
   }
 
-  // ── Default: Daily Overview ──────────────────────────────────────────
-  let overview = "**Your CRM snapshot:**\n\n";
+  // ── Default: Briefing Executivo ─────────────────────────────────────
+  let overview = "**Briefing executivo, Thiago:**\n\n";
 
-  // Key metrics
-  overview += `📊 **Pipeline:** ${formatCurrency(ctx.pipelineTotal)} across ${ctx.activeDealsCount} deals`;
-  if (ctx.atRiskDealsCount > 0) {
-    overview += ` (${ctx.atRiskDealsCount} at risk)`;
-  }
+  overview += `💰 **Pipeline:** ${formatCurrency(ctx.pipelineTotal)} em ${ctx.activeDealsCount} deals`;
+  if (ctx.atRiskDealsCount > 0) overview += ` (⚠ ${ctx.atRiskDealsCount} em risco)`;
   overview += "\n";
 
   if (ctx.overdueTasksCount > 0) {
     const topOverdue = ctx.overdueTasks[0];
-    overview += `⚠ **${ctx.overdueTasksCount} overdue task${ctx.overdueTasksCount === 1 ? "" : "s"}**`;
-    if (topOverdue) overview += ` — most urgent: ${topOverdue.title} (${topOverdue.daysOverdue}d)`;
+    overview += `🚨 **${ctx.overdueTasksCount} task${ctx.overdueTasksCount > 1 ? "s" : ""} atrasada${ctx.overdueTasksCount > 1 ? "s" : ""}**`;
+    if (topOverdue) overview += ` — urgente: ${topOverdue.title} (${topOverdue.daysOverdue}d)`;
     overview += "\n";
   }
 
   if (ctx.staleLeadsCount > 0) {
-    overview += `🔴 **${ctx.staleLeadsCount} stale lead${ctx.staleLeadsCount === 1 ? "" : "s"}** need re-engagement\n`;
+    overview += `🧊 **${ctx.staleLeadsCount} lead${ctx.staleLeadsCount > 1 ? "s" : ""} esfriando** — precisam de re-engajamento\n`;
   }
 
   if (ctx.todayMeetingsCount > 0) {
-    overview += `📅 **${ctx.todayMeetingsCount} meeting${ctx.todayMeetingsCount === 1 ? "" : "s"} today**`;
-    if (ctx.todayMeetings[0]) overview += ` — next: ${ctx.todayMeetings[0].title} at ${ctx.todayMeetings[0].startTime}`;
+    overview += `📅 **${ctx.todayMeetingsCount} reunião${ctx.todayMeetingsCount > 1 ? "ões" : ""} hoje**`;
+    if (ctx.todayMeetings[0]) overview += ` — próxima: ${ctx.todayMeetings[0].title} às ${ctx.todayMeetings[0].startTime}`;
     overview += "\n";
   }
 
-  overview += `👥 ${ctx.totalContactsCount} contacts · ${ctx.totalAccountsCount} accounts · ${ctx.totalCompaniesCount} companies · ${ctx.totalLeadsCount} leads\n`;
-  overview += `📈 ${ctx.recentActivitiesCount} activities this week\n\n`;
+  overview += `👥 ${ctx.totalContactsCount} contatos · ${ctx.totalAccountsCount} accounts · ${ctx.totalCompaniesCount} empresas · ${ctx.totalLeadsCount} leads\n`;
+  overview += `📈 ${ctx.recentActivitiesCount} atividades esta semana\n\n`;
 
-  // Recommendation
-  if (ctx.overdueTasksCount > 0) {
-    overview += "I'd start by tackling the overdue tasks — they can stall your deals. What should we work on first?";
+  // Strategic recommendation
+  if (ctx.overdueTasksCount > 0 && ctx.atRiskDealsCount > 0) {
+    overview += `**Prioridade #1:** Resolva as tasks atrasadas vinculadas aos deals em risco — cada dia de atraso corrói a confiança do prospect. Comece pelo deal de maior valor.`;
+  } else if (ctx.overdueTasksCount > 0) {
+    overview += `**Prioridade #1:** ${ctx.overdueTasksCount} tasks atrasadas. Tasks pendentes travam o avanço dos deals. Resolva as de prioridade HIGH primeiro.`;
   } else if (ctx.atRiskDealsCount > 0) {
-    overview += `Focus on the ${ctx.atRiskDealsCount} at-risk deal${ctx.atRiskDealsCount === 1 ? "" : "s"} — they need follow-ups to improve probability. Want details?`;
+    overview += `**Prioridade #1:** ${ctx.atRiskDealsCount} deal${ctx.atRiskDealsCount > 1 ? "s" : ""} em risco. Agende follow-ups agressivos esta semana — se não houver resposta em 48h, mude a abordagem.`;
   } else if (ctx.staleLeadsCount > 0) {
-    overview += "Your pipeline looks healthy! Let's re-engage those stale leads before they go cold. Want a plan?";
+    overview += `**Pipeline saudável!** Foco agora: re-engajar os ${ctx.staleLeadsCount} leads frios antes que virem oportunidades perdidas.`;
   } else {
-    overview += "Everything looks solid! Want to explore your pipeline or plan prospecting?";
+    overview += "**Tudo sob controle.** Pipeline saudável, tasks em dia, leads aquecidos. Momento ideal para prospectar novos deals e expandir o pipeline.";
   }
 
   const defaultSuggestions: Suggestion[] = [];
-  if (ctx.overdueTasksCount > 0) defaultSuggestions.push({ label: "Overdue tasks", action: "Show my overdue tasks" });
-  if (ctx.atRiskDealsCount > 0) defaultSuggestions.push({ label: "At-risk deals", action: "Show at-risk deals" });
-  if (ctx.staleLeadsCount > 0) defaultSuggestions.push({ label: "Stale leads", action: "Show stale leads" });
+  if (ctx.overdueTasksCount > 0) defaultSuggestions.push({ label: "Tasks atrasadas", action: "Tasks atrasadas" });
+  if (ctx.atRiskDealsCount > 0) defaultSuggestions.push({ label: "Deals em risco", action: "Deals em risco" });
+  if (ctx.staleLeadsCount > 0) defaultSuggestions.push({ label: "Leads frios", action: "Leads esfriando" });
   if (defaultSuggestions.length === 0) {
-    defaultSuggestions.push({ label: "Pipeline", action: "Pipeline overview" });
-    defaultSuggestions.push({ label: "Forecast", action: "Revenue forecast" });
+    defaultSuggestions.push({ label: "Pipeline", action: "Pipeline" });
+    defaultSuggestions.push({ label: "Forecast", action: "Previsão de receita" });
   }
-  defaultSuggestions.push({ label: "All data", action: "What data do you have access to?" });
+  defaultSuggestions.push({ label: "O que posso fazer?", action: "O que você pode fazer?" });
 
   return { message: overview, suggestions: defaultSuggestions.slice(0, 3) };
 }
@@ -826,9 +895,8 @@ export async function POST(request: NextRequest) {
     if (!organizationId) {
       return sendSuccess<ChatResponse>({
         message:
-          "It looks like your account isn't linked to an organization yet. " +
-          "Please complete onboarding first so I can access your CRM data. " +
-          "Need help with anything else?",
+          "Thiago, sua conta ainda não está vinculada a uma organização. " +
+          "Complete o onboarding primeiro para que eu possa acessar seus dados de CRM.",
       });
     }
 
@@ -877,36 +945,35 @@ function generateSuggestionsForMessage(message: string, ctx: CRMContext): Sugges
   const lower = message.toLowerCase();
   const suggestions: Suggestion[] = [];
 
-  // Context-aware follow-ups based on what the user asked about
-  if (lower.includes("lead") || lower.includes("stale")) {
-    suggestions.push({ label: "Pipeline", action: "How is my pipeline?" });
-    if (ctx.staleLeadsCount > 0) suggestions.push({ label: "Re-engage plan", action: "Help me re-engage stale leads" });
+  if (lower.includes("lead") || lower.includes("stale") || lower.includes("esfriando")) {
+    suggestions.push({ label: "Pipeline", action: "Como está meu pipeline?" });
+    if (ctx.staleLeadsCount > 0) suggestions.push({ label: "Re-engajamento", action: "Plano de re-engajamento para leads" });
   }
-  if (lower.includes("deal") || lower.includes("pipeline") || lower.includes("opportunity")) {
-    if (ctx.atRiskDealsCount > 0) suggestions.push({ label: "At-risk deals", action: "Show at-risk deals" });
-    suggestions.push({ label: "Forecast", action: "Revenue forecast" });
+  if (lower.includes("deal") || lower.includes("pipeline") || lower.includes("opportunity") || lower.includes("negócio")) {
+    if (ctx.atRiskDealsCount > 0) suggestions.push({ label: "Deals em risco", action: "Deals em risco" });
+    suggestions.push({ label: "Forecast", action: "Previsão de receita" });
   }
-  if (lower.includes("task") || lower.includes("overdue")) {
-    suggestions.push({ label: "Pipeline impact", action: "Are any deals impacted by overdue tasks?" });
+  if (lower.includes("task") || lower.includes("tarefa") || lower.includes("overdue") || lower.includes("atrasad")) {
+    suggestions.push({ label: "Impacto no pipeline", action: "Quais deals são impactados pelas tasks atrasadas?" });
   }
-  if (lower.includes("meeting") || lower.includes("calendar")) {
-    suggestions.push({ label: "Tasks due", action: "What tasks are due?" });
+  if (lower.includes("meeting") || lower.includes("reunião") || lower.includes("agenda")) {
+    suggestions.push({ label: "Tasks do dia", action: "Tasks pendentes" });
   }
-  if (lower.includes("account") || lower.includes("contact") || lower.includes("company")) {
-    suggestions.push({ label: "Pipeline", action: "Pipeline overview" });
-    suggestions.push({ label: "Leads", action: "Show my leads" });
+  if (lower.includes("account") || lower.includes("contact") || lower.includes("company") || lower.includes("contato") || lower.includes("empresa")) {
+    suggestions.push({ label: "Pipeline", action: "Pipeline" });
+    suggestions.push({ label: "Leads", action: "Meus leads" });
   }
-  if (lower.includes("forecast") || lower.includes("revenue")) {
-    suggestions.push({ label: "At-risk deals", action: "Show at-risk deals" });
-    suggestions.push({ label: "Top deals", action: "Tell me about my top deals" });
+  if (lower.includes("forecast") || lower.includes("receita") || lower.includes("previsão")) {
+    suggestions.push({ label: "Deals em risco", action: "Deals em risco" });
+    suggestions.push({ label: "Top deals", action: "Meus maiores deals" });
   }
 
   // Always offer follow-ups
   if (suggestions.length === 0) {
-    if (ctx.overdueTasksCount > 0) suggestions.push({ label: "Overdue tasks", action: "Show overdue tasks" });
-    if (ctx.atRiskDealsCount > 0) suggestions.push({ label: "At-risk deals", action: "Which deals are at risk?" });
-    if (ctx.staleLeadsCount > 0) suggestions.push({ label: "Stale leads", action: "Show stale leads" });
-    if (suggestions.length === 0) suggestions.push({ label: "Overview", action: "Give me my daily overview" });
+    if (ctx.overdueTasksCount > 0) suggestions.push({ label: "Tasks atrasadas", action: "Tasks atrasadas" });
+    if (ctx.atRiskDealsCount > 0) suggestions.push({ label: "Deals em risco", action: "Deals em risco" });
+    if (ctx.staleLeadsCount > 0) suggestions.push({ label: "Leads frios", action: "Leads esfriando" });
+    if (suggestions.length === 0) suggestions.push({ label: "Briefing", action: "Me dê o briefing do dia" });
   }
 
   return suggestions.slice(0, 3);

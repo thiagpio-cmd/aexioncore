@@ -10,6 +10,7 @@ import { CreateOpportunityModal } from "@/components/opportunities/create-opport
 import { Pagination } from "@/components/pagination";
 import { useSession } from "next-auth/react";
 import { TableSkeleton } from "@/components/shared/skeleton";
+import { AIInsightBanner } from "@/components/ai/ai-insight-banner";
 
 /** Convert DB stage names like LEAD_INQUIRY → "Lead Inquiry" */
 function stageLabel(stage: string): string {
@@ -98,6 +99,13 @@ export default function OpportunitiesPage() {
             </button>
           </div>
         }
+      />
+
+      {/* AI Deals Insight */}
+      <AIInsightBanner
+        prompt="Quais oportunidades precisam de atenção imediata e por quê?"
+        compact
+        className="mb-3"
       />
 
       {/* Tabs */}

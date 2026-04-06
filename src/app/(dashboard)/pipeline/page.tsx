@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { CreateOpportunityModal } from "@/components/opportunities/create-opportunity-modal";
 import { formatCurrency, getInitials, cn } from "@/lib/utils";
 import { TableSkeleton } from "@/components/shared/skeleton";
+import { AIInsightBanner } from "@/components/ai/ai-insight-banner";
 
 type ViewMode = "kanban" | "table" | "list";
 
@@ -263,6 +264,13 @@ export default function PipelinePage() {
             </button>
           </div>
         }
+      />
+
+      {/* AI Pipeline Insight */}
+      <AIInsightBanner
+        prompt="Analise a saúde do meu pipeline — quais deals precisam de atenção imediata?"
+        compact
+        className="mb-3"
       />
 
       {/* Search */}

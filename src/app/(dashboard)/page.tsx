@@ -11,6 +11,7 @@ import { ExecutiveWorkspace } from "@/components/workspaces/executive-workspace"
 import { SetupWizard, isOnboardingComplete } from "@/components/onboarding/setup-wizard";
 import { SetupProgressBanner } from "@/components/onboarding/progress-banner";
 import { MoneyAtRiskWidget } from "@/components/MoneyAtRiskWidget";
+import { AIInsightBanner } from "@/components/ai/ai-insight-banner";
 import { DebriefModal } from "@/components/DebriefModal";
 import { TodayView, TodayViewData } from "@/components/today-view";
 import { BentoGrid } from "@/components/design-system/BentoGrid";
@@ -467,6 +468,12 @@ export default function HomePage() {
           New Debrief
         </button>
       </div>
+
+      {/* ─── AI Strategic Briefing ─────────────────────────────── */}
+      <AIInsightBanner
+        prompt="Me dê o briefing executivo do dia com as prioridades mais urgentes"
+        className="mb-4"
+      />
 
       {/* ─── Today View ───────────────────────────────────────── */}
       {activeView === "today" && (

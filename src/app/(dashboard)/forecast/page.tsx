@@ -5,6 +5,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { cn } from "@/lib/utils";
+import { AIInsightBanner } from "@/components/ai/ai-insight-banner";
 
 type ViewMode = "overview" | "scenarios" | "gap";
 
@@ -72,6 +73,13 @@ export default function ForecastPage() {
           </div>
         }
       />
+      {/* AI Forecast Insight */}
+      <AIInsightBanner
+        prompt="Qual minha previsão de receita ponderada e o que posso fazer para melhorar o forecast?"
+        compact
+        className="mb-2"
+      />
+
       <div className="grid grid-cols-4 gap-4">
         <StatCard label="Commit" value={formatCurrency(totalCommit)} change={totalTarget > 0 ? `${((totalCommit / totalTarget) * 100).toFixed(0)}% of target` : "—"} changeType="neutral" />
         <StatCard label="Best Case" value={formatCurrency(totalBest)} change="Optimistic scenario" changeType="neutral" />

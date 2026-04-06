@@ -43,6 +43,19 @@ export function AIChatAssistant() {
     }
   }, [isOpen]);
 
+  // Listen for external events (from AI insight banners)
+  useEffect(() => {
+    function handleExternalSend(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (typeof detail === "string") {
+        setIsOpen(true);
+        setTimeout(() => sendMessage(detail), 200);
+      }
+    }
+    window.addEventListener("aexion-ai-send", handleExternalSend);
+    return () => window.removeEventListener("aexion-ai-send", handleExternalSend);
+  }, [sendMessage]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const generateId = () => `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   const sendMessage = useCallback(
@@ -165,7 +178,7 @@ export function AIChatAssistant() {
                   Aexion AI
                 </h3>
                 <p className="text-[11px] text-muted leading-none">
-                  CRM Consultant
+                  Diretora Comercial
                 </p>
               </div>
             </div>
@@ -208,20 +221,20 @@ export function AIChatAssistant() {
                   </svg>
                 </div>
                 <p className="text-sm font-medium text-foreground mb-1">
-                  How can I help?
+                  Sua Diretora Comercial
                 </p>
                 <p className="text-xs text-muted mb-4 max-w-[260px]">
-                  I know everything about your CRM — deals, leads, tasks,
-                  meetings, accounts, contacts, companies, and more. Just ask!
+                  Conheço todos os dados do seu CRM — deals, leads, tasks,
+                  reuniões, accounts, contatos e empresas. Me pergunte qualquer coisa.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {[
-                    { label: "📊 Daily overview", action: "What should I focus on today?" },
-                    { label: "🔴 At-risk deals", action: "Which deals are at risk?" },
-                    { label: "👥 My contacts", action: "Show my key contacts" },
-                    { label: "📅 Today's meetings", action: "What meetings do I have today?" },
-                    { label: "📈 Revenue forecast", action: "Give me a revenue forecast" },
-                    { label: "❓ What can you do?", action: "What can you do?" },
+                    { label: "📊 Briefing do dia", action: "Me dê o briefing do dia" },
+                    { label: "🔴 Deals em risco", action: "Quais deals estão em risco?" },
+                    { label: "👥 Contatos-chave", action: "Quem são meus contatos-chave?" },
+                    { label: "📅 Agenda de hoje", action: "Quais reuniões tenho hoje?" },
+                    { label: "📈 Forecast", action: "Previsão de receita" },
+                    { label: "💡 O que posso fazer?", action: "O que você pode fazer por mim?" },
                   ].map((s) => (
                     <button
                       key={s.label}
@@ -309,7 +322,7 @@ export function AIChatAssistant() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about your CRM data..."
+                placeholder="Pergunte sobre seus dados..."
                 rows={1}
                 className="flex-1 resize-none bg-background border border-border rounded-xl
                   px-3 py-2 text-sm text-foreground placeholder:text-muted

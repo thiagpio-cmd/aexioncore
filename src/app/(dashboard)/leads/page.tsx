@@ -10,6 +10,7 @@ import { CreateLeadModal } from "@/components/leads/create-lead-modal";
 import { Pagination } from "@/components/pagination";
 import { useSession } from "next-auth/react";
 import { TableSkeleton } from "@/components/shared/skeleton";
+import { AIInsightBanner } from "@/components/ai/ai-insight-banner";
 
 type FilterTab = "ALL" | "NEW" | "CONTACTED" | "QUALIFIED" | "CONVERTED" | "UNQUALIFIED";
 
@@ -77,6 +78,13 @@ export default function LeadsPage() {
             </button>
           </div>
         }
+      />
+
+      {/* AI Lead Insight */}
+      <AIInsightBanner
+        prompt="Analise meus leads — quais estão esfriando e quais são os mais quentes para converter?"
+        compact
+        className="mb-3"
       />
 
       {/* Tabs */}
