@@ -211,15 +211,17 @@ export function AIChatAssistant() {
                   How can I help?
                 </p>
                 <p className="text-xs text-muted mb-4 max-w-[260px]">
-                  Ask me about your leads, pipeline, tasks, forecasts, or
-                  anything about your CRM data.
+                  I know everything about your CRM — deals, leads, tasks,
+                  meetings, accounts, contacts, companies, and more. Just ask!
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {[
-                    { label: "Pipeline overview", action: "Give me a pipeline overview" },
-                    { label: "Overdue tasks", action: "Show my overdue tasks" },
-                    { label: "Stale leads", action: "Which leads are stale?" },
-                    { label: "What can you do?", action: "What can you do?" },
+                    { label: "📊 Daily overview", action: "What should I focus on today?" },
+                    { label: "🔴 At-risk deals", action: "Which deals are at risk?" },
+                    { label: "👥 My contacts", action: "Show my key contacts" },
+                    { label: "📅 Today's meetings", action: "What meetings do I have today?" },
+                    { label: "📈 Revenue forecast", action: "Give me a revenue forecast" },
+                    { label: "❓ What can you do?", action: "What can you do?" },
                   ].map((s) => (
                     <button
                       key={s.label}
