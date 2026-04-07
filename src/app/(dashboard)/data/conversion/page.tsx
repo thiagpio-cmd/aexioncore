@@ -4,7 +4,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { PageHeader } from "@/components/shared/page-header";
 import { DetailSkeleton } from "@/components/shared/skeleton";
 
-/** Convert DB stage names like LEAD_INQUIRY → "Lead Inquiry" */
+/** Convert DB stage names like LOI_SUBMITTED → "Loi Submitted" */
 function stageLabel(stage: string): string {
   return stage
     .replace(/_/g, " ")

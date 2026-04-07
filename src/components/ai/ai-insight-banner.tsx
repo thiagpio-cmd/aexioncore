@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 
 interface AIInsightBannerProps {
-  /** The context prompt sent to the AI (e.g. "Analise meu pipeline" or "Briefing do dia") */
+  /** The context prompt sent to the AI (e.g. "Analyze my pipeline" or "Daily briefing") */
   prompt: string;
   /** Optional CSS class */
   className?: string;
@@ -67,7 +67,7 @@ export function AIInsightBanner({
     return (
       <div className={`flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 ${className}`}>
         <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <span className="text-xs text-muted">Aexion AI analisando...</span>
+        <span className="text-xs text-muted">Aexion AI analyzing...</span>
       </div>
     );
   }

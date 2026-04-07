@@ -67,7 +67,7 @@ function metricLabel(key: string): string {
     .replace(/^./, (s) => s.toUpperCase());
 }
 
-/** Convert DB enum names like LEAD_INQUIRY → "Lead Inquiry" */
+/** Convert DB enum names like LOI_SUBMITTED → "Loi Submitted" */
 function enumLabel(val: string): string {
   return val
     .replace(/_/g, " ")
@@ -90,7 +90,7 @@ function formatMetricValue(key: string, value: unknown): string {
       .map(([k, v]) => {
         const label = enumLabel(k);
         if (typeof v === "object" && v !== null && !Array.isArray(v)) {
-          // e.g. byStage: { LEAD_INQUIRY: { count: 3, value: 500000 } }
+          // e.g. byStage: { LOI_SUBMITTED: { count: 3, value: 500000 } }
           const inner = v as Record<string, unknown>;
           const parts: string[] = [];
           if ("count" in inner) parts.push(`${inner.count}`);

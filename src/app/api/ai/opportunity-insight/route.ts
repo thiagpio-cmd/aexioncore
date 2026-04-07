@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     if (lastActivityDays !== null && lastActivityDays <= 2) signals.push({ type: "positive", text: "Recently active — momentum is strong" });
     if (overdueTasks > 0) signals.push({ type: "negative", text: `${overdueTasks} overdue task(s) — follow-up needed` });
     if (daysInStage > 14) signals.push({ type: "negative", text: `${daysInStage} days in current stage — may be stuck` });
-    if (opp.stage === "NEGOTIATION" && opp.probability >= 60) signals.push({ type: "positive", text: "In negotiation with strong probability — close is near" });
+    if (opp.stage === "LOI_NEGOTIATION" && opp.probability >= 60) signals.push({ type: "positive", text: "In LOI negotiation with strong probability — close is near" });
     if (!opp.primaryContact) signals.push({ type: "negative", text: "No primary contact linked — identify champion" });
     if (opp.expectedCloseDate) {
       const daysToExpectedClose = Math.floor((new Date(opp.expectedCloseDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -123,11 +123,15 @@ export async function GET(request: NextRequest) {
 
     // Estimated days to close
     const stageDaysMap: Record<string, number> = {
-      LEAD_INQUIRY: 30,
-      PROPERTY_TOUR: 20,
-      OFFER_SUBMITTED: 14,
-      UNDER_CONTRACT: 10,
-      DUE_DILIGENCE: 6,
+      PROSPECTING: 50,
+      INITIAL_CONTACT: 30,
+      PROPERTY_TOUR: 21,
+      LOI_SUBMITTED: 14,
+      LOI_NEGOTIATION: 21,
+      UNDER_CONTRACT: 14,
+      DUE_DILIGENCE: 30,
+      FINANCING: 21,
+      CLOSING: 14,
       CLOSED_WON: 0,
       CLOSED_LOST: 0,
     };
@@ -135,13 +139,17 @@ export async function GET(request: NextRequest) {
 
     // --- Next best action ---
     let nextAction = "Review deal strategy and determine next steps";
-    if (opp.stage === "LEAD_INQUIRY" && activityCount < 3) {
-      nextAction = "Schedule property tour and qualification meeting to advance the deal";
+    if (opp.stage === "PROSPECTING" && activityCount < 3) {
+      nextAction = "Schedule initial contact and qualification meeting to advance the deal";
+    } else if (opp.stage === "INITIAL_CONTACT" && activityCount < 3) {
+      nextAction = "Schedule property tour to advance the deal";
     } else if (opp.stage === "PROPERTY_TOUR" && !opp.primaryContact) {
       nextAction = "Identify and link a primary contact / decision-maker for this deal";
-    } else if (opp.stage === "OFFER_SUBMITTED" && lastActivityDays !== null && lastActivityDays > 5) {
-      nextAction = "Follow up on proposal — re-engage before momentum is lost";
-    } else if (opp.stage === "UNDER_CONTRACT" || opp.stage === "DUE_DILIGENCE") {
+    } else if (opp.stage === "LOI_SUBMITTED" && lastActivityDays !== null && lastActivityDays > 5) {
+      nextAction = "Follow up on LOI — re-engage before momentum is lost";
+    } else if (opp.stage === "LOI_NEGOTIATION" && lastActivityDays !== null && lastActivityDays > 5) {
+      nextAction = "Follow up on LOI negotiation — re-engage before momentum is lost";
+    } else if (opp.stage === "UNDER_CONTRACT" || opp.stage === "DUE_DILIGENCE" || opp.stage === "FINANCING" || opp.stage === "CLOSING") {
       nextAction = "Push for close — address remaining due diligence items and finalize terms";
     } else if (overdueTasks > 0) {
       nextAction = "Complete overdue tasks to maintain deal momentum";

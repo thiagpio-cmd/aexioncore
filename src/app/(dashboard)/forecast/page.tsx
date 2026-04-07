@@ -75,7 +75,7 @@ export default function ForecastPage() {
       />
       {/* AI Forecast Insight */}
       <AIInsightBanner
-        prompt="Qual minha previsão de receita ponderada e o que posso fazer para melhorar o forecast?"
+        prompt="What is my weighted revenue forecast and commission projection? How can I accelerate closings?"
         compact
         className="mb-2"
       />

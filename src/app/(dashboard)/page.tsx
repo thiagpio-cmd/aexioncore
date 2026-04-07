@@ -67,7 +67,7 @@ interface DashboardData {
   todayView?: TodayViewData;
 }
 
-/** Convert DB stage names like LEAD_INQUIRY → "Lead Inquiry" */
+/** Convert DB stage names like LOI_SUBMITTED → "Loi Submitted" */
 function stageLabel(stage: string): string {
   return stage
     .replace(/_/g, " ")
@@ -471,7 +471,7 @@ export default function HomePage() {
 
       {/* ─── AI Strategic Briefing ─────────────────────────────── */}
       <AIInsightBanner
-        prompt="Me dê o briefing executivo do dia com as prioridades mais urgentes"
+        prompt="Give me today's executive briefing: top priority deals, overdue tasks, and any at-risk properties in my pipeline"
         className="mb-4"
       />
 

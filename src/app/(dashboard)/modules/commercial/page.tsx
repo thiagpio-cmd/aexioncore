@@ -9,7 +9,7 @@ function fmt(n: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
-/** Convert DB enum names like LEAD_INQUIRY → "Lead Inquiry" */
+/** Convert DB enum names like LOI_SUBMITTED → "Loi Submitted" */
 function stageLabel(stage: string): string {
   return stage
     .replace(/_/g, " ")

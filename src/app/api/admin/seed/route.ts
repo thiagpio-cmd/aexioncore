@@ -442,13 +442,17 @@ export async function POST(request: NextRequest) {
     // ─── Pipeline & Stages ──────────────────────────────────────────
     const pipeline = await prisma.pipeline.create({ data: { organizationId: O, name: "Real Estate Sales Pipeline", description: "High-ticket property and development deal pipeline" } });
     const stageData = [
-      { name: "Lead Inquiry",    order: 1, color: "#3B82F6" },
-      { name: "Property Tour",   order: 2, color: "#8B5CF6" },
-      { name: "Offer Submitted", order: 3, color: "#F59E0B" },
-      { name: "Under Contract",  order: 4, color: "#EF4444" },
-      { name: "Due Diligence",   order: 5, color: "#06B6D4" },
-      { name: "Closed Won",      order: 6, color: "#10B981" },
-      { name: "Closed Lost",     order: 7, color: "#6B7280" },
+      { name: "Prospecting",      order: 1,  color: "#64748B" },
+      { name: "Initial Contact",  order: 2,  color: "#3B82F6" },
+      { name: "Property Tour",    order: 3,  color: "#6366F1" },
+      { name: "LOI Submitted",    order: 4,  color: "#8B5CF6" },
+      { name: "LOI Negotiation",  order: 5,  color: "#A855F7" },
+      { name: "Under Contract",   order: 6,  color: "#F59E0B" },
+      { name: "Due Diligence",    order: 7,  color: "#06B6D4" },
+      { name: "Financing",        order: 8,  color: "#14B8A6" },
+      { name: "Closing",          order: 9,  color: "#84CC16" },
+      { name: "Closed Won",       order: 10, color: "#10B981" },
+      { name: "Closed Lost",      order: 11, color: "#6B7280" },
     ];
     const stages: Record<string, string> = {};
     for (const s of stageData) {
@@ -460,29 +464,222 @@ export async function POST(request: NextRequest) {
     const mkOpp = (p: { title: string; description?: string; value: number; stage: string; stageId: string; probability: number; accountId: string; ownerId: string; ownerName: string; expectedCloseDate: Date; createdAt?: Date; primaryContactId?: string }) =>
       prisma.opportunity.create({ data: { organizationId: O, ...p } });
 
+    // Add CRE columns to opportunities table
+    await addCol("opportunities", "propertyType", "TEXT");
+    await addCol("opportunities", "propertyAddress", "TEXT");
+    await addCol("opportunities", "propertyCity", "TEXT");
+    await addCol("opportunities", "propertyState", "TEXT");
+    await addCol("opportunities", "propertySqft", "INTEGER");
+    await addCol("opportunities", "pricePerSqft", "DOUBLE PRECISION");
+    await addCol("opportunities", "capRate", "DOUBLE PRECISION");
+    await addCol("opportunities", "noi", "DOUBLE PRECISION");
+    await addCol("opportunities", "occupancyRate", "DOUBLE PRECISION");
+    await addCol("opportunities", "yearBuilt", "INTEGER");
+    await addCol("opportunities", "zoning", "TEXT");
+    await addCol("opportunities", "dealType", "TEXT");
+    await addCol("opportunities", "leaseTermMonths", "INTEGER");
+    await addCol("opportunities", "askingRent", "DOUBLE PRECISION");
+    await addCol("opportunities", "tenantName", "TEXT");
+    await addCol("opportunities", "tenantIndustry", "TEXT");
+    await addCol("opportunities", "loiSubmittedAt", "TIMESTAMPTZ");
+    await addCol("opportunities", "dueDiligenceStart", "TIMESTAMPTZ");
+    await addCol("opportunities", "dueDiligenceEnd", "TIMESTAMPTZ");
+    await addCol("opportunities", "scheduledClosing", "TIMESTAMPTZ");
+
+    // Create Commission table
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "commissions" (
+        "id" TEXT NOT NULL PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        "organizationId" TEXT NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+        "opportunityId" TEXT NOT NULL REFERENCES "opportunities"("id") ON DELETE CASCADE,
+        "agentId" TEXT NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+        "role" TEXT NOT NULL,
+        "splitPercent" DOUBLE PRECISION NOT NULL,
+        "grossAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "netAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "status" TEXT NOT NULL DEFAULT 'PENDING',
+        "paidAt" TIMESTAMPTZ,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "commissions_oppId" ON "commissions"("opportunityId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "commissions_agentId" ON "commissions"("agentId")`);
+
+    // Create PropertyComp table
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "property_comps" (
+        "id" TEXT NOT NULL PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        "organizationId" TEXT NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+        "address" TEXT NOT NULL,
+        "city" TEXT NOT NULL,
+        "state" TEXT NOT NULL,
+        "propertyType" TEXT NOT NULL,
+        "sqft" INTEGER NOT NULL,
+        "salePrice" DOUBLE PRECISION NOT NULL,
+        "pricePerSqft" DOUBLE PRECISION NOT NULL,
+        "capRate" DOUBLE PRECISION,
+        "noi" DOUBLE PRECISION,
+        "occupancyRate" DOUBLE PRECISION,
+        "closedDate" TIMESTAMPTZ NOT NULL,
+        "source" TEXT,
+        "notes" TEXT,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "property_comps_type" ON "property_comps"("propertyType")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "property_comps_city" ON "property_comps"("city")`);
+
+    // Create DealDocument table
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "deal_documents" (
+        "id" TEXT NOT NULL PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        "organizationId" TEXT NOT NULL REFERENCES "organizations"("id") ON DELETE CASCADE,
+        "opportunityId" TEXT NOT NULL REFERENCES "opportunities"("id") ON DELETE CASCADE,
+        "type" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "fileUrl" TEXT,
+        "version" INTEGER NOT NULL DEFAULT 1,
+        "status" TEXT NOT NULL DEFAULT 'DRAFT',
+        "sentAt" TIMESTAMPTZ,
+        "signedAt" TIMESTAMPTZ,
+        "expiresAt" TIMESTAMPTZ,
+        "notes" TEXT,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "deal_documents_oppId" ON "deal_documents"("opportunityId")`);
+
     const opps: any[] = [];
-    // LEAD INQUIRY (3)
-    opps.push(await mkOpp({ title: "Westfield — 42-Unit Luxury Condo (Coral Gables)",        description: "New luxury condo development, 42 units, waterfront location in Coral Gables FL",                                value: 2800000,  stage: "LEAD_INQUIRY",    stageId: stages["Lead Inquiry"],    probability: 15, accountId: acctSkyline.id,     ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(85),  primaryContactId: ctRobertWest.id }));
-    opps.push(await mkOpp({ title: "Skyline Tower — Pre-Construction Sales (Brickell)",       description: "250 luxury condos in Miami's Brickell district, pre-construction phase marketing",                               value: 1200000,  stage: "LEAD_INQUIRY",    stageId: stages["Lead Inquiry"],    probability: 10, accountId: acctSkyline.id,     ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: future(90),  primaryContactId: ctKevinSkyline.id }));
-    opps.push(await mkOpp({ title: "Gold Coast — Penthouse Portfolio (Palm Beach)",           description: "3 ultra-luxury penthouses in Palm Beach, $4M+ each, international buyer network",                                value: 850000,   stage: "LEAD_INQUIRY",    stageId: stages["Lead Inquiry"],    probability: 20, accountId: acctSkyline.id,     ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(75),  primaryContactId: ctSophiaGold.id }));
+    // PROSPECTING (3) — Early pipeline, initial outreach
+    opps.push(await mkOpp({ title: "Westfield — 42-Unit Luxury Condo (Coral Gables)",        description: "New luxury condo development, 42 units, waterfront location in Coral Gables FL",                                value: 2800000,  stage: "PROSPECTING",       stageId: stages["Prospecting"],      probability: 5,   accountId: acctSkyline.id,     ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(85),  primaryContactId: ctRobertWest.id }));
+    opps.push(await mkOpp({ title: "Skyline Tower — Pre-Construction Sales (Brickell)",       description: "250 luxury condos in Miami's Brickell district, pre-construction phase marketing",                               value: 1200000,  stage: "PROSPECTING",       stageId: stages["Prospecting"],      probability: 5,   accountId: acctSkyline.id,     ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: future(90),  primaryContactId: ctKevinSkyline.id }));
+    opps.push(await mkOpp({ title: "Gold Coast — Penthouse Portfolio (Palm Beach)",           description: "3 ultra-luxury penthouses in Palm Beach, $4M+ each, international buyer network",                                value: 850000,   stage: "INITIAL_CONTACT",   stageId: stages["Initial Contact"],  probability: 10,  accountId: acctSkyline.id,     ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(75),  primaryContactId: ctSophiaGold.id }));
     // PROPERTY TOUR (3)
-    opps.push(await mkOpp({ title: "Silverstone — 200K SF Office Campus (Reston, VA)",        description: "Class A office campus, 200,000 SF, Northern Virginia tech corridor, NNN lease",                                  value: 4500000,  stage: "PROPERTY_TOUR",   stageId: stages["Property Tour"],   probability: 35, accountId: acctSilverstone.id,  ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: future(60),  primaryContactId: ctMarcusSilver.id }));
-    opps.push(await mkOpp({ title: "Coastal Living — 28-Lot Subdivision (Kiawah Island)",     description: "Master-planned 28-lot subdivision on Kiawah Island, SC. Lots avg $800K each",                                    value: 3200000,  stage: "PROPERTY_TOUR",   stageId: stages["Property Tour"],   probability: 40, accountId: acctCoastal.id,      ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(50),  primaryContactId: ctDianaCoast.id }));
-    opps.push(await mkOpp({ title: "Palmetto Capital — 120-Unit Multifamily (Nashville)",     description: "Value-add multifamily acquisition, 120 units in Nashville submarket, 7.2% cap rate",                             value: 1800000,  stage: "PROPERTY_TOUR",   stageId: stages["Property Tour"],   probability: 45, accountId: acctPalmetto.id,     ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: future(45),  primaryContactId: ctCatherinePalm.id }));
-    // OFFER SUBMITTED (2)
-    opps.push(await mkOpp({ title: "Summit Peak — Waterfront Mixed-Use (Charleston)",         description: "12-story mixed-use waterfront development, retail + 180 residential units, Charleston SC",                       value: 8500000,  stage: "OFFER_SUBMITTED", stageId: stages["Offer Submitted"], probability: 55, accountId: acctSummitPeak.id,   ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(30),  primaryContactId: ctJamesSummit.id }));
-    opps.push(await mkOpp({ title: "MetroNest — Brooklyn Heights Conversion (NYC)",           description: "Warehouse-to-residential conversion, 85 units, Brooklyn Heights, NYC approvals in hand",                         value: 5200000,  stage: "OFFER_SUBMITTED", stageId: stages["Offer Submitted"], probability: 60, accountId: acctMetroNest.id,    ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: future(25),  primaryContactId: ctChrisMetro.id }));
-    // UNDER CONTRACT (2)
-    opps.push(await mkOpp({ title: "Meridian — 350K SF Class A Office (Washington DC)",       description: "Trophy Class A office, Pennsylvania Ave, 350,000 SF, 95% occupied, 10-year hold strategy",                       value: 12000000, stage: "UNDER_CONTRACT",  stageId: stages["Under Contract"],  probability: 75, accountId: acctMeridianRE.id,   ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(14),  primaryContactId: ctThomasMerid.id }));
-    opps.push(await mkOpp({ title: "Coastal Living — Luxury Estate Portfolio (Hilton Head)",   description: "Portfolio of 6 luxury waterfront estates, Hilton Head Island, $2.5M-$4.5M each",                                 value: 6800000,  stage: "UNDER_CONTRACT",  stageId: stages["Under Contract"],  probability: 80, accountId: acctCoastal.id,      ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: future(10),  primaryContactId: ctDianaCoast.id }));
-    // DUE DILIGENCE (1)
-    opps.push(await mkOpp({ title: "Palmetto Capital — Savannah Portfolio (8 Properties)",    description: "8-property portfolio in Savannah historic district, mix of retail and residential, stabilized",                   value: 9500000,  stage: "DUE_DILIGENCE",   stageId: stages["Due Diligence"],   probability: 90, accountId: acctPalmetto.id,     ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(5),   primaryContactId: ctCatherinePalm.id }));
+    opps.push(await mkOpp({ title: "Silverstone — 200K SF Office Campus (Reston, VA)",        description: "Class A office campus, 200,000 SF, Northern Virginia tech corridor, NNN lease",                                  value: 4500000,  stage: "PROPERTY_TOUR",     stageId: stages["Property Tour"],    probability: 20,  accountId: acctSilverstone.id,  ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: future(60),  primaryContactId: ctMarcusSilver.id }));
+    opps.push(await mkOpp({ title: "Coastal Living — 28-Lot Subdivision (Kiawah Island)",     description: "Master-planned 28-lot subdivision on Kiawah Island, SC. Lots avg $800K each",                                    value: 3200000,  stage: "PROPERTY_TOUR",     stageId: stages["Property Tour"],    probability: 20,  accountId: acctCoastal.id,      ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(50),  primaryContactId: ctDianaCoast.id }));
+    opps.push(await mkOpp({ title: "Palmetto Capital — 120-Unit Multifamily (Nashville)",     description: "Value-add multifamily acquisition, 120 units in Nashville submarket, 7.2% cap rate",                             value: 1800000,  stage: "PROPERTY_TOUR",     stageId: stages["Property Tour"],    probability: 20,  accountId: acctPalmetto.id,     ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: future(45),  primaryContactId: ctCatherinePalm.id }));
+    // LOI SUBMITTED (1) + LOI NEGOTIATION (1)
+    opps.push(await mkOpp({ title: "Summit Peak — Waterfront Mixed-Use (Charleston)",         description: "12-story mixed-use waterfront development, retail + 180 residential units, Charleston SC",                       value: 8500000,  stage: "LOI_SUBMITTED",     stageId: stages["LOI Submitted"],    probability: 35,  accountId: acctSummitPeak.id,   ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(30),  primaryContactId: ctJamesSummit.id }));
+    opps.push(await mkOpp({ title: "MetroNest — Brooklyn Heights Conversion (NYC)",           description: "Warehouse-to-residential conversion, 85 units, Brooklyn Heights, NYC approvals in hand",                         value: 5200000,  stage: "LOI_NEGOTIATION",   stageId: stages["LOI Negotiation"],  probability: 50,  accountId: acctMetroNest.id,    ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: future(25),  primaryContactId: ctChrisMetro.id }));
+    // UNDER CONTRACT (1) + FINANCING (1)
+    opps.push(await mkOpp({ title: "Meridian — 350K SF Class A Office (Washington DC)",       description: "Trophy Class A office, Pennsylvania Ave, 350,000 SF, 95% occupied, 10-year hold strategy",                       value: 12000000, stage: "UNDER_CONTRACT",    stageId: stages["Under Contract"],   probability: 65,  accountId: acctMeridianRE.id,   ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(14),  primaryContactId: ctThomasMerid.id }));
+    opps.push(await mkOpp({ title: "Coastal Living — Luxury Estate Portfolio (Hilton Head)",   description: "Portfolio of 6 luxury waterfront estates, Hilton Head Island, $2.5M-$4.5M each",                                 value: 6800000,  stage: "FINANCING",         stageId: stages["Financing"],        probability: 85,  accountId: acctCoastal.id,      ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: future(10),  primaryContactId: ctDianaCoast.id }));
+    // CLOSING (1)
+    opps.push(await mkOpp({ title: "Palmetto Capital — Savannah Portfolio (8 Properties)",    description: "8-property portfolio in Savannah historic district, mix of retail and residential, stabilized",                   value: 9500000,  stage: "CLOSING",           stageId: stages["Closing"],          probability: 95,  accountId: acctPalmetto.id,     ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: future(5),   primaryContactId: ctCatherinePalm.id }));
     // CLOSED WON (2)
-    opps.push(await mkOpp({ title: "Silverstone — Industrial Park (Atlanta)",                 description: "500,000 SF industrial distribution center, Atlanta metro, Amazon pre-lease",                                     value: 7200000,  stage: "CLOSED_WON",      stageId: stages["Closed Won"],      probability: 100, accountId: acctSilverstone.id, ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: d(5),  createdAt: d(60), primaryContactId: ctMarcusSilver.id }));
-    opps.push(await mkOpp({ title: "Palmetto Capital — Charlotte Multifamily Disposition",    description: "Disposition of 220-unit Class B multifamily, Charlotte NC, held 4 years, 2.1x return",                            value: 15000000, stage: "CLOSED_WON",      stageId: stages["Closed Won"],      probability: 100, accountId: acctPalmetto.id,    ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: d(12), createdAt: d(75), primaryContactId: ctCatherinePalm.id }));
+    opps.push(await mkOpp({ title: "Silverstone — Industrial Park (Atlanta)",                 description: "500,000 SF industrial distribution center, Atlanta metro, Amazon pre-lease",                                     value: 7200000,  stage: "CLOSED_WON",        stageId: stages["Closed Won"],       probability: 100, accountId: acctSilverstone.id, ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: d(5),  createdAt: d(60), primaryContactId: ctMarcusSilver.id }));
+    opps.push(await mkOpp({ title: "Palmetto Capital — Charlotte Multifamily Disposition",    description: "Disposition of 220-unit Class B multifamily, Charlotte NC, held 4 years, 2.1x return",                            value: 15000000, stage: "CLOSED_WON",        stageId: stages["Closed Won"],       probability: 100, accountId: acctPalmetto.id,    ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: d(12), createdAt: d(75), primaryContactId: ctCatherinePalm.id }));
     // CLOSED LOST (2)
-    opps.push(await mkOpp({ title: "Evergreen — Austin Mixed-Use (Lost to Competitor)",       description: "Lost to competing developer — better relationship with city planning commission",                                  value: 4200000,  stage: "CLOSED_LOST",     stageId: stages["Closed Lost"],     probability: 0,  accountId: acctEvergreen.id,   ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: d(8),  createdAt: d(40) }));
-    opps.push(await mkOpp({ title: "Lakeside Resort — Mountain Lodge Development",            description: "Buyer pulled out after environmental impact study raised concerns about wetland preservation",                     value: 3600000,  stage: "CLOSED_LOST",     stageId: stages["Closed Lost"],     probability: 0,  accountId: acctEvergreen.id,   ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: d(15), createdAt: d(50) }));
+    opps.push(await mkOpp({ title: "Evergreen — Austin Mixed-Use (Lost to Competitor)",       description: "Lost to competing developer — better relationship with city planning commission",                                  value: 4200000,  stage: "CLOSED_LOST",       stageId: stages["Closed Lost"],      probability: 0,  accountId: acctEvergreen.id,   ownerId: emma.id,   ownerName: "Emma Blackwell",    expectedCloseDate: d(8),  createdAt: d(40) }));
+    opps.push(await mkOpp({ title: "Lakeside Resort — Mountain Lodge Development",            description: "Buyer pulled out after environmental impact study raised concerns about wetland preservation",                     value: 3600000,  stage: "CLOSED_LOST",       stageId: stages["Closed Lost"],      probability: 0,  accountId: acctEvergreen.id,   ownerId: james.id,  ownerName: "James Whitfield",   expectedCloseDate: d(15), createdAt: d(50) }));
+
+    // ─── Update CRE fields on opportunities via raw SQL ────────────
+    const creUpdates = [
+      { idx: 0,  propertyType: "MULTIFAMILY", propertyAddress: "3400 SW 27th Ave",    propertyCity: "Coral Gables",    propertyState: "FL", propertySqft: 52000,  pricePerSqft: 53.85,  capRate: null,  noi: null,       occupancyRate: null,  yearBuilt: null,  dealType: "SALE" },
+      { idx: 1,  propertyType: "MULTIFAMILY", propertyAddress: "1001 Brickell Bay Dr", propertyCity: "Miami",           propertyState: "FL", propertySqft: 320000, pricePerSqft: 3.75,   capRate: null,  noi: null,       occupancyRate: null,  yearBuilt: null,  dealType: "SALE" },
+      { idx: 2,  propertyType: "MULTIFAMILY", propertyAddress: "200 S Ocean Blvd",    propertyCity: "Palm Beach",      propertyState: "FL", propertySqft: 12000,  pricePerSqft: 70.83,  capRate: null,  noi: null,       occupancyRate: null,  yearBuilt: 2019, dealType: "SALE" },
+      { idx: 3,  propertyType: "OFFICE",      propertyAddress: "1500 Innovation Dr",  propertyCity: "Reston",          propertyState: "VA", propertySqft: 200000, pricePerSqft: 22.50,  capRate: 6.8,   noi: 306000,     occupancyRate: 92,    yearBuilt: 2015, dealType: "LEASE" },
+      { idx: 4,  propertyType: "LAND",        propertyAddress: "Kiawah Island Pkwy",  propertyCity: "Kiawah Island",   propertyState: "SC", propertySqft: 610000, pricePerSqft: 5.25,   capRate: null,  noi: null,       occupancyRate: null,  yearBuilt: null,  dealType: "SALE" },
+      { idx: 5,  propertyType: "MULTIFAMILY", propertyAddress: "2200 West End Ave",   propertyCity: "Nashville",       propertyState: "TN", propertySqft: 95000,  pricePerSqft: 18.95,  capRate: 7.2,   noi: 129600,     occupancyRate: 88,    yearBuilt: 1998, dealType: "SALE" },
+      { idx: 6,  propertyType: "MIXED_USE",   propertyAddress: "45 Calhoun St",       propertyCity: "Charleston",      propertyState: "SC", propertySqft: 280000, pricePerSqft: 30.36,  capRate: 5.8,   noi: 493000,     occupancyRate: null,  yearBuilt: null,  dealType: "SALE" },
+      { idx: 7,  propertyType: "MULTIFAMILY", propertyAddress: "120 Clark St",        propertyCity: "Brooklyn",        propertyState: "NY", propertySqft: 78000,  pricePerSqft: 66.67,  capRate: 5.1,   noi: 265200,     occupancyRate: null,  yearBuilt: 1952, dealType: "SALE" },
+      { idx: 8,  propertyType: "OFFICE",      propertyAddress: "1600 Pennsylvania Ave",propertyCity: "Washington",     propertyState: "DC", propertySqft: 350000, pricePerSqft: 34.29,  capRate: 6.2,   noi: 744000,     occupancyRate: 95,    yearBuilt: 2008, dealType: "LEASE" },
+      { idx: 9,  propertyType: "MULTIFAMILY", propertyAddress: "Hilton Head Island",  propertyCity: "Hilton Head",     propertyState: "SC", propertySqft: 42000,  pricePerSqft: 161.90, capRate: 4.8,   noi: 326400,     occupancyRate: 100,   yearBuilt: 2020, dealType: "SALE" },
+      { idx: 10, propertyType: "RETAIL",      propertyAddress: "Bull St District",    propertyCity: "Savannah",        propertyState: "GA", propertySqft: 125000, pricePerSqft: 76.00,  capRate: 7.5,   noi: 712500,     occupancyRate: 91,    yearBuilt: 1890, dealType: "SALE" },
+      { idx: 11, propertyType: "INDUSTRIAL",  propertyAddress: "4500 Fulton Industrial", propertyCity: "Atlanta",      propertyState: "GA", propertySqft: 500000, pricePerSqft: 14.40,  capRate: 5.2,   noi: 374400,     occupancyRate: 100,   yearBuilt: 2021, dealType: "SALE" },
+      { idx: 12, propertyType: "MULTIFAMILY", propertyAddress: "1200 South Blvd",     propertyCity: "Charlotte",       propertyState: "NC", propertySqft: 180000, pricePerSqft: 83.33,  capRate: 5.5,   noi: 825000,     occupancyRate: 94,    yearBuilt: 2005, dealType: "SALE" },
+      { idx: 13, propertyType: "MIXED_USE",   propertyAddress: "700 Congress Ave",    propertyCity: "Austin",          propertyState: "TX", propertySqft: 160000, pricePerSqft: 26.25,  capRate: 5.9,   noi: 247800,     occupancyRate: null,  yearBuilt: null,  dealType: "SALE" },
+      { idx: 14, propertyType: "HOSPITALITY", propertyAddress: "Blue Ridge Pkwy",     propertyCity: "Asheville",       propertyState: "NC", propertySqft: 85000,  pricePerSqft: 42.35,  capRate: 6.1,   noi: 219600,     occupancyRate: 72,    yearBuilt: 2010, dealType: "SALE" },
+    ];
+    for (const u of creUpdates) {
+      const opp = opps[u.idx];
+      if (!opp) continue;
+      const sets: string[] = [];
+      sets.push(`"propertyType" = '${u.propertyType}'`);
+      if (u.propertyAddress) sets.push(`"propertyAddress" = '${u.propertyAddress}'`);
+      if (u.propertyCity)    sets.push(`"propertyCity" = '${u.propertyCity}'`);
+      if (u.propertyState)   sets.push(`"propertyState" = '${u.propertyState}'`);
+      if (u.propertySqft)    sets.push(`"propertySqft" = ${u.propertySqft}`);
+      if (u.pricePerSqft)    sets.push(`"pricePerSqft" = ${u.pricePerSqft}`);
+      if (u.capRate)         sets.push(`"capRate" = ${u.capRate}`);
+      if (u.noi)             sets.push(`"noi" = ${u.noi}`);
+      if (u.occupancyRate)   sets.push(`"occupancyRate" = ${u.occupancyRate}`);
+      if (u.yearBuilt)       sets.push(`"yearBuilt" = ${u.yearBuilt}`);
+      if (u.dealType)        sets.push(`"dealType" = '${u.dealType}'`);
+      await prisma.$executeRawUnsafe(`UPDATE "opportunities" SET ${sets.join(", ")} WHERE "id" = '${opp.id}'`);
+    }
+
+    // ─── Property Comps (10) — Recent CRE Transactions ─────────────
+    const compData = [
+      { address: "500 Brickell Key Dr",       city: "Miami",       state: "FL", propertyType: "OFFICE",      sqft: 180000, salePrice: 72000000,  pricePerSqft: 400.00, capRate: 6.2,  noi: 4464000,  occupancyRate: 96, closedDate: d(30),  source: "CoStar" },
+      { address: "1400 S Congress Ave",        city: "Austin",      state: "TX", propertyType: "MIXED_USE",   sqft: 95000,  salePrice: 28500000,  pricePerSqft: 300.00, capRate: 5.5,  noi: 1567500,  occupancyRate: 92, closedDate: d(45),  source: "CoStar" },
+      { address: "200 Peachtree St NE",        city: "Atlanta",     state: "GA", propertyType: "OFFICE",      sqft: 420000, salePrice: 126000000, pricePerSqft: 300.00, capRate: 6.8,  noi: 8568000,  occupancyRate: 89, closedDate: d(60),  source: "CBRE" },
+      { address: "800 W End Ave",              city: "Nashville",   state: "TN", propertyType: "MULTIFAMILY", sqft: 110000, salePrice: 22000000,  pricePerSqft: 200.00, capRate: 5.8,  noi: 1276000,  occupancyRate: 95, closedDate: d(20),  source: "Marcus & Millichap" },
+      { address: "3200 Greenville Ave",        city: "Dallas",      state: "TX", propertyType: "RETAIL",      sqft: 45000,  salePrice: 11250000,  pricePerSqft: 250.00, capRate: 6.5,  noi: 731250,   occupancyRate: 88, closedDate: d(35),  source: "JLL" },
+      { address: "1500 K St NW",               city: "Washington",  state: "DC", propertyType: "OFFICE",      sqft: 280000, salePrice: 112000000, pricePerSqft: 400.00, capRate: 5.9,  noi: 6608000,  occupancyRate: 97, closedDate: d(15),  source: "Cushman & Wakefield" },
+      { address: "5000 Fulton Industrial Blvd",city: "Atlanta",     state: "GA", propertyType: "INDUSTRIAL",  sqft: 350000, salePrice: 38500000,  pricePerSqft: 110.00, capRate: 5.0,  noi: 1925000,  occupancyRate: 100, closedDate: d(40), source: "Prologis" },
+      { address: "250 Meeting St",             city: "Charleston",  state: "SC", propertyType: "MIXED_USE",   sqft: 75000,  salePrice: 18750000,  pricePerSqft: 250.00, capRate: 6.0,  noi: 1125000,  occupancyRate: 93, closedDate: d(25),  source: "CoStar" },
+      { address: "1200 Ocean Dr",              city: "Miami Beach", state: "FL", propertyType: "HOSPITALITY", sqft: 120000, salePrice: 60000000,  pricePerSqft: 500.00, capRate: 4.5,  noi: 2700000,  occupancyRate: 85, closedDate: d(50),  source: "HVS" },
+      { address: "600 Elm St",                 city: "Charlotte",   state: "NC", propertyType: "MULTIFAMILY", sqft: 200000, salePrice: 36000000,  pricePerSqft: 180.00, capRate: 5.6,  noi: 2016000,  occupancyRate: 93, closedDate: d(18),  source: "Marcus & Millichap" },
+    ];
+    for (const c of compData) {
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "property_comps" ("id", "organizationId", "address", "city", "state", "propertyType", "sqft", "salePrice", "pricePerSqft", "capRate", "noi", "occupancyRate", "closedDate", "source")
+        VALUES (gen_random_uuid()::text, '${O}', '${c.address}', '${c.city}', '${c.state}', '${c.propertyType}', ${c.sqft}, ${c.salePrice}, ${c.pricePerSqft}, ${c.capRate}, ${c.noi}, ${c.occupancyRate}, '${c.closedDate.toISOString()}', '${c.source}')
+      `);
+    }
+
+    // ─── Commissions (for closed deals) ─────────────────────────────
+    // opps[11] = Silverstone Industrial (CLOSED_WON, $7.2M)
+    // opps[12] = Palmetto Charlotte (CLOSED_WON, $15M)
+    const commissionData = [
+      { oppIdx: 11, agentId: james.id, role: "LISTING_AGENT", splitPercent: 1.5, grossAmount: 108000, netAmount: 97200, status: "PAID", paidAt: d(3) },
+      { oppIdx: 11, agentId: emma.id,  role: "COOP_BROKER",   splitPercent: 1.0, grossAmount: 72000,  netAmount: 64800, status: "PAID", paidAt: d(3) },
+      { oppIdx: 12, agentId: emma.id,  role: "LISTING_AGENT", splitPercent: 2.0, grossAmount: 300000, netAmount: 270000, status: "PAID", paidAt: d(10) },
+      { oppIdx: 12, agentId: james.id, role: "REFERRAL",      splitPercent: 0.5, grossAmount: 75000,  netAmount: 67500, status: "PAID", paidAt: d(10) },
+      // Pending commissions for active deals
+      { oppIdx: 8,  agentId: emma.id,  role: "LISTING_AGENT", splitPercent: 1.5, grossAmount: 180000, netAmount: 0, status: "PENDING", paidAt: null },
+      { oppIdx: 10, agentId: emma.id,  role: "LISTING_AGENT", splitPercent: 2.0, grossAmount: 190000, netAmount: 0, status: "PENDING", paidAt: null },
+      { oppIdx: 10, agentId: james.id, role: "BUYERS_AGENT",  splitPercent: 1.0, grossAmount: 95000,  netAmount: 0, status: "PENDING", paidAt: null },
+    ];
+    for (const cm of commissionData) {
+      const opp = opps[cm.oppIdx];
+      if (!opp) continue;
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "commissions" ("id", "organizationId", "opportunityId", "agentId", "role", "splitPercent", "grossAmount", "netAmount", "status"${cm.paidAt ? ', "paidAt"' : ''})
+        VALUES (gen_random_uuid()::text, '${O}', '${opp.id}', '${cm.agentId}', '${cm.role}', ${cm.splitPercent}, ${cm.grossAmount}, ${cm.netAmount}, '${cm.status}'${cm.paidAt ? `, '${cm.paidAt.toISOString()}'` : ''})
+      `);
+    }
+
+    // ─── Deal Documents ─────────────────────────────────────────────
+    const docData = [
+      { oppIdx: 6,  type: "LOI",    name: "LOI — Summit Peak Charleston",          status: "SENT",    sentAt: d(5) },
+      { oppIdx: 7,  type: "LOI",    name: "LOI — MetroNest Brooklyn Heights",      status: "SIGNED",  sentAt: d(10), signedAt: d(7) },
+      { oppIdx: 7,  type: "NDA",    name: "NDA — MetroNest Urban Living",          status: "SIGNED",  sentAt: d(15), signedAt: d(14) },
+      { oppIdx: 8,  type: "PSA",    name: "PSA — Meridian DC Office",              status: "SIGNED",  sentAt: d(8),  signedAt: d(6) },
+      { oppIdx: 8,  type: "NDA",    name: "NDA — Meridian RE Advisors",            status: "SIGNED",  sentAt: d(20), signedAt: d(19) },
+      { oppIdx: 8,  type: "ESTOPPEL",name: "Estoppel Certificates — Meridian DC",  status: "PENDING" },
+      { oppIdx: 9,  type: "PSA",    name: "PSA — Coastal Hilton Head Estates",     status: "SENT",    sentAt: d(3) },
+      { oppIdx: 10, type: "PSA",    name: "PSA — Palmetto Savannah Portfolio",     status: "SIGNED",  sentAt: d(4),  signedAt: d(2) },
+      { oppIdx: 10, type: "ENVIRONMENTAL", name: "Phase I ESA — Savannah Historic", status: "SIGNED", sentAt: d(6),  signedAt: d(3) },
+      { oppIdx: 10, type: "TITLE",  name: "Title Search — Savannah Portfolio",     status: "PENDING" },
+      { oppIdx: 10, type: "SURVEY", name: "ALTA Survey — Savannah Portfolio",      status: "PENDING" },
+      { oppIdx: 11, type: "PSA",    name: "PSA — Silverstone Industrial Atlanta",  status: "SIGNED",  sentAt: d(30), signedAt: d(25) },
+      { oppIdx: 12, type: "PSA",    name: "PSA — Palmetto Charlotte Disposition",  status: "SIGNED",  sentAt: d(40), signedAt: d(35) },
+    ];
+    for (const doc of docData) {
+      const opp = opps[doc.oppIdx];
+      if (!opp) continue;
+      const sentPart = doc.sentAt ? `, '${(doc.sentAt as Date).toISOString()}'` : ", NULL";
+      const signedPart = (doc as any).signedAt ? `, '${((doc as any).signedAt as Date).toISOString()}'` : ", NULL";
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "deal_documents" ("id", "organizationId", "opportunityId", "type", "name", "status", "sentAt", "signedAt")
+        VALUES (gen_random_uuid()::text, '${O}', '${opp.id}', '${doc.type}', '${doc.name}', '${doc.status}'${sentPart}${signedPart})
+      `);
+    }
 
     // ─── Tasks (20) ─────────────────────────────────────────────────
     await prisma.task.createMany({
@@ -536,7 +733,7 @@ export async function POST(request: NextRequest) {
         { organizationId: O, type: "CALL",         channel: "phone",    subject: "Qualification call — Natalie Pressman, Prestige PM", body: "45-minute call. Discussed property management tech needs. Strong fit for our platform.",                               creatorId: rachel.id,  leadId: leads[5].id,                              createdAt: d(0, 14) },
         { organizationId: O, type: "NOTE",         channel: "internal", subject: "Champion confirmed — Palmetto Capital",              body: "Catherine Palmer confirmed fund committee approved Q2 allocation for Savannah portfolio. Moving to due diligence.",     creatorId: emma.id,    leadId: leads[11].id,                             createdAt: d(1, 10) },
         { organizationId: O, type: "EMAIL",        channel: "email",    subject: "Follow-up from ICSC conference",                     body: "Kevin Zhang from Skyline Tower requested a meeting after ICSC conference. Hot referral from co-investor.",              creatorId: rachel.id,  leadId: leads[9].id,                              createdAt: d(1, 16) },
-        { organizationId: O, type: "STAGE_CHANGE", channel: "system",   subject: "Stage: LEAD_INQUIRY -> PROPERTY_TOUR",               body: "Silverstone — 200K SF Office Campus advanced to Property Tour.",                                                        creatorId: james.id,   opportunityId: opps[3].id,                        createdAt: d(2, 11) },
+        { organizationId: O, type: "STAGE_CHANGE", channel: "system",   subject: "Stage: INITIAL_CONTACT -> PROPERTY_TOUR",            body: "Silverstone — 200K SF Office Campus advanced to Property Tour.",                                                        creatorId: james.id,   opportunityId: opps[3].id,                        createdAt: d(2, 11) },
         { organizationId: O, type: "EMAIL",        channel: "email",    subject: "CMA report for Meridian DC office",                  body: "Sent comparable market analysis showing 15% upside potential vs. similar Class A assets in the submarket.",             creatorId: emma.id,    opportunityId: opps[8].id,                        createdAt: d(4, 9) },
         { organizationId: O, type: "MEETING",      channel: "video",    subject: "Summit Peak — Charleston waterfront presentation",   body: "Presented to 6 Summit Peak stakeholders. Strong interest in mixed-use concept. Need environmental clearance docs.",     creatorId: emma.id,    opportunityId: opps[6].id,                        createdAt: d(5, 14) },
         { organizationId: O, type: "CALL",         channel: "phone",    subject: "Pricing negotiation — Palmetto Savannah",            body: "Catherine requested 5% discount for all 8 properties. Counter-offered with 3% discount + management contract.",        creatorId: emma.id,    opportunityId: opps[10].id,                       createdAt: d(5, 10) },
@@ -544,7 +741,7 @@ export async function POST(request: NextRequest) {
         { organizationId: O, type: "EMAIL",        channel: "email",    subject: "LOI sent for Coastal Living estate portfolio",       body: "Legal reviewed the Hilton Head estate portfolio LOI. Sent to Diana Coastal for review and signature.",                  creatorId: james.id,   opportunityId: opps[9].id,                        createdAt: d(6, 9) },
         { organizationId: O, type: "CALL",         channel: "phone",    subject: "Cold outreach — Robert Westfield, Coral Gables",     body: "First call with Robert. Interested in marketing partnership for new 42-unit luxury condo project.",                     creatorId: alex.id,    leadId: leads[0].id,                              createdAt: d(8, 11) },
         { organizationId: O, type: "EMAIL",        channel: "email",    subject: "Referral intro — Andrew Mitchell, Atlantic Shores",  body: "Andrew was referred by a past client. Beachfront developer looking for sales platform for new project.",                creatorId: rachel.id,  leadId: leads[1].id,                              createdAt: d(8, 16) },
-        { organizationId: O, type: "STAGE_CHANGE", channel: "system",   subject: "Stage: OFFER_SUBMITTED -> UNDER_CONTRACT",           body: "Meridian — 350K SF Class A Office moved to Under Contract.",                                                            creatorId: emma.id,    opportunityId: opps[8].id,                        createdAt: d(10, 10) },
+        { organizationId: O, type: "STAGE_CHANGE", channel: "system",   subject: "Stage: LOI_NEGOTIATION -> UNDER_CONTRACT",           body: "Meridian — 350K SF Class A Office moved to Under Contract.",                                                            creatorId: emma.id,    opportunityId: opps[8].id,                        createdAt: d(10, 10) },
         { organizationId: O, type: "STAGE_CHANGE", channel: "system",   subject: "Stage: UNDER_CONTRACT -> CLOSED_WON",                body: "Silverstone — Industrial Park (Atlanta) closed for $7,200,000.",                                                        creatorId: james.id,   opportunityId: opps[11].id,                       createdAt: d(5, 17) },
         { organizationId: O, type: "STAGE_CHANGE", channel: "system",   subject: "Stage: DUE_DILIGENCE -> CLOSED_WON",                 body: "Palmetto Capital — Charlotte Multifamily closed for $15,000,000. 2.1x return.",                                         creatorId: emma.id,    opportunityId: opps[12].id,                       createdAt: d(12, 17) },
         { organizationId: O, type: "EMAIL",        channel: "email",    subject: "Lost deal post-mortem — Evergreen Austin",           body: "Evergreen chose competitor with stronger city council relationship. Lesson: engage earlier on entitlements.",            creatorId: emma.id,                                                       createdAt: d(8, 10) },

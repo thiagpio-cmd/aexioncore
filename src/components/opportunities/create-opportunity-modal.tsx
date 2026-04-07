@@ -25,7 +25,7 @@ export function CreateOpportunityModal({ open, onClose, onCreated, currentUserId
     title: "",
     description: "",
     value: "",
-    stage: "LEAD_INQUIRY",
+    stage: "PROSPECTING",
     accountId: "",
     ownerId: currentUserId || "",
     probability: "20",
@@ -100,7 +100,7 @@ export function CreateOpportunityModal({ open, onClose, onCreated, currentUserId
     onCreated();
     onClose();
     setForm({
-      title: "", description: "", value: "", stage: "LEAD_INQUIRY",
+      title: "", description: "", value: "", stage: "PROSPECTING",
       accountId: "", ownerId: currentUserId || "", probability: "20", expectedCloseDate: "",
     });
   }
@@ -141,11 +141,15 @@ export function CreateOpportunityModal({ open, onClose, onCreated, currentUserId
           </FormField>
           <FormField label="Stage">
             <select value={form.stage} onChange={(e) => set("stage", e.target.value)} className={selectStyles}>
-              <option value="LEAD_INQUIRY">Lead Inquiry</option>
+              <option value="PROSPECTING">Prospecting</option>
+              <option value="INITIAL_CONTACT">Initial Contact</option>
               <option value="PROPERTY_TOUR">Property Tour</option>
-              <option value="OFFER_SUBMITTED">Offer Submitted</option>
+              <option value="LOI_SUBMITTED">LOI Submitted</option>
+              <option value="LOI_NEGOTIATION">LOI Negotiation</option>
               <option value="UNDER_CONTRACT">Under Contract</option>
               <option value="DUE_DILIGENCE">Due Diligence</option>
+              <option value="FINANCING">Financing</option>
+              <option value="CLOSING">Closing</option>
               <option value="CLOSED_WON">Closed Won</option>
               <option value="CLOSED_LOST">Closed Lost</option>
             </select>

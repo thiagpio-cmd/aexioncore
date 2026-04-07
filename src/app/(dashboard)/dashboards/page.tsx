@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 type Period = "7d" | "30d" | "90d" | "all";
 
-/** Convert DB stage names like LEAD_INQUIRY → "Lead Inquiry" */
+/** Convert DB stage names like LOI_SUBMITTED → "Loi Submitted" */
 function stageLabel(stage: string): string {
   return stage
     .replace(/_/g, " ")

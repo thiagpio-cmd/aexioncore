@@ -8,7 +8,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 
 type Tab = "overview" | "pipeline" | "leads" | "team";
 
-/** Convert DB enum names like LEAD_INQUIRY → "Lead Inquiry" */
+/** Convert DB enum names like LOI_SUBMITTED → "Loi Submitted" */
 function stageLabel(stage: string): string {
   return stage
     .replace(/_/g, " ")
@@ -17,11 +17,17 @@ function stageLabel(stage: string): string {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  LEAD_INQUIRY: "bg-blue-500",
+  PROSPECTING: "bg-slate-500",
+  INITIAL_CONTACT: "bg-blue-500",
   PROPERTY_TOUR: "bg-indigo-500",
-  OFFER_SUBMITTED: "bg-purple-500",
+  LOI_SUBMITTED: "bg-violet-500",
+  LOI_NEGOTIATION: "bg-purple-500",
   UNDER_CONTRACT: "bg-amber-500",
   DUE_DILIGENCE: "bg-cyan-500",
+  FINANCING: "bg-teal-500",
+  CLOSING: "bg-lime-500",
+  CLOSED_WON: "bg-emerald-500",
+  CLOSED_LOST: "bg-red-500",
 };
 
 const TEMP_COLORS: Record<string, string> = {

@@ -79,7 +79,7 @@ export default function TasksPage() {
 
       {/* AI Tasks Insight */}
       <AIInsightBanner
-        prompt="Quais tasks atrasadas têm maior impacto nos meus deals? Me ajude a priorizar"
+        prompt="Which overdue tasks have the highest impact on my active deals? Prioritize by deal value and closing timeline."
         compact
         className="mb-3"
       />

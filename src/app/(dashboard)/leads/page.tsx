@@ -82,7 +82,7 @@ export default function LeadsPage() {
 
       {/* AI Lead Insight */}
       <AIInsightBanner
-        prompt="Analise meus leads — quais estão esfriando e quais são os mais quentes para converter?"
+        prompt="Analyze my leads — which prospects are cooling off and which are hottest to convert into CRE opportunities?"
         compact
         className="mb-3"
       />

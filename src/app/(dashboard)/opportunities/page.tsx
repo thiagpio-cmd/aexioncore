@@ -12,7 +12,7 @@ import { useSession } from "next-auth/react";
 import { TableSkeleton } from "@/components/shared/skeleton";
 import { AIInsightBanner } from "@/components/ai/ai-insight-banner";
 
-/** Convert DB stage names like LEAD_INQUIRY → "Lead Inquiry" */
+/** Convert DB stage names like LOI_SUBMITTED → "Loi Submitted" */
 function stageLabel(stage: string): string {
   return stage
     .replace(/_/g, " ")
@@ -21,16 +21,20 @@ function stageLabel(stage: string): string {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  LEAD_INQUIRY: "bg-blue-50 text-blue-700",
+  PROSPECTING: "bg-slate-50 text-slate-700",
+  INITIAL_CONTACT: "bg-blue-50 text-blue-700",
   PROPERTY_TOUR: "bg-indigo-50 text-indigo-700",
-  OFFER_SUBMITTED: "bg-violet-50 text-violet-700",
+  LOI_SUBMITTED: "bg-violet-50 text-violet-700",
+  LOI_NEGOTIATION: "bg-purple-50 text-purple-700",
   UNDER_CONTRACT: "bg-amber-50 text-amber-700",
   DUE_DILIGENCE: "bg-cyan-50 text-cyan-700",
+  FINANCING: "bg-teal-50 text-teal-700",
+  CLOSING: "bg-lime-50 text-lime-700",
   CLOSED_WON: "bg-emerald-50 text-emerald-700",
   CLOSED_LOST: "bg-red-50 text-red-700",
 };
 
-type FilterTab = "ALL" | "LEAD_INQUIRY" | "PROPERTY_TOUR" | "OFFER_SUBMITTED" | "UNDER_CONTRACT" | "DUE_DILIGENCE" | "CLOSED_WON" | "CLOSED_LOST";
+type FilterTab = "ALL" | "PROSPECTING" | "INITIAL_CONTACT" | "PROPERTY_TOUR" | "LOI_SUBMITTED" | "LOI_NEGOTIATION" | "UNDER_CONTRACT" | "DUE_DILIGENCE" | "FINANCING" | "CLOSING" | "CLOSED_WON" | "CLOSED_LOST";
 
 export default function OpportunitiesPage() {
   const router = useRouter();
@@ -61,11 +65,15 @@ export default function OpportunitiesPage() {
 
   const tabs: { key: FilterTab; label: string; count: number }[] = useMemo(() => [
     { key: "ALL", label: "All", count: allOpps?.length ?? 0 },
-    { key: "LEAD_INQUIRY", label: "Lead Inquiry", count: allOpps?.filter((o: any) => o.stage === "LEAD_INQUIRY").length ?? 0 },
+    { key: "PROSPECTING", label: "Prospecting", count: allOpps?.filter((o: any) => o.stage === "PROSPECTING").length ?? 0 },
+    { key: "INITIAL_CONTACT", label: "Initial Contact", count: allOpps?.filter((o: any) => o.stage === "INITIAL_CONTACT").length ?? 0 },
     { key: "PROPERTY_TOUR", label: "Property Tour", count: allOpps?.filter((o: any) => o.stage === "PROPERTY_TOUR").length ?? 0 },
-    { key: "OFFER_SUBMITTED", label: "Offer Submitted", count: allOpps?.filter((o: any) => o.stage === "OFFER_SUBMITTED").length ?? 0 },
+    { key: "LOI_SUBMITTED", label: "LOI Submitted", count: allOpps?.filter((o: any) => o.stage === "LOI_SUBMITTED").length ?? 0 },
+    { key: "LOI_NEGOTIATION", label: "LOI Negotiation", count: allOpps?.filter((o: any) => o.stage === "LOI_NEGOTIATION").length ?? 0 },
     { key: "UNDER_CONTRACT", label: "Under Contract", count: allOpps?.filter((o: any) => o.stage === "UNDER_CONTRACT").length ?? 0 },
     { key: "DUE_DILIGENCE", label: "Due Diligence", count: allOpps?.filter((o: any) => o.stage === "DUE_DILIGENCE").length ?? 0 },
+    { key: "FINANCING", label: "Financing", count: allOpps?.filter((o: any) => o.stage === "FINANCING").length ?? 0 },
+    { key: "CLOSING", label: "Closing", count: allOpps?.filter((o: any) => o.stage === "CLOSING").length ?? 0 },
     { key: "CLOSED_WON", label: "Closed Won", count: allOpps?.filter((o: any) => o.stage === "CLOSED_WON").length ?? 0 },
     { key: "CLOSED_LOST", label: "Closed Lost", count: allOpps?.filter((o: any) => o.stage === "CLOSED_LOST").length ?? 0 },
   ], [allOpps]);
@@ -103,7 +111,7 @@ export default function OpportunitiesPage() {
 
       {/* AI Deals Insight */}
       <AIInsightBanner
-        prompt="Quais oportunidades precisam de atenção imediata e por quê?"
+        prompt="Which CRE opportunities need immediate attention? Analyze by cap rate, deal stage, and days since last activity."
         compact
         className="mb-3"
       />

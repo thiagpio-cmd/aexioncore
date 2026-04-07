@@ -178,7 +178,7 @@ export function AIChatAssistant() {
                   Aexion AI
                 </h3>
                 <p className="text-[11px] text-muted leading-none">
-                  Diretora Comercial
+                  CRE Deal Advisor
                 </p>
               </div>
             </div>
@@ -221,20 +221,20 @@ export function AIChatAssistant() {
                   </svg>
                 </div>
                 <p className="text-sm font-medium text-foreground mb-1">
-                  Sua Diretora Comercial
+                  Your CRE Deal Advisor
                 </p>
                 <p className="text-xs text-muted mb-4 max-w-[260px]">
-                  Conheço todos os dados do seu CRM — deals, leads, tasks,
-                  reuniões, accounts, contatos e empresas. Me pergunte qualquer coisa.
+                  I know your entire CRM — deals, leads, tasks, meetings, accounts,
+                  contacts, comps, and commissions. Ask me anything about your portfolio.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {[
-                    { label: "📊 Briefing do dia", action: "Me dê o briefing do dia" },
-                    { label: "🔴 Deals em risco", action: "Quais deals estão em risco?" },
-                    { label: "👥 Contatos-chave", action: "Quem são meus contatos-chave?" },
-                    { label: "📅 Agenda de hoje", action: "Quais reuniões tenho hoje?" },
-                    { label: "📈 Forecast", action: "Previsão de receita" },
-                    { label: "💡 O que posso fazer?", action: "O que você pode fazer por mim?" },
+                    { label: "📊 Daily Briefing", action: "Give me today's executive briefing" },
+                    { label: "🔴 At-Risk Deals", action: "Which deals are at risk and why?" },
+                    { label: "📈 Cap Rate Analysis", action: "Analyze cap rates across my pipeline" },
+                    { label: "💰 Commission Tracker", action: "Show my commission status — pending vs paid" },
+                    { label: "🏢 Portfolio Overview", action: "Give me a full portfolio summary" },
+                    { label: "📰 Market Trends", action: "What are the latest CRE market trends?" },
                   ].map((s) => (
                     <button
                       key={s.label}

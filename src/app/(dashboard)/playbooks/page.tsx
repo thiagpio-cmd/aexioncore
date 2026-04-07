@@ -6,7 +6,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { PageHeader } from "@/components/shared/page-header";
 import { CardSkeleton } from "@/components/shared/skeleton";
 
-/** Convert DB enum names like LEAD_INQUIRY → "Lead Inquiry" */
+/** Convert DB enum names like LOI_SUBMITTED → "Loi Submitted" */
 function stageLabel(stage: string): string {
   if (!stage) return "—";
   return stage

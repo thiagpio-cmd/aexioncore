@@ -14,7 +14,7 @@ import { cn, formatDate } from "@/lib/utils";
 type Tab = "generator" | "saved";
 type Period = "7d" | "30d" | "90d" | "365d" | "custom";
 
-/** Convert DB enum names like LEAD_INQUIRY → "Lead Inquiry" */
+/** Convert DB enum names like LOI_SUBMITTED → "Loi Submitted" */
 function enumLabel(val: string): string {
   return val
     .replace(/_/g, " ")
@@ -52,11 +52,15 @@ const SOURCES = [
 ];
 
 const STAGES = [
-  "LEAD_INQUIRY",
+  "PROSPECTING",
+  "INITIAL_CONTACT",
   "PROPERTY_TOUR",
-  "OFFER_SUBMITTED",
+  "LOI_SUBMITTED",
+  "LOI_NEGOTIATION",
   "UNDER_CONTRACT",
   "DUE_DILIGENCE",
+  "FINANCING",
+  "CLOSING",
   "CLOSED_WON",
   "CLOSED_LOST",
 ];

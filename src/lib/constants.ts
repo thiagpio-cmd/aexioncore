@@ -64,13 +64,17 @@ export const OPPORTUNITY_STAGES: Record<
   string,
   { label: string; color: string; order: number }
 > = {
-  LEAD_INQUIRY: { label: "Lead Inquiry", color: "bg-blue-500", order: 1 },
-  PROPERTY_TOUR: { label: "Property Tour", color: "bg-indigo-500", order: 2 },
-  OFFER_SUBMITTED: { label: "Offer Submitted", color: "bg-purple-500", order: 3 },
-  UNDER_CONTRACT: { label: "Under Contract", color: "bg-amber-500", order: 4 },
-  DUE_DILIGENCE: { label: "Due Diligence", color: "bg-cyan-500", order: 5 },
-  CLOSED_WON: { label: "Closed Won", color: "bg-emerald-500", order: 6 },
-  CLOSED_LOST: { label: "Closed Lost", color: "bg-red-500", order: 7 },
+  PROSPECTING: { label: "Prospecting", color: "bg-slate-500", order: 1 },
+  INITIAL_CONTACT: { label: "Initial Contact", color: "bg-blue-500", order: 2 },
+  PROPERTY_TOUR: { label: "Property Tour", color: "bg-indigo-500", order: 3 },
+  LOI_SUBMITTED: { label: "LOI Submitted", color: "bg-violet-500", order: 4 },
+  LOI_NEGOTIATION: { label: "LOI Negotiation", color: "bg-purple-500", order: 5 },
+  UNDER_CONTRACT: { label: "Under Contract", color: "bg-amber-500", order: 6 },
+  DUE_DILIGENCE: { label: "Due Diligence", color: "bg-cyan-500", order: 7 },
+  FINANCING: { label: "Financing", color: "bg-teal-500", order: 8 },
+  CLOSING: { label: "Closing", color: "bg-lime-500", order: 9 },
+  CLOSED_WON: { label: "Closed Won", color: "bg-emerald-500", order: 10 },
+  CLOSED_LOST: { label: "Closed Lost", color: "bg-red-500", order: 11 },
 };
 
 // ─── Task Types ──────────────────────────────────────────────────────────────

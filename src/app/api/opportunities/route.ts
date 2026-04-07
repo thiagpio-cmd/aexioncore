@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Compute healthScore on-the-fly (field doesn't exist on Opportunity model)
-    const STAGE_WEIGHT: Record<string, number> = { LEAD_INQUIRY: 10, PROPERTY_TOUR: 25, OFFER_SUBMITTED: 45, UNDER_CONTRACT: 65, DUE_DILIGENCE: 80, CLOSED_WON: 100, CLOSED_LOST: 0 };
+    const STAGE_WEIGHT: Record<string, number> = { PROSPECTING: 5, INITIAL_CONTACT: 10, PROPERTY_TOUR: 20, LOI_SUBMITTED: 35, LOI_NEGOTIATION: 50, UNDER_CONTRACT: 65, DUE_DILIGENCE: 75, FINANCING: 85, CLOSING: 95, CLOSED_WON: 100, CLOSED_LOST: 0 };
     const enriched = opportunities.map((opp: any) => ({
       ...opp,
       healthScore: Math.min(100, Math.max(0, (STAGE_WEIGHT[opp.stage] ?? 0) + Math.round((opp.probability || 0) * 0.4))),

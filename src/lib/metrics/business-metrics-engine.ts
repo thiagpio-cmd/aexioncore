@@ -218,7 +218,7 @@ async function computeConversion(
   const churned = customers.filter(a => a.churnDate != null);
 
   // Stage flow conversion rates
-  const stages = ["LEAD_INQUIRY", "PROPERTY_TOUR", "OFFER_SUBMITTED", "UNDER_CONTRACT", "DUE_DILIGENCE", "CLOSED_WON"];
+  const stages = ["PROSPECTING", "INITIAL_CONTACT", "PROPERTY_TOUR", "LOI_SUBMITTED", "LOI_NEGOTIATION", "UNDER_CONTRACT", "DUE_DILIGENCE", "FINANCING", "CLOSING", "CLOSED_WON"];
   const stageCounts: Record<string, number> = {};
   for (const s of stages) {
     stageCounts[s] = opps.filter(o => o.stage?.toUpperCase() === s || (s === "CLOSED_WON" && o.stage?.toUpperCase() === "CLOSED_WON")).length;

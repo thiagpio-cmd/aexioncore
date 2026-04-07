@@ -59,17 +59,21 @@ interface Activity {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  LEAD_INQUIRY: "bg-blue-50 text-blue-700",
+  PROSPECTING: "bg-slate-50 text-slate-700",
+  INITIAL_CONTACT: "bg-blue-50 text-blue-700",
   PROPERTY_TOUR: "bg-indigo-50 text-indigo-700",
-  OFFER_SUBMITTED: "bg-violet-50 text-violet-700",
+  LOI_SUBMITTED: "bg-violet-50 text-violet-700",
+  LOI_NEGOTIATION: "bg-purple-50 text-purple-700",
   UNDER_CONTRACT: "bg-amber-50 text-amber-700",
   DUE_DILIGENCE: "bg-cyan-50 text-cyan-700",
+  FINANCING: "bg-teal-50 text-teal-700",
+  CLOSING: "bg-lime-50 text-lime-700",
   CLOSED_WON: "bg-emerald-50 text-emerald-700",
   CLOSED_LOST: "bg-red-50 text-red-700",
 };
 
-const OPP_STAGES = ["LEAD_INQUIRY", "PROPERTY_TOUR", "OFFER_SUBMITTED", "UNDER_CONTRACT", "DUE_DILIGENCE", "CLOSED_WON", "CLOSED_LOST"];
-const PIPELINE_STAGES = ["LEAD_INQUIRY", "PROPERTY_TOUR", "OFFER_SUBMITTED", "UNDER_CONTRACT", "DUE_DILIGENCE"];
+const OPP_STAGES = ["PROSPECTING", "INITIAL_CONTACT", "PROPERTY_TOUR", "LOI_SUBMITTED", "LOI_NEGOTIATION", "UNDER_CONTRACT", "DUE_DILIGENCE", "FINANCING", "CLOSING", "CLOSED_WON", "CLOSED_LOST"];
+const PIPELINE_STAGES = ["PROSPECTING", "INITIAL_CONTACT", "PROPERTY_TOUR", "LOI_SUBMITTED", "LOI_NEGOTIATION", "UNDER_CONTRACT", "DUE_DILIGENCE", "FINANCING", "CLOSING"];
 
 export default function OpportunityDetailPage() {
   const params = useParams();
@@ -346,7 +350,7 @@ export default function OpportunityDetailPage() {
             </div>
           )}
           {/* Upcoming Deadline */}
-          {deal.expectedCloseDate && new Date(deal.expectedCloseDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) && new Date(deal.expectedCloseDate) > new Date() && ["LEAD_INQUIRY", "PROPERTY_TOUR"].includes(deal.stage) && (
+          {deal.expectedCloseDate && new Date(deal.expectedCloseDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) && new Date(deal.expectedCloseDate) > new Date() && ["PROSPECTING", "INITIAL_CONTACT", "PROPERTY_TOUR"].includes(deal.stage) && (
             <div className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger-light px-4 py-3">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-danger shrink-0">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

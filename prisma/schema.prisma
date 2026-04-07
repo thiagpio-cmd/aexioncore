@@ -47,7 +47,7 @@ model Organization {
   timezone        String?  @default("UTC")
 
   // New: BRL / engine configuration
-  defaultCurrencyCode String? @default("BRL")
+  defaultCurrencyCode String? @default("USD")
   icpProfileId        String?
 
   // Money Engine configuration
@@ -369,6 +369,28 @@ model Opportunity {
   valueBRL   Int?    @default(0)
   icpScoreId String?
 
+  // ── CRE Property Data ──────────────────────────────────────────────
+  propertyType      String?    // OFFICE, RETAIL, INDUSTRIAL, MULTIFAMILY, MIXED_USE, LAND, HOSPITALITY
+  propertyAddress   String?
+  propertyCity      String?
+  propertyState     String?
+  propertySqft      Float?
+  pricePerSqft      Float?
+  capRate           Float?
+  noi               Float?     // Net Operating Income
+  occupancyRate     Float?
+  yearBuilt         Int?
+  zoning            String?
+  dealType          String?    // SALE, LEASE, SUBLEASE, GROUND_LEASE, SALE_LEASEBACK
+  leaseTermMonths   Int?
+  askingRent        Float?     // per sqft/year
+  tenantName        String?
+  tenantIndustry    String?
+  loiSubmittedAt    DateTime?
+  dueDiligenceStart DateTime?
+  dueDiligenceEnd   DateTime?
+  scheduledClosing  DateTime?
+
   // Money & Intelligence scoring (Phase-2)
   moneyAtRisk          Float?   // R$ em risco calculado
   commissionAtRisk     Float?   // comissão em risco
@@ -399,6 +421,9 @@ model Opportunity {
   debriefs        Debrief[]
   moneySnapshots  MoneySnapshot[]
   actionProposals ActionProposal[]
+
+  commissions     Commission[]
+  documents       DealDocument[]
 
   @@index([organizationId])
   @@index([accountId])
@@ -1659,4 +1684,75 @@ model CustomerProfile {
   @@index([organizationId])
   @@unique([contactId, organizationId])
   @@map("customer_profiles")
+}
+
+// ============================================================================
+// CRE Models
+// ============================================================================
+
+model Commission {
+  id              String   @id @default(cuid())
+  organizationId  String
+  opportunityId   String
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  agentId         String
+  role            String    // LISTING_AGENT, BUYERS_AGENT, REFERRAL, COOP_BROKER
+  splitPercent    Float
+  grossAmount     Float     @default(0)
+  netAmount       Float     @default(0)
+  status          String    @default("PENDING") // PENDING, EARNED, PAID
+  paidAt          DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([opportunityId])
+  @@index([agentId])
+  @@index([organizationId])
+  @@map("commissions")
+}
+
+model PropertyComp {
+  id              String    @id @default(cuid())
+  organizationId  String
+  address         String
+  city            String?
+  state           String?
+  propertyType    String    // OFFICE, RETAIL, INDUSTRIAL, MULTIFAMILY, etc.
+  sqft            Float?
+  salePrice       Float?
+  pricePerSqft    Float?
+  capRate         Float?
+  noi             Float?
+  occupancyRate   Float?
+  closedDate      DateTime?
+  source          String?   @default("MANUAL") // MANUAL, COSTAR, LOOPNET, CREXI
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([organizationId])
+  @@index([propertyType])
+  @@map("property_comps")
+}
+
+model DealDocument {
+  id              String    @id @default(cuid())
+  organizationId  String
+  opportunityId   String
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  type            String    // LOI, PSA, NDA, LEASE, AMENDMENT, CA, ESTOPPEL, SURVEY, ENVIRONMENTAL, TITLE, FINANCIAL
+  name            String
+  fileUrl         String?
+  version         Int       @default(1)
+  status          String    @default("DRAFT") // DRAFT, SENT, UNDER_REVIEW, SIGNED, EXPIRED, REJECTED
+  sentAt          DateTime?
+  signedAt        DateTime?
+  expiresAt       DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([opportunityId])
+  @@index([organizationId])
+  @@map("deal_documents")
 }

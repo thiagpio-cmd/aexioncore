@@ -14,13 +14,17 @@ import { AIInsightBanner } from "@/components/ai/ai-insight-banner";
 type ViewMode = "kanban" | "table" | "list";
 
 const STAGES = [
-  { id: "LEAD_INQUIRY", name: "Lead Inquiry", color: "bg-blue-500", order: 1 },
-  { id: "PROPERTY_TOUR", name: "Property Tour", color: "bg-indigo-500", order: 2 },
-  { id: "OFFER_SUBMITTED", name: "Offer Submitted", color: "bg-purple-500", order: 3 },
-  { id: "UNDER_CONTRACT", name: "Under Contract", color: "bg-amber-500", order: 4 },
-  { id: "DUE_DILIGENCE", name: "Due Diligence", color: "bg-cyan-500", order: 5 },
-  { id: "CLOSED_WON", name: "Closed Won", color: "bg-emerald-500", order: 6 },
-  { id: "CLOSED_LOST", name: "Closed Lost", color: "bg-red-500", order: 7 },
+  { id: "PROSPECTING", name: "Prospecting", color: "bg-slate-500", order: 1 },
+  { id: "INITIAL_CONTACT", name: "Initial Contact", color: "bg-blue-500", order: 2 },
+  { id: "PROPERTY_TOUR", name: "Property Tour", color: "bg-indigo-500", order: 3 },
+  { id: "LOI_SUBMITTED", name: "LOI Submitted", color: "bg-violet-500", order: 4 },
+  { id: "LOI_NEGOTIATION", name: "LOI Negotiation", color: "bg-purple-500", order: 5 },
+  { id: "UNDER_CONTRACT", name: "Under Contract", color: "bg-amber-500", order: 6 },
+  { id: "DUE_DILIGENCE", name: "Due Diligence", color: "bg-cyan-500", order: 7 },
+  { id: "FINANCING", name: "Financing", color: "bg-teal-500", order: 8 },
+  { id: "CLOSING", name: "Closing", color: "bg-lime-500", order: 9 },
+  { id: "CLOSED_WON", name: "Closed Won", color: "bg-emerald-500", order: 10 },
+  { id: "CLOSED_LOST", name: "Closed Lost", color: "bg-red-500", order: 11 },
 ];
 
 interface Deal {
@@ -36,6 +40,15 @@ interface Deal {
   expectedCloseDate?: string;
   createdAt: string;
   updatedAt: string;
+  // CRE fields
+  propertyType?: string;
+  propertyAddress?: string;
+  propertyCity?: string;
+  propertyState?: string;
+  propertySqft?: number;
+  pricePerSqft?: number;
+  capRate?: number;
+  dealType?: string;
 }
 
 function getDaysInStage(updatedAt: string): number {
@@ -268,7 +281,7 @@ export default function PipelinePage() {
 
       {/* AI Pipeline Insight */}
       <AIInsightBanner
-        prompt="Analise a saúde do meu pipeline — quais deals precisam de atenção imediata?"
+        prompt="Analyze my CRE pipeline health — which deals need immediate attention? Flag any stalled LOIs or extended due diligence."
         compact
         className="mb-3"
       />
