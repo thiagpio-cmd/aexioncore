@@ -74,11 +74,15 @@ function formatCurrency(value: number): string {
 async function loadCRMContext(organizationId: string, userId: string): Promise<CRMContext> {
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
   const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const dayMs = 1000 * 60 * 60 * 24;
+
+  // Helper: safely run a query with a fallback value
+  async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+    try { return await fn(); } catch (e) { console.warn("[ai-ctx] query failed:", e); return fallback; }
+  }
 
   const [
     topOpps,
@@ -100,94 +104,94 @@ async function loadCRMContext(organizationId: string, userId: string): Promise<C
     totalCompanies,
   ] = await Promise.all([
     // ── Opportunities ──
-    prisma.opportunity.findMany({
+    safe(() => prisma.opportunity.findMany({
       where: { organizationId, stage: { notIn: ["CLOSED_WON", "CLOSED_LOST"] } },
       orderBy: { value: "desc" },
       take: 10,
       select: { title: true, value: true, stage: true, probability: true, updatedAt: true },
-    }),
+    }), []),
 
     // ── Leads (all active, top 15) ──
-    prisma.lead.findMany({
+    safe(() => prisma.lead.findMany({
       where: { organizationId, status: { notIn: ["CONVERTED", "UNQUALIFIED"] } },
       orderBy: { updatedAt: "desc" },
       take: 15,
       select: { name: true, email: true, status: true, temperature: true, fitScore: true, updatedAt: true, company: { select: { name: true } } },
-    }),
+    }), []),
     // Leads grouped by status
-    prisma.lead.groupBy({
+    safe(() => prisma.lead.groupBy({
       by: ["status"],
       where: { organizationId },
       _count: true,
-    }),
-    prisma.lead.count({ where: { organizationId } }),
+    }), []),
+    safe(() => prisma.lead.count({ where: { organizationId } }), 0),
 
     // ── Tasks (overdue) ──
-    prisma.task.findMany({
+    safe(() => prisma.task.findMany({
       where: { organizationId, status: { not: "COMPLETED" }, dueDate: { lt: now } },
       orderBy: { dueDate: "asc" },
       take: 10,
       select: { title: true, priority: true, status: true, dueDate: true, opportunity: { select: { title: true } }, lead: { select: { name: true } } },
-    }),
+    }), []),
     // Upcoming tasks (next 7 days)
-    prisma.task.findMany({
+    safe(() => prisma.task.findMany({
       where: { organizationId, status: { not: "COMPLETED" }, dueDate: { gte: now, lt: nextWeek } },
       orderBy: { dueDate: "asc" },
       take: 10,
       select: { title: true, priority: true, status: true, dueDate: true, opportunity: { select: { title: true } }, lead: { select: { name: true } } },
-    }),
-    prisma.task.count({ where: { organizationId, status: { not: "COMPLETED" } } }),
+    }), []),
+    safe(() => prisma.task.count({ where: { organizationId, status: { not: "COMPLETED" } } }), 0),
 
     // ── Meetings (today) ──
-    prisma.meeting.findMany({
+    safe(() => prisma.meeting.findMany({
       where: { organizationId, startTime: { gte: todayStart, lt: todayEnd } },
       orderBy: { startTime: "asc" },
       take: 10,
       select: { title: true, startTime: true, attendees: true, opportunity: { select: { title: true } }, lead: { select: { name: true } } },
-    }),
+    }), []),
     // Upcoming meetings (next 7 days)
-    prisma.meeting.findMany({
+    safe(() => prisma.meeting.findMany({
       where: { organizationId, startTime: { gte: todayEnd, lt: nextWeek } },
       orderBy: { startTime: "asc" },
       take: 10,
       select: { title: true, startTime: true, attendees: true, opportunity: { select: { title: true } }, lead: { select: { name: true } } },
-    }),
+    }), []),
 
     // ── Activities (recent) ──
-    prisma.activity.findMany({
+    safe(() => prisma.activity.findMany({
       where: { organizationId, createdAt: { gte: sevenDaysAgo } },
       orderBy: { createdAt: "desc" },
       take: 10,
       select: { type: true, subject: true, channel: true, createdAt: true, leadId: true, opportunityId: true },
-    }),
-    prisma.activity.count({ where: { organizationId, createdAt: { gte: sevenDaysAgo } } }),
+    }), []),
+    safe(() => prisma.activity.count({ where: { organizationId, createdAt: { gte: sevenDaysAgo } } }), 0),
 
     // ── Accounts ──
-    prisma.account.findMany({
+    safe(() => prisma.account.findMany({
       where: { organizationId },
       orderBy: { updatedAt: "desc" },
       take: 15,
       select: { name: true, status: true, isCustomer: true, onboardingStatus: true, company: { select: { name: true } } },
-    }),
-    prisma.account.count({ where: { organizationId } }),
+    }), []),
+    safe(() => prisma.account.count({ where: { organizationId } }), 0),
 
     // ── Contacts ──
-    prisma.contact.findMany({
+    safe(() => prisma.contact.findMany({
       where: { company: { organizationId } },
       orderBy: { updatedAt: "desc" },
       take: 15,
       select: { name: true, email: true, title: true, isChampion: true, isDecisionMaker: true, company: { select: { name: true } } },
-    }),
-    prisma.contact.count({ where: { company: { organizationId } } }),
+    }), []),
+    safe(() => prisma.contact.count({ where: { company: { organizationId } } }), 0),
 
     // ── Companies ──
-    prisma.company.findMany({
+    safe(() => prisma.company.findMany({
       where: { organizationId },
       orderBy: { updatedAt: "desc" },
       take: 15,
       select: { name: true, industry: true, _count: { select: { contacts: true, leads: true, accounts: true } } },
-    }),
-    prisma.company.count({ where: { organizationId } }),
+    }), []),
+    safe(() => prisma.company.count({ where: { organizationId } }), 0),
   ]);
 
   // ── Enrich data ──

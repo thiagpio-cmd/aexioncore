@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface AIInsightBannerProps {
   /** The context prompt sent to the AI (e.g. "Analise meu pipeline" or "Briefing do dia") */
@@ -28,28 +28,34 @@ export function AIInsightBanner({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!autoLoad) return;
     loadInsight();
+    return () => { abortRef.current?.abort(); };
   }, [prompt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadInsight() {
     setLoading(true);
     setError(false);
     try {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: prompt }),
+        signal: controller.signal,
       });
       if (!res.ok) throw new Error("AI request failed");
       const json = await res.json();
       if (json.success && json.data) {
         setInsight(json.data);
       }
-    } catch {
-      setError(true);
+    } catch (e: any) {
+      if (e?.name !== "AbortError") setError(true);
     } finally {
       setLoading(false);
     }

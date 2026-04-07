@@ -43,19 +43,6 @@ export function AIChatAssistant() {
     }
   }, [isOpen]);
 
-  // Listen for external events (from AI insight banners)
-  useEffect(() => {
-    function handleExternalSend(e: Event) {
-      const detail = (e as CustomEvent).detail;
-      if (typeof detail === "string") {
-        setIsOpen(true);
-        setTimeout(() => sendMessage(detail), 200);
-      }
-    }
-    window.addEventListener("aexion-ai-send", handleExternalSend);
-    return () => window.removeEventListener("aexion-ai-send", handleExternalSend);
-  }, [sendMessage]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const generateId = () => `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   const sendMessage = useCallback(
@@ -122,6 +109,19 @@ export function AIChatAssistant() {
     },
     [isTyping, isOpen]
   );
+
+  // Listen for external events (from AI insight banners)
+  useEffect(() => {
+    function handleExternalSend(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (typeof detail === "string") {
+        setIsOpen(true);
+        setTimeout(() => sendMessage(detail), 200);
+      }
+    }
+    window.addEventListener("aexion-ai-send", handleExternalSend);
+    return () => window.removeEventListener("aexion-ai-send", handleExternalSend);
+  }, [sendMessage]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
