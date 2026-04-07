@@ -13,7 +13,7 @@ import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/l
 async function searchWeb(query: string): Promise<string> {
   try {
     const res = await fetch(
-      \`https://api.search.brave.com/res/v1/web/search?q=\${encodeURIComponent(query)}&count=5\`,
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`,
       {
         headers: {
           "Accept": "application/json",
@@ -25,7 +25,7 @@ async function searchWeb(query: string): Promise<string> {
     if (!res.ok) return "";
     const data = await res.json();
     const results = (data.web?.results || []).slice(0, 3);
-    return results.map((r: any) => \`- \${r.title}: \${r.description}\`).join("\n");
+    return results.map((r: any) => `- ${r.title}: ${r.description}`).join("\n");
   } catch {
     return "";
   }
