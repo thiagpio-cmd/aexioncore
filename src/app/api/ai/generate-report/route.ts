@@ -5,7 +5,7 @@ import { sendSuccess, sendError, sendUnhandledError } from "@/lib/api-response";
 import { unauthorized, badRequest } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { requireRole } from "@/server/auth";
-import { openaiTaskProvider } from "@/lib/ai/providers/openai-tasks";
+import { anthropicTaskProvider as openaiTaskProvider } from "@/lib/ai/providers/anthropic-tasks";
 import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 type ReportType =

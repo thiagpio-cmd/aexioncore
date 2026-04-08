@@ -4,7 +4,7 @@ import { sendSuccess, sendError } from "@/lib/api-response";
 import { unauthorized, badRequest } from "@/lib/errors";
 import { authOptions } from "@/lib/auth";
 import { geminiProvider } from "@/lib/ai/providers/gemini-provider";
-import { openaiTaskProvider } from "@/lib/ai/providers/openai-tasks";
+import { anthropicTaskProvider as openaiTaskProvider } from "@/lib/ai/providers/anthropic-tasks";
 import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 /**

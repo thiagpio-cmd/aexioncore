@@ -14,7 +14,7 @@
  * - Single prompt — one OpenAI call extracts everything at once
  */
 
-import { openaiTaskProvider } from "./providers/openai-tasks";
+import { anthropicTaskProvider as openaiTaskProvider } from "./providers/anthropic-tasks";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
