@@ -21,8 +21,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </span>
               </div>
               <nav className="flex items-center gap-4">
+                <a href="/admin" className="text-sm text-white/60 hover:text-white transition-colors">
+                  Dashboard
+                </a>
                 <a href="/admin/tenants" className="text-sm text-white/60 hover:text-white transition-colors">
                   Tenants
+                </a>
+                <a href="/admin/plans" className="text-sm text-white/60 hover:text-white transition-colors">
+                  Plans
+                </a>
+                <a href="/admin/licenses" className="text-sm text-white/60 hover:text-white transition-colors">
+                  Licenses
+                </a>
+                <a href="/admin/billing" className="text-sm text-white/60 hover:text-white transition-colors">
+                  Billing
+                </a>
+                <a href="/admin/analytics" className="text-sm text-white/60 hover:text-white transition-colors">
+                  Analytics
+                </a>
+                <a href="/admin/audit" className="text-sm text-white/60 hover:text-white transition-colors">
+                  Audit
                 </a>
                 <a href="/admin/provision" className="text-sm text-white/60 hover:text-white transition-colors">
                   Provision

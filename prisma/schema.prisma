@@ -86,6 +86,12 @@ model Organization {
   actionProposals      ActionProposal[]
   customerProfiles     CustomerProfile[]
 
+  // Licensing & billing relations
+  subscriptions  Subscription[]
+  usageRecords   UsageRecord[]
+  invoices       Invoice[]
+  licenseKeys    LicenseKey[]
+
   @@map("organizations")
 }
 
@@ -1755,4 +1761,204 @@ model DealDocument {
   @@index([opportunityId])
   @@index([organizationId])
   @@map("deal_documents")
+}
+
+// ============================================================================
+// Licensing & Billing Models
+// ============================================================================
+
+model Plan {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  tier String @default("STARTER") // FREE, STARTER, PROFESSIONAL, ENTERPRISE, CUSTOM
+
+  // Limits
+  maxSeats           Int @default(5)
+  maxDeals           Int @default(100)
+  maxLeads           Int @default(500)
+  maxStorageMB       Int @default(1024)
+  maxAICallsPerMonth Int @default(200)
+  maxIntegrations    Int @default(3)
+
+  // Module & feature access
+  enabledModules  String? // JSON array: ["commercial","data","reports",...]
+  enabledFeatures String? // JSON object: {"customBranding":true,"rbacCustom":false,...}
+
+  // Pricing (in cents)
+  priceMonthly Int @default(0)
+  priceAnnual  Int @default(0)
+  currency     String @default("USD")
+
+  // Lifecycle
+  trialDays Int     @default(14)
+  isActive  Boolean @default(true)
+  isPublic  Boolean @default(true) // visible on pricing page
+
+  sortOrder Int @default(0)
+  metadata  String? // JSON: extensible plan metadata
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([tier])
+  @@index([isActive, isPublic])
+  @@map("plans")
+}
+
+model Subscription {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  planId         String
+  plan           Plan         @relation(fields: [planId], references: [id])
+
+  status String @default("TRIALING") // TRIALING, ACTIVE, PAST_DUE, CANCELED, EXPIRED, SUSPENDED
+
+  // Period tracking
+  currentPeriodStart DateTime  @default(now())
+  currentPeriodEnd   DateTime
+  trialStart         DateTime?
+  trialEnd           DateTime?
+
+  // Cancellation
+  canceledAt   DateTime?
+  cancelReason String?
+
+  // Billing
+  billingCycle       String  @default("MONTHLY") // MONTHLY, ANNUAL
+  stripeSubscriptionId String?
+  stripeCustomerId     String?
+
+  // Overrides (per-tenant customization beyond plan defaults)
+  seatOverride    Int?    // override maxSeats for this org
+  featureOverrides String? // JSON: per-tenant feature flag overrides
+
+  metadata String? // JSON
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  usageRecords UsageRecord[]
+  invoices     Invoice[]
+
+  @@index([organizationId])
+  @@index([planId])
+  @@index([status])
+  @@index([stripeSubscriptionId])
+  @@map("subscriptions")
+}
+
+model UsageRecord {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  metric    String // SEATS, DEALS, LEADS, STORAGE_MB, AI_CALLS, API_CALLS, INTEGRATIONS
+  quantity  Int    @default(0) // current usage count
+  limitVal  Int    @default(0) // plan limit at time of recording
+  overage   Int    @default(0) // quantity - limit if > 0
+
+  periodStart DateTime
+  periodEnd   DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, metric])
+  @@index([organizationId, periodStart])
+  @@index([subscriptionId])
+  @@map("usage_records")
+}
+
+model Invoice {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  invoiceNumber String  @unique
+  status        String  @default("DRAFT") // DRAFT, OPEN, PAID, VOID, UNCOLLECTIBLE
+
+  amountDue  Int    @default(0) // in cents
+  amountPaid Int    @default(0)
+  currency   String @default("USD")
+
+  periodStart DateTime?
+  periodEnd   DateTime?
+  dueDate     DateTime?
+  paidAt      DateTime?
+
+  lineItems String? // JSON array: [{description, quantity, unitPrice, total}]
+
+  stripeInvoiceId String?
+  pdfUrl          String?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([stripeInvoiceId])
+  @@map("invoices")
+}
+
+model LicenseKey {
+  id             String       @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  key    String @unique // Format: AXN-XXXX-XXXX-XXXX
+  status String @default("ACTIVE") // ACTIVE, REVOKED, EXPIRED
+
+  // Activation
+  activatedAt        DateTime?
+  expiresAt          DateTime?
+  maxActivations     Int @default(1)
+  currentActivations Int @default(0)
+
+  // What this key grants
+  planTier String? // links to a plan tier
+  features String? // JSON: feature overrides
+
+  notes String?
+
+  createdBy String? // admin identifier
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([key])
+  @@map("license_keys")
+}
+
+model AdminAuditLog {
+  id              String @id @default(cuid())
+  adminIdentifier String // email or "system"
+
+  action     String // CREATE_PLAN, UPDATE_PLAN, CREATE_SUBSCRIPTION, CANCEL_SUBSCRIPTION, TOGGLE_TENANT, RESET_PASSWORD, GENERATE_LICENSE, REVOKE_LICENSE, etc.
+  targetType String // plan, subscription, organization, user, license_key
+  targetId   String?
+
+  details   String? // JSON: contextual data
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  @@index([adminIdentifier])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
 }

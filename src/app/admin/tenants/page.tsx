@@ -124,6 +124,7 @@ export default function TenantsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Industry</th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-white/40 uppercase tracking-wider">Users</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Admin</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-white/40 uppercase tracking-wider">Plan</th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-white/40 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Created</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-white/40 uppercase tracking-wider">Actions</th>
@@ -138,7 +139,9 @@ export default function TenantsPage() {
                         {t.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">{t.name}</p>
+                        <a href={`/admin/tenants/${t.id}`} className="text-sm font-medium text-white hover:text-[#2457FF] transition-colors">
+                          {t.name}
+                        </a>
                         <p className="text-xs text-white/30">{t.slug}</p>
                       </div>
                     </div>
@@ -148,6 +151,9 @@ export default function TenantsPage() {
                     <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white">{t.userCount}</span>
                   </td>
                   <td className="px-6 py-4 text-sm text-white/60">{t.admin?.email || "—"}</td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/50">—</span>
+                  </td>
                   <td className="px-6 py-4 text-center">
                     <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${t.isActive ? "bg-[#10B981]/20 text-[#10B981]" : "bg-red-500/20 text-red-400"}`}>
                       {t.isActive ? "Active" : "Disabled"}
