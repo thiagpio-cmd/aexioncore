@@ -107,7 +107,6 @@ async function loadCRMContext(organizationId: string, userId: string): Promise<C
   }
 
   const [
-    commissionsRaw, propertyCompsRaw, dealDocumentsRaw,
     topOpps,
     allLeadsRaw,
     leadsByStatusRaw,
@@ -125,6 +124,9 @@ async function loadCRMContext(organizationId: string, userId: string): Promise<C
     totalContacts,
     companiesRaw,
     totalCompanies,
+    commissionsRaw,
+    propertyCompsRaw,
+    dealDocumentsRaw,
   ] = await Promise.all([
     // ── Opportunities ──
     safe(() => prisma.opportunity.findMany({
@@ -215,23 +217,25 @@ async function loadCRMContext(organizationId: string, userId: string): Promise<C
       select: { name: true, industry: true, _count: { select: { contacts: true, leads: true, accounts: true } } },
     }), []),
     safe(() => prisma.company.count({ where: { organizationId } }), 0),
-    // -- Commissions --
-    safe(() => prisma.commission.findMany({
-      where: { organizationId },
-      include: { opportunity: { select: { title: true, value: true } } },
-      take: 20,
-    }), []),
-    safe(() => prisma.propertyComp.findMany({
-      where: { organizationId },
-      orderBy: { closedDate: "desc" },
-      take: 20,
-    }), []),
-    safe(() => prisma.dealDocument.findMany({
-      where: { organizationId },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      include: { opportunity: { select: { title: true } } },
-    }), []),
+    // -- Commissions (raw SQL — tables created via seed, not in Prisma schema) --
+    safe(() => prisma.$queryRawUnsafe(`
+      SELECT c.*, o.title as "opportunityTitle", o.value as "dealValue"
+      FROM commissions c
+      LEFT JOIN opportunities o ON c."opportunityId" = o.id
+      WHERE o."organizationId" = $1
+      ORDER BY c."createdAt" DESC LIMIT 20
+    `, organizationId) as Promise<any[]>, []),
+    safe(() => prisma.$queryRawUnsafe(`
+      SELECT * FROM property_comps WHERE "organizationId" = $1
+      ORDER BY "closedDate" DESC NULLS LAST LIMIT 20
+    `, organizationId) as Promise<any[]>, []),
+    safe(() => prisma.$queryRawUnsafe(`
+      SELECT dd.*, o.title as "opportunityTitle"
+      FROM deal_documents dd
+      LEFT JOIN opportunities o ON dd."opportunityId" = o.id
+      WHERE o."organizationId" = $1
+      ORDER BY dd."createdAt" DESC LIMIT 20
+    `, organizationId) as Promise<any[]>, []),
   ]);
 
   // ── Enrich data ──
