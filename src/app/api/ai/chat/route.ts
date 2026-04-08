@@ -8,24 +8,30 @@ import { openaiTaskProvider } from "@/lib/ai/providers/openai-tasks";
 import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
 
 
-// --- Web Search for Market Intelligence ---
+// --- Web Search for Market Intelligence (Tavily) ---
 
 async function searchWeb(query: string): Promise<string> {
+  const apiKey = process.env.TAVILY_API_KEY;
+  if (!apiKey) return "";
   try {
-    const res = await fetch(
-      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`,
-      {
-        headers: {
-          "Accept": "application/json",
-          "Accept-Encoding": "gzip",
-          "X-Subscription-Token": process.env.BRAVE_SEARCH_API_KEY || "",
-        },
-      }
-    );
+    const res = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: apiKey,
+        query,
+        max_results: 5,
+        search_depth: "basic",
+        include_answer: true,
+      }),
+    });
     if (!res.ok) return "";
     const data = await res.json();
-    const results = (data.web?.results || []).slice(0, 3);
-    return results.map((r: any) => `- ${r.title}: ${r.description}`).join("\n");
+    let output = "";
+    if (data.answer) output += `Summary: ${data.answer}\n`;
+    const results = (data.results || []).slice(0, 3);
+    output += results.map((r: any) => `- ${r.title}: ${r.content?.slice(0, 200)}`).join("\n");
+    return output;
   } catch {
     return "";
   }
