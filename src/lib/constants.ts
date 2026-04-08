@@ -132,7 +132,6 @@ export const NAV_SECTIONS = [
     title: "Operation",
     items: [
       { label: "Home", href: "/", icon: "home", roles: allRoles },
-      { label: "Inbox", href: "/inbox", icon: "inbox", roles: allRoles },
       { label: "Leads", href: "/leads", icon: "users", roles: [UserRole.SDR, UserRole.MANAGER, UserRole.ADMIN, UserRole.REVOPS] },
       { label: "Opportunities", href: "/opportunities", icon: "briefcase", roles: [UserRole.CLOSER, UserRole.MANAGER, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.REVOPS] },
       { label: "Pipeline", href: "/pipeline", icon: "git-branch", roles: [UserRole.CLOSER, UserRole.MANAGER, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.REVOPS] },
