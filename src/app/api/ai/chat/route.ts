@@ -1002,7 +1002,7 @@ function generateRuleBasedResponse(message: string, ctx: CRMContext): ChatRespon
   }
 
   // ── Pipeline / Deals ────────────────────────────────────────────────
-  if (lower.includes("deal") || lower.includes("pipeline") || lower.includes("opportunity") || ) {
+  if (lower.includes("deal") || lower.includes("pipeline") || lower.includes("opportunity") || lower.includes("opportunities")) {
     const dealBreakdown = ctx.topOpportunities.map((d) => `  • **${d.title}** — ${formatCurrency(d.value)} | ${fmtStage(d.stage)} | ${d.probability}% | ${d.daysInStage}d`).join("\n");
     const stageBreakdown: Record<string, { count: number; value: number }> = {};
     for (const o of ctx.topOpportunities) {
@@ -1093,7 +1093,7 @@ function generateRuleBasedResponse(message: string, ctx: CRMContext): ChatRespon
   }
 
   // ── Contatos ────────────────────────────────────────────────────────
-  if (lower.includes("contact") || lower.includes("champion") || lower.includes("decision maker") || ) {
+  if (lower.includes("contact") || lower.includes("champion") || lower.includes("decision maker")) {
     const champions = ctx.contacts.filter((c) => c.isChampion);
     const dms = ctx.contacts.filter((c) => c.isDecisionMaker);
     const list = ctx.contacts.slice(0, 8).map((c) => `  • **${c.name}** (${c.company})${c.title ? ` — ${c.title}` : ""}${c.isChampion ? " ★champion" : ""}${c.isDecisionMaker ? " ★decisor" : ""}`).join("\n");
