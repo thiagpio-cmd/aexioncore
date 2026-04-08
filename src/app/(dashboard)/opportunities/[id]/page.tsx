@@ -45,6 +45,27 @@ interface Opportunity {
   tasks?: { id: string; title: string; status: string; priority: string; owner?: { id: string; name: string } }[];
   insights?: { id: string; title: string; impact: string; confidence: number }[];
   scoring?: ScoreResult;
+  // CRE Property Data
+  propertyType?: string;
+  propertyAddress?: string;
+  propertyCity?: string;
+  propertyState?: string;
+  propertySqft?: number;
+  pricePerSqft?: number;
+  capRate?: number;
+  noi?: number;
+  occupancyRate?: number;
+  yearBuilt?: number;
+  zoning?: string;
+  dealType?: string;
+  leaseTermMonths?: number;
+  askingRent?: number;
+  tenantName?: string;
+  tenantIndustry?: string;
+  loiSubmittedAt?: string;
+  dueDiligenceStart?: string;
+  dueDiligenceEnd?: string;
+  scheduledClosing?: string;
 }
 
 interface Activity {
@@ -92,6 +113,9 @@ export default function OpportunityDetailPage() {
   const { data: deal, loading: dealLoading, refetch } = useApi<Opportunity>(`/api/opportunities/${oppId}`);
   const { data: activities, loading: activitiesLoading, refetch: refetchActivities } = useApi<Activity[]>(`/api/activities?opportunityId=${oppId}`);
   const { data: debriefs, refetch: refetchDebriefs } = useApi<any[]>(`/api/debriefs?opportunityId=${oppId}&limit=10`);
+  const { data: commissions } = useApi<{ commissions: any[]; summary: any }>(`/api/commissions?opportunityId=${oppId}`);
+  const { data: comps } = useApi<any[]>(`/api/property-comps?opportunityId=${oppId}`);
+  const { data: documents } = useApi<any[]>(`/api/deal-documents?opportunityId=${oppId}`);
 
   if (dealLoading) {
     return <DetailSkeleton />;
@@ -480,6 +504,135 @@ export default function OpportunityDetailPage() {
             )}
           </div>
 
+          {/* Property Details — CRE Data */}
+          {deal.propertyType && (
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <h3 className="mb-4 text-base font-semibold text-foreground flex items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary">
+                  <path d="M3 21h18M3 7v14M21 7v14M6 11h.01M6 15h.01M6 19h.01M10 11h.01M10 15h.01M10 19h.01M14 11h.01M14 15h.01M14 19h.01M18 11h.01M18 15h.01M18 19h.01M6 7V3h12v4" />
+                </svg>
+                Property Details
+              </h3>
+              <div className="grid grid-cols-3 gap-4">
+                {deal.propertyType && (
+                  <div>
+                    <p className="text-xs text-muted">Property Type</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">{deal.propertyType.replace(/_/g, " ")}</p>
+                  </div>
+                )}
+                {deal.dealType && (
+                  <div>
+                    <p className="text-xs text-muted">Deal Type</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">{deal.dealType.replace(/_/g, " ")}</p>
+                  </div>
+                )}
+                {(deal.propertyAddress || deal.propertyCity) && (
+                  <div>
+                    <p className="text-xs text-muted">Location</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">
+                      {deal.propertyAddress && <span>{deal.propertyAddress}<br/></span>}
+                      {deal.propertyCity}{deal.propertyState ? `, ${deal.propertyState}` : ""}
+                    </p>
+                  </div>
+                )}
+                {deal.propertySqft && (
+                  <div>
+                    <p className="text-xs text-muted">Size</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">{deal.propertySqft.toLocaleString()} SF</p>
+                  </div>
+                )}
+                {deal.pricePerSqft && (
+                  <div>
+                    <p className="text-xs text-muted">Price / SF</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">${deal.pricePerSqft.toFixed(2)}</p>
+                  </div>
+                )}
+                {deal.capRate != null && deal.capRate > 0 && (
+                  <div>
+                    <p className="text-xs text-muted">Cap Rate</p>
+                    <p className="mt-0.5 text-sm font-semibold text-primary">{deal.capRate.toFixed(2)}%</p>
+                  </div>
+                )}
+                {deal.noi != null && deal.noi > 0 && (
+                  <div>
+                    <p className="text-xs text-muted">NOI</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">${deal.noi.toLocaleString()}</p>
+                  </div>
+                )}
+                {deal.occupancyRate != null && deal.occupancyRate > 0 && (
+                  <div>
+                    <p className="text-xs text-muted">Occupancy</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">{deal.occupancyRate}%</p>
+                  </div>
+                )}
+                {deal.yearBuilt && (
+                  <div>
+                    <p className="text-xs text-muted">Year Built</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">{deal.yearBuilt}</p>
+                  </div>
+                )}
+                {deal.zoning && (
+                  <div>
+                    <p className="text-xs text-muted">Zoning</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">{deal.zoning}</p>
+                  </div>
+                )}
+                {deal.tenantName && (
+                  <div>
+                    <p className="text-xs text-muted">Tenant</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">{deal.tenantName}</p>
+                    {deal.tenantIndustry && <p className="text-xs text-muted">{deal.tenantIndustry}</p>}
+                  </div>
+                )}
+                {deal.leaseTermMonths && (
+                  <div>
+                    <p className="text-xs text-muted">Lease Term</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">{deal.leaseTermMonths} months</p>
+                  </div>
+                )}
+                {deal.askingRent && (
+                  <div>
+                    <p className="text-xs text-muted">Asking Rent</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">${deal.askingRent.toFixed(2)} / SF</p>
+                  </div>
+                )}
+              </div>
+
+              {/* CRE Timeline Milestones */}
+              {(deal.loiSubmittedAt || deal.dueDiligenceStart || deal.scheduledClosing) && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs font-semibold text-muted mb-3 uppercase tracking-wider">Deal Milestones</p>
+                  <div className="flex items-center gap-6">
+                    {deal.loiSubmittedAt && (
+                      <div className="text-center">
+                        <p className="text-[10px] text-muted">LOI Submitted</p>
+                        <p className="text-xs font-medium text-foreground">{new Date(deal.loiSubmittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                      </div>
+                    )}
+                    {deal.dueDiligenceStart && (
+                      <div className="text-center">
+                        <p className="text-[10px] text-muted">DD Start</p>
+                        <p className="text-xs font-medium text-foreground">{new Date(deal.dueDiligenceStart).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                      </div>
+                    )}
+                    {deal.dueDiligenceEnd && (
+                      <div className="text-center">
+                        <p className="text-[10px] text-muted">DD End</p>
+                        <p className="text-xs font-medium text-foreground">{new Date(deal.dueDiligenceEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                      </div>
+                    )}
+                    {deal.scheduledClosing && (
+                      <div className="text-center">
+                        <p className="text-[10px] text-muted">Scheduled Close</p>
+                        <p className="text-xs font-semibold text-primary">{new Date(deal.scheduledClosing).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Tasks */}
           {deal.tasks && deal.tasks.length > 0 && (
             <div className="rounded-xl border border-border bg-surface p-5">
@@ -605,6 +758,10 @@ export default function OpportunityDetailPage() {
                 { label: "Owner", value: ownerName },
                 { label: "Account", value: accountName },
                 { label: "Created", value: new Date(deal.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) },
+                ...(deal.propertyType ? [{ label: "Property Type", value: deal.propertyType.replace(/_/g, " ") }] : []),
+                ...(deal.capRate ? [{ label: "Cap Rate", value: `${deal.capRate.toFixed(2)}%` }] : []),
+                ...(deal.propertyCity ? [{ label: "Location", value: `${deal.propertyCity}${deal.propertyState ? `, ${deal.propertyState}` : ""}` }] : []),
+                ...(deal.propertySqft ? [{ label: "Size", value: `${deal.propertySqft.toLocaleString()} SF` }] : []),
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">
                   <dt className="text-xs text-muted">{item.label}</dt>
@@ -613,6 +770,92 @@ export default function OpportunityDetailPage() {
               ))}
             </dl>
           </div>
+
+          {/* Commission Tracking */}
+          {commissions && commissions.commissions && commissions.commissions.length > 0 && (
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <h3 className="mb-3 text-sm font-semibold text-foreground flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-success"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                Commissions
+              </h3>
+              <div className="space-y-2">
+                {commissions.commissions.map((c: any) => (
+                  <div key={c.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                    <div>
+                      <p className="text-xs font-medium text-foreground">{c.agentName || "Agent"}</p>
+                      <p className="text-[10px] text-muted">{(c.role || "").replace(/_/g, " ")} &middot; {c.splitPercent}%</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-semibold text-foreground">${parseFloat(c.grossAmount || 0).toLocaleString()}</p>
+                      <span className={`text-[10px] font-medium ${c.status === "PAID" ? "text-success" : c.status === "EARNED" ? "text-primary" : "text-warning"}`}>
+                        {c.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {commissions.summary && (
+                <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                  <span className="text-xs text-muted">Total Commission</span>
+                  <span className="text-sm font-bold text-foreground">${commissions.summary.totalGross.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Property Comps */}
+          {comps && Array.isArray(comps) && comps.length > 0 && (
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <h3 className="mb-3 text-sm font-semibold text-foreground flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-indigo-500"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
+                Comparable Properties ({comps.length})
+              </h3>
+              <div className="space-y-2">
+                {comps.slice(0, 5).map((comp: any) => (
+                  <div key={comp.id} className="rounded-lg border border-border px-3 py-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-medium text-foreground truncate">{comp.address}</p>
+                      <span className="text-[10px] text-muted">{comp.source}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] text-muted">
+                      {comp.salePrice && <span className="font-medium text-foreground">${parseFloat(comp.salePrice).toLocaleString()}</span>}
+                      {comp.capRate && <span className="text-primary font-semibold">{parseFloat(comp.capRate).toFixed(2)}% cap</span>}
+                      {comp.sqft && <span>{parseInt(comp.sqft).toLocaleString()} SF</span>}
+                      {comp.pricePerSqft && <span>${parseFloat(comp.pricePerSqft).toFixed(0)}/SF</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Deal Documents */}
+          {documents && Array.isArray(documents) && documents.length > 0 && (
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <h3 className="mb-3 text-sm font-semibold text-foreground flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                Documents ({documents.length})
+              </h3>
+              <div className="space-y-1.5">
+                {documents.map((doc: any) => (
+                  <div key={doc.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-[10px] font-medium text-muted bg-background rounded px-1.5 py-0.5 shrink-0">{doc.type}</span>
+                      <p className="text-xs font-medium text-foreground truncate">{doc.name}</p>
+                    </div>
+                    <span className={`text-[10px] font-medium shrink-0 ${
+                      doc.status === "SIGNED" ? "text-success" :
+                      doc.status === "UNDER_REVIEW" ? "text-primary" :
+                      doc.status === "SENT" ? "text-warning" :
+                      doc.status === "EXPIRED" || doc.status === "REJECTED" ? "text-danger" : "text-muted"
+                    }`}>
+                      {(doc.status || "DRAFT").replace(/_/g, " ")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Activity Summary */}
           <div className="rounded-xl border border-border bg-surface p-5">

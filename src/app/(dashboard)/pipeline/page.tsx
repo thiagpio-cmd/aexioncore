@@ -111,6 +111,14 @@ function DealCard({
         ) : null}
       </div>
       <p className="text-xs text-muted mb-2">{accountName}</p>
+      {/* CRE Quick Info */}
+      {(deal.propertyType || deal.capRate) && (
+        <div className="flex items-center gap-2 mb-2 text-[10px] text-muted">
+          {deal.propertyType && <span className="rounded bg-background px-1.5 py-0.5 font-medium">{deal.propertyType.replace(/_/g, " ")}</span>}
+          {deal.capRate != null && deal.capRate > 0 && <span className="font-semibold text-primary">{deal.capRate.toFixed(1)}% cap</span>}
+          {deal.propertyCity && deal.propertyState && <span>{deal.propertyCity}, {deal.propertyState}</span>}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-foreground">{formatCurrency(deal.value, "USD")}</span>
         <div className="flex items-center gap-1.5">
@@ -372,6 +380,8 @@ export default function PipelinePage() {
             <thead className="sticky top-0 bg-surface z-10">
               <tr className="border-b border-border">
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Deal</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Cap Rate</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Account</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Value</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted">Stage</th>
@@ -400,6 +410,8 @@ export default function PipelinePage() {
                         <span className="text-sm font-medium text-foreground">{deal.title}</span>
                       </div>
                     </td>
+                    <td className="px-4 py-3 text-xs text-muted">{deal.propertyType?.replace(/_/g, " ") || "—"}</td>
+                    <td className="px-4 py-3 text-xs font-medium text-primary">{deal.capRate ? `${deal.capRate.toFixed(2)}%` : "—"}</td>
                     <td className="px-4 py-3 text-sm text-muted">{deal.account?.name || "—"}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-foreground">{formatCurrency(deal.value, "USD")}</td>
                     <td className="px-4 py-3">

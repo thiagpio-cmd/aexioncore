@@ -51,6 +51,11 @@ interface OpportunityItem {
   expectedCloseDate: string | null;
   account: { id: string; name: string } | null;
   owner: { id: string; name: string } | null;
+  propertyType?: string;
+  propertyCity?: string;
+  propertyState?: string;
+  capRate?: number;
+  propertySqft?: number;
 }
 
 interface MeetingItem {
@@ -248,6 +253,58 @@ export function CloserWorkspace() {
         </div>
       )}
 
+      {/* Commission Summary */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-success"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+            <span className="text-xs font-semibold text-muted">Commissions Earned</span>
+          </div>
+          <p className="text-xl font-bold text-success">
+            {formatCurrency(
+              (opportunities || [])
+                .filter(o => o.stage === "CLOSED_WON")
+                .reduce((s, o) => s + o.value * 0.03, 0),
+              "USD"
+            )}
+          </p>
+          <p className="text-[10px] text-muted mt-0.5">
+            {(opportunities || []).filter(o => o.stage === "CLOSED_WON").length} closed deals
+          </p>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-warning"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+            <span className="text-xs font-semibold text-muted">Pending Commission</span>
+          </div>
+          <p className="text-xl font-bold text-warning">
+            {formatCurrency(
+              (opportunities || [])
+                .filter(o => !["CLOSED_WON", "CLOSED_LOST"].includes(o.stage))
+                .reduce((s, o) => s + o.value * 0.03, 0),
+              "USD"
+            )}
+          </p>
+          <p className="text-[10px] text-muted mt-0.5">
+            {(opportunities || []).filter(o => !["CLOSED_WON", "CLOSED_LOST"].includes(o.stage)).length} active deals
+          </p>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
+            <span className="text-xs font-semibold text-muted">Avg Cap Rate</span>
+          </div>
+          <p className="text-xl font-bold text-primary">
+            {(() => {
+              const withCap = (opportunities || []).filter(o => o.capRate && o.capRate > 0);
+              if (withCap.length === 0) return "—";
+              return (withCap.reduce((s, o) => s + (o.capRate || 0), 0) / withCap.length).toFixed(2) + "%";
+            })()}
+          </p>
+          <p className="text-[10px] text-muted mt-0.5">Across active deals</p>
+        </div>
+      </div>
+
       {/* Mini Kanban Pipeline */}
       {oppsLoading ? (
         <SkeletonCard />
@@ -283,9 +340,24 @@ export function CloserWorkspace() {
                           className="block rounded-md border border-border bg-surface p-2.5 hover:border-primary/30 transition-colors"
                         >
                           <p className="text-xs font-medium text-foreground truncate">{opp.title}</p>
+                          {(opp.propertyType || opp.propertyCity) && (
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {opp.propertyType && (
+                                <span className="text-[9px] rounded bg-primary/10 text-primary px-1 py-0.5 font-medium">{opp.propertyType.replace(/_/g, " ")}</span>
+                              )}
+                              {opp.propertyCity && opp.propertyState && (
+                                <span className="text-[9px] text-muted">{opp.propertyCity}, {opp.propertyState}</span>
+                              )}
+                            </div>
+                          )}
                           <div className="flex items-center justify-between mt-1">
                             <span className="text-xs text-muted">{formatCurrency(opp.value, "USD")}</span>
-                            <span className="text-[10px] text-muted">{daysInStage}d</span>
+                            <div className="flex items-center gap-1.5">
+                              {opp.capRate != null && opp.capRate > 0 && (
+                                <span className="text-[10px] font-semibold text-primary">{opp.capRate.toFixed(1)}%</span>
+                              )}
+                              <span className="text-[10px] text-muted">{daysInStage}d</span>
+                            </div>
                           </div>
                           {isStuck && (
                             <span className="mt-1 inline-flex items-center rounded-full bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold text-warning">
