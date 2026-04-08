@@ -15,5 +15,10 @@
       ]
     }
   ],
-  "crons": []
+  "crons": [
+    {
+      "path": "/api/cron/market-intel",
+      "schedule": "0 10,15,21 * * *"
+    }
+  ]
 }

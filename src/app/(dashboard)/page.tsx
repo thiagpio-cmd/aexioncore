@@ -14,6 +14,7 @@ import { MoneyAtRiskWidget } from "@/components/MoneyAtRiskWidget";
 import { AIInsightBanner } from "@/components/ai/ai-insight-banner";
 import { DebriefModal } from "@/components/DebriefModal";
 import { TodayView, TodayViewData } from "@/components/today-view";
+import { MarketIntelWidget } from "@/components/market-intel-widget";
 import { BentoGrid } from "@/components/design-system/BentoGrid";
 import { GlassCard } from "@/components/design-system/GlassCard";
 import { MetricValue } from "@/components/design-system/MetricValue";
@@ -474,6 +475,13 @@ export default function HomePage() {
         prompt="Give me today's executive briefing: top priority deals, overdue tasks, and any at-risk properties in my pipeline"
         className="mb-4"
       />
+
+      {/* ─── Market Intelligence ─────────────────────────────── */}
+      <div style={{ marginBottom: "var(--space-lg)" }}>
+        <BentoGrid columns={4} gap="10px">
+          <MarketIntelWidget />
+        </BentoGrid>
+      </div>
 
       {/* ─── Today View ───────────────────────────────────────── */}
       {activeView === "today" && (
