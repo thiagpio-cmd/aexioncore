@@ -37,6 +37,28 @@ async function searchWeb(query: string): Promise<string> {
   }
 }
 
+// --- Cached Market Intelligence (daily snapshot) ---
+
+async function loadCachedMarketIntel(organizationId: string): Promise<string> {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT "data" FROM "market_snapshots"
+       WHERE "date" = $1 AND "organizationId" = $2
+       ORDER BY "createdAt" DESC LIMIT 1`,
+      today,
+      organizationId
+    );
+    if (rows.length === 0) return "";
+    const snapshot = JSON.parse(rows[0].data);
+    return (snapshot.sections || [])
+      .map((s: any) => `### ${s.topic}\n${s.summary}`)
+      .join("\n\n");
+  } catch {
+    return "";
+  }
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface Suggestion {
@@ -592,7 +614,7 @@ ABSOLUTE RULES:
 12. Use market benchmarks to contextualize ANY number mentioned`;
 
   if (marketIntel) {
-    prompt += `\n\n═══ MARKET INTELLIGENCE (live) ═══\n${marketIntel}`;
+    prompt += `\n\n═══ MARKET INTELLIGENCE (daily snapshot) ═══\n${marketIntel}`;
   }
 
   return prompt;
@@ -1234,13 +1256,17 @@ export async function POST(request: NextRequest) {
 
     const ctx = await loadCRMContext(organizationId, userId);
 
-    // Try to get market intelligence if the message mentions market/news/trends
+    // Load cached market intelligence (daily snapshot — no live API calls)
     let marketIntel = "";
     const lowerMsg = message.toLowerCase();
     if (lowerMsg.includes("market") ||
         lowerMsg.includes("news") || lowerMsg.includes("trend") ||
         lowerMsg.includes("forecast") || lowerMsg.includes("projection")) {
-      marketIntel = await searchWeb(`commercial real estate market ${new Date().getFullYear()} trends`);
+      marketIntel = await loadCachedMarketIntel(organizationId);
+      // Fallback to live search only if no cached snapshot exists
+      if (!marketIntel) {
+        marketIntel = await searchWeb(`commercial real estate market ${new Date().getFullYear()} trends`);
+      }
     }
 
     // ── Try AI provider first ─────────────────────────────────────────

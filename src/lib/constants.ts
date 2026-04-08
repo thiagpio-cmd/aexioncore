@@ -157,6 +157,7 @@ export const NAV_SECTIONS = [
     title: "Intelligence",
     items: [
       { label: "ICP", href: "/intelligence/icp", icon: "brain", roles: allExceptViewer },
+      { label: "Market Intel", href: "/market-intelligence", icon: "globe", roles: allExceptViewer },
     ],
   },
   {
